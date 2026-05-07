@@ -186,7 +186,7 @@
 ### Backend
 
 - 构建：`cd infoq-scaffold-backend && mvn clean package -P dev`
-- 运行：`cd infoq-scaffold-backend && mvn spring-boot:run -pl infoq-admin`
+- 运行：`cd infoq-scaffold-backend && mvn clean install -DskipTests && java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local`
 - 定向测试：`cd infoq-scaffold-backend && mvn -pl infoq-modules/infoq-system -am -DskipTests=false test`
 
 ### React Admin

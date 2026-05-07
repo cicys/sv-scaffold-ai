@@ -40,13 +40,15 @@ outline: [2, 3]
 因为默认 profile 是 `dev`。如果你只是执行：
 
 ```bash
-mvn spring-boot:run -pl infoq-admin
+cd infoq-scaffold-backend
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
 
 实际加载的是 `application-dev.yml`。要启用 `local`，必须显式：
 
 ```bash
-mvn spring-boot:run -pl infoq-admin -Plocal
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
 ```
 
 ## 5. 小程序端为什么报缺少 `TARO_APP_API_ORIGIN`

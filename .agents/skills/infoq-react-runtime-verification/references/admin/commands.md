@@ -2,8 +2,27 @@
 
 ## 启动 Backend + React Admin
 
+Unix-like / `bash` 可用时：
+
 ```bash
 bash .agents/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.sh
+```
+
+若当前环境不适合执行 `bash`，改用工作区原生命令手动启动。启动 backend 前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
+
+Backend：
+
+```bash
+cd infoq-scaffold-backend
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
+```
+
+React Admin：
+
+```bash
+cd infoq-scaffold-frontend-react
+pnpm run dev -- --host 127.0.0.1 --port 5174 --strictPort
 ```
 
 ## 仅停止本技能启动的进程
@@ -18,7 +37,7 @@ bash .agents/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stac
 bash .agents/skills/infoq-react-runtime-verification/scripts/print_admin_login_inject_snippet.sh
 ```
 
-## 从后端抓取真实路由路径
+## 从后端抓取真实路由
 
 ```bash
 bash .agents/skills/infoq-react-runtime-verification/scripts/fetch_admin_routes_with_token.sh
@@ -32,6 +51,18 @@ bash .agents/skills/infoq-react-runtime-verification/scripts/fetch_admin_routes_
 
 ## 浏览器验证模式
 
-1. 启动本地栈。
-2. 运行 `print_admin_login_inject_snippet.sh` 获取精确的 localStorage 注入表达式。
-3. 使用 `infoq-browser-automation` 或 Playwright MCP 打开 `/login`，注入 token，并按 `fetch_admin_routes_with_token.sh` 返回的路由逐个验证。
+1. 启动本地栈，或至少确保 backend `http://127.0.0.1:8080` 与 React admin `http://127.0.0.1:5174` 已可访问。
+2. 若只需要查看真实后端返回的受保护路由列表，执行：
+
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe --backend-url "http://127.0.0.1:8080" --list-routes
+```
+
+3. 对目标受保护路由执行 CLI-first 浏览器探测：
+
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe --frontend-origin "http://127.0.0.1:5174" --route "/index"
+```
+
+4. 只有在需要临时交互探索或定位器发现时，才改用 Playwright MCP。
+5. 若需要兼容包装器，Windows 使用 `run_admin_route_probe.ps1`，macOS / Linux 使用 `run_admin_route_probe.sh`；但主文档入口保持为跨平台 CLI。

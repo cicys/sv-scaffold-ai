@@ -112,6 +112,8 @@ infoq-scaffold-ai
 - 仓库定位与索引刷新：`infoq-codebase-index`
 - OpenSpec 与项目参考：`infoq-openspec-delivery`、`infoq-project-reference`
 
+其中浏览器自动化默认路径已经收敛为“仓库脚本 + skill 内本地 Playwright 依赖”。`playwright` MCP 只用于临时交互探索，`chrome-devtools` MCP 只用于 Network / Console / Performance 深度诊断。
+
 React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/weapp` 区分客户端，但不再保留共享底座型 skill 目录。
 
 详见：
@@ -175,10 +177,14 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 
 ### 1. 后端
 
+运行前先确认 `java -version` 与 `mvn -version` 都指向 JDK 17；若当前终端落在旧版 JDK，先覆盖 `JAVA_HOME` / `PATH` 后再执行：
+
 ```bash
 cd infoq-scaffold-backend
-mvn spring-boot:run -pl infoq-admin
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
+如需继续执行 React / Vue admin 的受保护路由浏览器探测，临时追加 `--captcha.enable=false`。
 
 默认本地访问：
 
@@ -328,6 +334,25 @@ bash script/bin/deploy-frontend.sh deploy
 - 文档站：`cd infoq-scaffold-docs && pnpm run docs:sync && pnpm run docs:check-links && pnpm run build`
 
 如果改动影响浏览器运行态、登录、路由守卫、页面渲染或小程序 DevTools 打开流程，建议额外使用对应的 React 或 Vue 运行态 verification skill。
+
+若要直接执行最小浏览器探测，可使用：
+
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts install
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- flow --url "https://example.com" --wait-for-text "Example Domain"
+```
+
+首次运行缺少浏览器二进制时，先执行 `pnpm --dir .agents/skills/infoq-browser-automation/scripts exec playwright install chromium`。
+
+如需兼容包装器：
+
+```bash
+sh .agents/skills/infoq-browser-automation/scripts/invoke_playwright_flow.sh --url "https://example.com" --wait-for-text "Example Domain"
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .agents/skills/infoq-browser-automation/scripts/invoke_playwright_flow.ps1 -Url "https://example.com" -WaitForText "Example Domain"
+```
 
 ## 项目能力概览
 

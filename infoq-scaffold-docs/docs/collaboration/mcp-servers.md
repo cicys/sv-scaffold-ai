@@ -10,89 +10,59 @@ outline: [2, 3]
 
 # 项目 MCP Server 说明
 
-本文档说明本仓库使用的项目级 MCP server，配置文件位于 `.codex/config.toml`。文档真值以该文件为准。
+本仓库的 MCP 真值源是 `.codex/config.toml`。
+凡是 server 名称、tool 白名单、审批模式、超时或启动脚本路径，都以该文件为准。
 
-## 1. 当前配置总览
+## 1. 当前启用状态
 
-| Server | 状态 | 传输方式 | 主要用途 | 是否需要额外配置 |
-| --- | --- | --- | --- | --- |
-| `playwright` | 已启用 | STDIO | 浏览器自动化、页面流程验证、截图、控制台检查 | 否 |
-| `openai-docs` | 已启用 | HTTP | 查询 OpenAI / Codex / API 官方文档 | 否 |
-| `chrome-devtools` | 已启用 | STDIO | 前端调试、Network/Console/Performance 分析 | 否 |
-| `mysql` | 可选，默认禁用，只读 | STDIO | 只读查看本地 / 测试 MySQL 数据库上下文 | 需通过 `.codex/scripts/start_mysql_mcp.sh` 启动，并保证 backend `application-local.yml` 中的数据库配置可解析 |
-| `redis` | 可选，默认禁用，只读 | STDIO | 只读查看本地 / 测试 Redis 缓存上下文 | 需通过 `.codex/scripts/start_redis_mcp.sh` 启动，并保证 backend `application-local.yml` 中的 Redis 配置可解析 |
-
-当前仓库级配置里已不再维护 `context7` 和 `github` server；若后续重新引入，应先更新 `.codex/config.toml`，再同步本文件与 `README.md` 及相关 `doc/*.md`。
-
-## 2. 工具暴露、审批与超时策略
-
-下表只记录仓库在 `.codex/config.toml` 里显式声明的工具级约束；未出现的工具表示“仓库配置未单独覆写”，其最终行为以 MCP server 自身和客户端默认策略为准。
-
-| Server | `enabled_tools` 白名单 | 显式 `approval_mode = "approve"` | 超时设置 |
+| Server | 状态 | 传输方式 | 主要用途 |
 | --- | --- | --- | --- |
-| `playwright` | 未配置白名单 | `browser_navigate`、`browser_click`、`browser_run_code` | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
-| `openai-docs` | 未配置白名单 | `search_openai_docs`、`fetch_openai_doc` | `tool_timeout_sec = 120` |
-| `chrome-devtools` | 未配置白名单 | `take_snapshot`、`take_screenshot`、`evaluate_script`、`click` | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
-| `mysql` | `show_databases`、`list_tables`、`describe_table`、`show_create_table`、`show_indexes`、`query`、`select`、`batch_query` | 与白名单一致，上述 8 个工具均要求 `approve` | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
-| `redis` | `ping`、`info`、`keys`、`get`、`hgetall`、`lrange`、`smembers`、`ttl`、`zrange` | 与白名单一致，上述 9 个工具均要求 `approve` | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
+| `playwright` | 已启用 | STDIO | 浏览器交互探索与补充验证 |
+| `openai-docs` | 已启用 | HTTP | OpenAI / Codex / API 官方文档查询 |
+| `chrome-devtools` | 已启用 | STDIO | Network / Console / Performance 深度调试 |
+| `mysql` | 可选、默认禁用、只读 | STDIO | 查看本地或测试 MySQL 上下文 |
+| `redis` | 可选、默认禁用、只读 | STDIO | 查看本地或测试 Redis 上下文 |
 
-补充说明：
+## 2. 与 repo-owned CLI 的边界
 
-- `mysql` / `redis` 除了工具白名单，还通过 `env = { *_READONLY = "true" }` 强制只读运行。
-- `mysql` / `redis` 当前虽默认禁用，但一旦启用，暴露范围仍以上表白名单为准，不会开放额外写入类工具。
-- `playwright` 当前对导航、点击和直接执行浏览器代码这 3 个高交互工具显式要求 `approve`；其余工具未在仓库配置中单独覆写。
-- `openai-docs` 当前只对“搜索”和“抓取具体文档”显式要求 `approve`；像 `list_openai_docs`、`list_api_endpoints`、`get_openapi_spec` 这类工具没有在仓库配置中单独覆写。
-- `chrome-devtools` 当前只对高交互 / 高信息量工具显式要求 `approve`；其余工具未在仓库配置中单独覆写。
+下列命令不是 MCP server，而是仓库内脚本入口：
 
-## 3. 为什么这些 MCP 对本仓库重要
+- `playwright-cli`
+- `chrome-devtools-cli`
 
-### `playwright`
+它们位于：
 
-用途：
+- `.agents/skills/infoq-browser-automation/scripts/playwright_cli.mjs`
+- `.agents/skills/infoq-browser-automation/scripts/chrome_devtools_cli.mjs`
 
-- 驱动浏览器执行真实页面操作
-- 用于登录、点击、输入、页面跳转、截图、渲染态提取、控制台错误检查
-- 适合做 React/Vue 管理端运行态验证
+推荐关系：
 
-对应仓库 skill：
+- 默认浏览器主流程：先用 repo-owned CLI
+- 临时交互探索：再用 `playwright` MCP
+- DevTools 级诊断：用 `chrome-devtools-cli` 或 `chrome-devtools` MCP
 
-- `.agents/skills/infoq-react-runtime-verification/SKILL.md`
-- `.agents/skills/infoq-vue-runtime-verification/SKILL.md`
-- `.agents/skills/infoq-browser-automation/SKILL.md`
+## 3. 工具暴露与审批
 
-### `openai-docs`
+文档只描述仓库在 `.codex/config.toml` 中显式约束过的部分；未单独覆写的工具行为，以各 MCP server 默认策略为准。
 
-用途：
+| Server | 已显式要求审批的工具 | 超时配置 |
+| --- | --- | --- |
+| `playwright` | `browser_navigate`、`browser_click`、`browser_run_code` | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
+| `openai-docs` | `search_openai_docs`、`fetch_openai_doc` | `tool_timeout_sec = 120` |
+| `chrome-devtools` | `take_snapshot`、`take_screenshot`、`evaluate_script`、`click` | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
+| `mysql` | 只读白名单工具 | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
+| `redis` | 只读白名单工具 | `startup_timeout_sec = 20`，`tool_timeout_sec = 120` |
 
-- 查询 OpenAI 开发者官方文档
-- 适用于 OpenAI API、Responses API、Codex、skills、AGENTS、MCP、subagents 等问题
+## 4. 典型使用方式
 
-### `chrome-devtools`
-
-用途：
-
-- 直接查看 Network、Console、Performance、DOM、Lighthouse
-- 更适合复杂前端问题排查和性能分析
-
-### `mysql` / `redis`
-
-用途：
-
-- 在本仓库里为后端联调提供只读数据库和缓存上下文
-- 适合排查接口返回、登录态、权限、缓存和测试数据问题
-- 当前默认禁用，避免 fresh checkout 或未配置本地环境时触发无意义的 MCP 启动失败
-- 启用前由 `.codex/scripts/start_mysql_mcp.sh` / `.codex/scripts/start_redis_mcp.sh` 从 `infoq-scaffold-backend/infoq-admin/src/main/resources/application-local.yml` 派生连接参数
-
-## 4. 本仓库中的典型使用方式
-
-- React 或 Vue 管理端运行态问题：先用 Playwright 或 `infoq-browser-automation`，需要深入排查再用 `chrome-devtools`
-- OpenAI / AGENTS / skills / subagent 问题：优先 `openai-docs`
-- 后端接口返回与缓存问题：在已完成本地配置后再启用 `mysql`、`redis`（只读）
+- React / Vue 管理端运行态问题：先用 `infoq-browser-automation` 的 CLI-first 路径；需要临时互动时再用 `playwright` MCP。
+- 页面白屏、接口报错、性能或请求细节排查：用 `chrome-devtools`。
+- OpenAI / AGENTS / skills / Codex / MCP 文档问题：优先 `openai-docs`。
+- backend 数据或缓存排查：在本地配置完成后再显式启用只读 `mysql` / `redis`。
 
 ## 5. 使用约束
 
-- 不在仓库中存储任何真实 token、账号或本地私有路径
-- `mysql` 和 `redis` 只保留只读能力
-- 默认启用的仓库级 MCP 只有 `playwright`、`openai-docs`、`chrome-devtools`
-- 需要真实浏览器状态时优先复用已存在的 skill，而不是在文档里发散出新的临时流程
-- skill 名称与 MCP 文档名称必须跟仓库真实路径保持一致
+- 不在仓库内保存真实 token、账号或私有本机路径。
+- `mysql` 与 `redis` 只保留只读能力。
+- 默认启用的仓库级 MCP 只有 `playwright`、`openai-docs`、`chrome-devtools`。
+- 文档与 skill 中出现的 server / tool 名称，必须与 `.codex/config.toml` 保持一致。

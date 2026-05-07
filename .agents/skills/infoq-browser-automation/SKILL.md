@@ -1,73 +1,130 @@
 ---
 name: infoq-browser-automation
-description: 本仓库通用浏览器自动化技能。凡涉及网页交互或浏览器状态验证（打开页面、填表、点击、登录、截图、抓取渲染内容、检查控制台错误、验证 Web 流程）均应使用，即使用户未显式提及“浏览器自动化”。执行后端为 `agent-browser` CLI。
-allowed-tools: Bash(npx agent-browser:*), Bash(agent-browser:*)
+description: 本仓库通用浏览器自动化技能。凡涉及网页交互、登录态注入、受保护路由访问、截图、console/pageerror 采集、渲染校验与浏览器证据留存时均应使用。默认执行路径为仓库内跨平台 `playwright-cli` / `chrome-devtools-cli`，MCP 仅作显式 fallback。
 ---
 
 # InfoQ 浏览器自动化
 
 将 `infoq-browser-automation` 作为本仓库真实浏览器交互的默认技能。
-执行后端仍是 `agent-browser` CLI，但仓库技能名遵循本地 `infoq-` 命名约定。
-它依赖 `agent-browser` CLI 和本地 Playwright 兼容浏览器运行时。若需要自定义浏览器二进制或持久化会话，请使用文档化参数，避免临时 shell 绕行。
+当前默认主路径是仓库内 `scripts/` 目录提供的 repo-owned、跨平台 Node CLI：
 
-## 快速路径
+- `playwright-cli`：主流程浏览器自动化
+- `chrome-devtools-cli`：本地 DevTools CLI 包装入口
 
-大多数任务应遵循以下顺序：
+这两个 CLI 在 Windows / macOS / Linux 下都应通过 `pnpm --dir .agents/skills/infoq-browser-automation/scripts run <cli-name> -- ...` 调用。
+若需要兼容包装器：
 
-1. 打开目标页面。
-2. 等待加载完成或稳定元素出现。
-3. 获取可交互元素快照。
-4. 使用 `@e` 引用或语义定位器进行交互。
-5. 导航或 DOM 变化后重新快照。
-6. 采集结果：文本、截图、PDF、控制台信息或错误。
+- Windows：使用 `.ps1`
+- macOS / Linux：使用 `.sh`
 
-基线流程：
+包装器只负责参数转发与默认取证路径，主文档入口仍然是跨平台 `pnpm --dir ... run ...`。
 
-```bash
-agent-browser open https://example.com
-agent-browser wait --load networkidle
-agent-browser snapshot -i
+## 默认路径
+
+### 1. 安装依赖
+
+```powershell
+pnpm --dir .agents/skills/infoq-browser-automation/scripts install
 ```
 
-然后基于返回的 refs 执行交互：
+首次缺少浏览器二进制时执行：
 
-```bash
-agent-browser fill @e1 "user@example.com"
-agent-browser fill @e2 "password123"
-agent-browser click @e3
-agent-browser wait --load networkidle
-agent-browser snapshot -i
+```powershell
+pnpm --dir .agents/skills/infoq-browser-automation/scripts exec playwright install chromium
 ```
 
-## 核心规则
+### 2. 最小页面流程
 
-- 任意导航、弹窗打开、DOM 刷新或重大前端重渲染后，都要重新快照。
-- 常规流程优先 `snapshot -i`；当 ref 列表缺少可点击容器时，使用 `snapshot -i -C`。
-- 当 refs 不稳定时，优先使用 `find role`、`find text`、`find label`、`find placeholder` 等语义定位器。
-- 优先使用 `wait --load networkidle`、`wait --url` 或 `wait <selector>`，避免盲等。
-- 优先使用保存的认证状态或 `auth` 命令，避免在 shell 历史暴露明文密码。
-- 修改 `--executable-path`、`--session-name`、有头/无头模式等运行参数时，先关闭浏览器，再用新参数重启。
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- flow --url "https://example.com" --wait-for-text "Example Domain"
+```
 
-## 引用加载指引
+### 3. 管理端受保护路由验证
 
-只加载当前任务所需的文档。
+先只列出后端真实返回路由：
 
-- 完整命令面与参数：`references/commands.md`
-- ref 生命周期与定位稳定性：`references/snapshot-refs.md`
-- 登录流程与凭证处理：`references/authentication.md`
-- 会话、cookies、存储与清理：`references/session-management.md`
-- trace、性能分析、控制台与错误：`references/profiling.md`
-- 代理与自定义浏览器配置：`references/proxy-support.md`
-- 录屏流程：`references/video-recording.md`
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe --backend-url "http://127.0.0.1:8080" --list-routes
+```
 
-## 资产
+再对目标路由执行浏览器探测：
 
-- `assets/templates/authenticated-session.sh`
-- `assets/templates/capture-workflow.sh`
-- `assets/templates/form-automation.sh`
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe --frontend-origin "http://127.0.0.1:5174" --route "/index"
+```
+
+该命令会：
+
+1. 通过现有 `login_check.mjs` 获取 backend token。
+2. 在页面加载前写入 `Admin-Token`。
+3. 打开目标前端路由。
+4. 输出截图与 console 日志路径。
+5. 默认把 `console error` / `pageerror` 视为失败。
+
+### 4. DevTools CLI
+
+```bash
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run chrome-devtools-cli -- --help
+```
+
+该入口是本地 `chrome-devtools-mcp` 的 repo-owned 包装器，用于在需要时直接启用 DevTools 级诊断。
+
+## 前置条件
+
+- `node` 与 `pnpm` 可用。
+- 若任务依赖本地 admin 栈，先确认 backend / frontend 已启动。
+- backend 构建或运行前必须确认 `java -version` 与 `mvn -version` 指向 JDK 17；不要在 JDK 8 shell 中继续执行。
+- 当前迁移范围不假设 `bash` 一定可用；若 `bash` 入口不可用，应手动启动本地栈后继续使用跨平台 CLI。
+
+## 参数约定
+
+`playwright-cli flow` 常用参数：
+
+- `--url`：目标 URL，必填。
+- `--storage-key` / `--storage-value`：页面加载前写入 localStorage。
+- `--wait-for-text`：等待页面出现的文本。
+- `--wait-for-url`：等待 URL 模式。
+- `--screenshot-path`：截图输出路径。
+- `--console-log-path`：console / pageerror 输出路径。
+- `--timeout-ms`：等待超时。
+- `--headed`：显示浏览器窗口。
+- `--ignore-https-errors`：忽略证书错误。
+- `--allow-console-errors`：仅在明确接受时关闭 console 失败门禁。
+
+`playwright-cli admin-route-probe` 额外参数：
+
+- `--frontend-origin`：管理端站点 origin，例如 `http://127.0.0.1:5174`。
+- `--route`：目标受保护路由，默认 `/index`。
+- `--backend-url`：后端地址，默认 `http://127.0.0.1:8080`。
+- `--client-id`：登录 client id。
+- `--username` / `--password`：显式覆盖默认候选账号。
+- `--list-routes`：只输出路由列表，不启动浏览器。
+
+## MCP Fallback 条件
+
+- 使用 `playwright` MCP：
+  - 需要临时交互探索；
+  - 需要现场找元素或快速试定位器；
+  - 任务更像一次性人工排查，而不是可复跑脚本。
+- 使用 `chrome-devtools` MCP：
+  - 需要 Network / Console / Performance 深度诊断；
+  - 需要 Lighthouse、request body、性能 trace 等 CLI 默认不提供的证据。
 
 ## 护栏
 
-- 将 `eval` 视为末端工具（用于检查或状态注入），而不是默认交互方式。
-- 若 shell 转义变脆弱，改用 `eval --stdin` 或专用模板/参考流程，不要强行叠加嵌套引号。
-- 当任务对视觉效果或时序敏感时，使用 `--headed`、标注截图、trace 或 profiler 输出。
+- 默认优先复跑 CLI，不要先上 MCP。
+- CLI 失败时必须保留失败命令、错误摘要与证据路径，禁止静默切走 MCP。
+- backend 未运行、captcha 未关闭或前端站点不可达时，必须显式失败。
+- skill 文档树只保留当前 CLI-first 入口与现行约束，不保留任何历史浏览器入口说明。
+
+## 参考
+
+- Playwright CLI：`scripts/playwright_cli.mjs`
+- DevTools CLI：`scripts/chrome_devtools_cli.mjs`
+- Playwright 最小流程包装器：
+  - Windows：`scripts/invoke_playwright_flow.ps1`
+  - macOS / Linux：`scripts/invoke_playwright_flow.sh`
+- 管理端路由探测包装器：
+  - Windows：`scripts/run_admin_route_probe.ps1`
+  - macOS / Linux：`scripts/run_admin_route_probe.sh`
+- 依赖清单：`scripts/package.json`

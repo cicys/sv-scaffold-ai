@@ -206,8 +206,10 @@ outline: [2, 3]
 
 ```bash
 cd infoq-scaffold-backend
-mvn spring-boot:run -pl infoq-admin
-mvn spring-boot:run -pl infoq-admin -Plocal
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
 mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
 mvn clean package -P prod -pl infoq-admin -am
 ```
