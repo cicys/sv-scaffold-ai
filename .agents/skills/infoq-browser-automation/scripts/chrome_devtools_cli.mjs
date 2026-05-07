@@ -5,21 +5,24 @@ import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const binName = process.platform === 'win32' ? 'chrome-devtools-mcp.cmd' : 'chrome-devtools-mcp';
-const binPath = path.join(scriptDir, 'node_modules', '.bin', binName);
+const repoRoot = path.resolve(scriptDir, '..', '..', '..', '..');
+const entryPath = path.join(scriptDir, 'node_modules', 'chrome-devtools-mcp', 'build', 'src', 'bin', 'chrome-devtools-mcp.js');
+const localStoragePath = path.join(repoRoot, '.codex', 'tmp', 'chrome-devtools-mcp-localstorage');
+const forwardedArgs = process.argv[2] === '--' ? process.argv.slice(3) : process.argv.slice(2);
 
-if (!fs.existsSync(binPath)) {
+if (!fs.existsSync(entryPath)) {
   console.error(
     "chrome-devtools-mcp is not installed. Run 'pnpm --dir .agents/skills/infoq-browser-automation/scripts install' first."
   );
   process.exit(1);
 }
 
-const child = spawn(binPath, process.argv.slice(2), {
+fs.mkdirSync(path.dirname(localStoragePath), { recursive: true });
+
+const child = spawn(process.execPath, [`--localstorage-file=${localStoragePath}`, entryPath, ...forwardedArgs], {
   cwd: scriptDir,
   env: process.env,
-  stdio: 'inherit',
-  shell: process.platform === 'win32'
+  stdio: 'inherit'
 });
 
 child.on('error', (error) => {

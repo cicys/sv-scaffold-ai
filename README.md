@@ -339,7 +339,7 @@ bash script/bin/deploy-frontend.sh deploy
 
 ```bash
 pnpm --dir .agents/skills/infoq-browser-automation/scripts install
-pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- flow --url "https://example.com" --wait-for-text "Example Domain"
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli flow --url "https://example.com" --wait-for-text "Example Domain"
 ```
 
 首次运行缺少浏览器二进制时，先执行 `pnpm --dir .agents/skills/infoq-browser-automation/scripts exec playwright install chromium`。

@@ -27,10 +27,21 @@ function buildDefaultFlowEvidencePath(extension) {
   return path.join(repoRoot, 'test-results', 'browser-automation', `${formatTimestamp()}.${extension}`);
 }
 
+function normalizeCommandArgs(rawArgs) {
+  if (rawArgs[0] === '--') {
+    return rawArgs.slice(1);
+  }
+  return rawArgs;
+}
+
 function printHelp() {
   console.log(`Usage:
-  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- flow [options]
-  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe [options]
+  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli flow [options]
+  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe [options]
+
+Compatibility:
+  The CLI also accepts an optional leading "--" before the command to tolerate
+  package-manager argument forwarding differences across Windows / macOS / Linux.
 
 Commands:
   flow               Open a page, optionally inject localStorage, wait, capture screenshot and console logs
@@ -40,7 +51,7 @@ Commands:
 
 function printFlowHelp() {
   console.log(`Usage:
-  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- flow --url <url> [options]
+  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli flow --url <url> [options]
 
 Options:
   --url <url>
@@ -59,7 +70,7 @@ Options:
 
 function printAdminProbeHelp() {
   console.log(`Usage:
-  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe [options]
+  pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe [options]
 
 Options:
   --frontend-origin <origin>
@@ -248,7 +259,7 @@ function parseAdminProbeArgs(args) {
 }
 
 async function main() {
-  const [, , command, ...args] = process.argv;
+  const [command, ...args] = normalizeCommandArgs(process.argv.slice(2));
 
   if (!command || command === '--help' || command === '-h') {
     printHelp();

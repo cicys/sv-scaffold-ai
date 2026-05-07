@@ -44,12 +44,13 @@
 
 `infoq-browser-automation` 的默认主路径已经切换为仓库内跨平台 CLI：
 
-- `pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- ...`
-- `pnpm --dir .agents/skills/infoq-browser-automation/scripts run chrome-devtools-cli -- ...`
+- `pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli ...`
+- `pnpm --dir .agents/skills/infoq-browser-automation/scripts run chrome-devtools-cli ...`
 
 说明：
 
 - 这两个 CLI 是 repo-owned 入口，适用于 Windows / macOS / Linux。
+- 为兼容不同平台和 `pnpm` 参数透传差异，也接受 `run <cli-name> -- ...` 形式，但默认推荐无 `--` 写法。
 - 兼容包装器同时提供两套：Windows 使用 `.ps1`，macOS / Linux 使用 `.sh`。
 - `playwright` MCP 只用于临时交互探索。
 - `chrome-devtools` MCP 只用于深度诊断。
