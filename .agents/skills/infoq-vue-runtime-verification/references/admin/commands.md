@@ -2,13 +2,11 @@
 
 ## 启动 Backend + Vue Admin
 
-Unix-like / `bash` 可用时：
-
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
 ```
 
-若当前环境不适合执行 `bash`，改用工作区原生命令手动启动。启动 backend 前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
+若不使用 skill 主入口，可改用工作区原生命令手动启动。启动 backend 前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
 
 Backend：
 
@@ -28,19 +26,19 @@ pnpm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ## 仅停止本技能启动的进程
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.mjs
 ```
 
 ## 打印 Token 注入片段
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/print_admin_login_inject_snippet.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/print_admin_login_inject_snippet.mjs
 ```
 
 ## 从后端抓取真实路由
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/fetch_admin_routes_with_token.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/fetch_admin_routes_with_token.mjs
 ```
 
 ## 默认 Admin URL
@@ -55,14 +53,13 @@ bash .agents/skills/infoq-vue-runtime-verification/scripts/fetch_admin_routes_wi
 2. 若只需要查看真实后端返回的受保护路由列表，执行：
 
 ```bash
-pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe --backend-url "http://127.0.0.1:8080" --list-routes
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe --backend-url "http://127.0.0.1:8080" --list-routes
 ```
 
 3. 对目标受保护路由执行 CLI-first 浏览器探测：
 
 ```bash
-pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli -- admin-route-probe --frontend-origin "http://127.0.0.1:5173" --route "/index"
+pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe --frontend-origin "http://127.0.0.1:5173" --route "/index"
 ```
 
 4. 只有在需要临时交互探索或定位器发现时，才改用 Playwright MCP。
-5. 若需要兼容包装器，Windows 使用 `run_admin_route_probe.ps1`，macOS / Linux 使用 `run_admin_route_probe.sh`；但主文档入口保持为跨平台 CLI。

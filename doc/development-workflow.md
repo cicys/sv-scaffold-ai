@@ -106,7 +106,7 @@ pnpm --dir infoq-scaffold-docs run docs:build
 当 `infoq-scaffold-backend`、`infoq-scaffold-frontend-react`、`infoq-scaffold-frontend-vue` 发生 add/delete/rename/move/class-name change 时，执行：
 
 ```bash
-python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py
+node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs
 ```
 
 ## 9. 核心原则

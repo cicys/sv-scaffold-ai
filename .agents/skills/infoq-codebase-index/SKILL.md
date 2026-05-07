@@ -20,7 +20,7 @@ description: 维护并查询 infoq-scaffold-backend、infoq-scaffold-frontend-re
 3. 若本轮改动涉及任一目标工作区的文件或类名变更，执行：
 
 ```bash
-python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py
+node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs
 ```
 
 该命令会刷新 skill 引用，并规范化相关 `AGENTS.md` 路由规则。

@@ -3,7 +3,7 @@
 OpenAI YAML Generator - Creates agents/openai.yaml for a skill folder.
 
 Usage:
-    generate_openai_yaml.py <skill_dir> [--name <skill_name>] [--interface key=value]
+    generate_openai_yaml.mjs <skill_dir> [--name <skill_name>] [--interface key=value]
 """
 
 import argparse

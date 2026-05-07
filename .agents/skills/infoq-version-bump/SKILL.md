@@ -10,25 +10,24 @@ description: 在本仓库内统一升级项目版本，覆盖后端 Maven revisi
 执行：
 
 ```bash
-bash .agents/skills/infoq-version-bump/scripts/bump_version.sh 2.0.3
+node .agents/skills/infoq-version-bump/scripts/bump_version.mjs 2.0.3
 ```
 
 执行环境：
 
-- `bash`
+- `node`
 - `perl`
 - `grep`
 - `find`
-- `node`
 
 常用变体：
 
 ```bash
 # Preview checks without editing files
-bash .agents/skills/infoq-version-bump/scripts/bump_version.sh --dry-run 2.0.3
+node .agents/skills/infoq-version-bump/scripts/bump_version.mjs --dry-run 2.0.3
 
 # Run against another checkout or a temporary fixture
-bash .agents/skills/infoq-version-bump/scripts/bump_version.sh \
+node .agents/skills/infoq-version-bump/scripts/bump_version.mjs \
   --repo-root /path/to/infoq-scaffold-ai \
   2.0.3
 ```
@@ -84,7 +83,7 @@ bash .agents/skills/infoq-version-bump/scripts/bump_version.sh \
 真实执行后：
 
 ```bash
-bash .agents/skills/infoq-version-bump/scripts/test_bump_version.sh
+node .agents/skills/infoq-version-bump/scripts/test_bump_version.mjs
 ```
 
 升级后可选的项目级检查：
@@ -98,5 +97,5 @@ pnpm --dir infoq-scaffold-docs run docs:check-links
 ## 参考资源
 
 - 受管目标与护栏：`references/targets.md`
-- 主脚本：`scripts/bump_version.sh`
-- 脚本回归冒烟：`scripts/test_bump_version.sh`
+- 主脚本：`scripts/bump_version.mjs`
+- 脚本回归冒烟：`scripts/test_bump_version.mjs`

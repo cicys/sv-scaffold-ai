@@ -29,6 +29,7 @@ infoq-scaffold-frontend-vue/eslint.config.ts
 infoq-scaffold-frontend-vue/html/ie.html
 infoq-scaffold-frontend-vue/index.html
 infoq-scaffold-frontend-vue/package.json
+infoq-scaffold-frontend-vue/pnpm-lock.yaml
 infoq-scaffold-frontend-vue/public/favicon.ico
 infoq-scaffold-frontend-vue/src/App.vue
 infoq-scaffold-frontend-vue/src/animate.ts

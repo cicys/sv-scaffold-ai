@@ -66,9 +66,9 @@ npx vitest --config vitest.config.ts --run \
 ## 运行态后续验证
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.sh
-bash .agents/skills/infoq-vue-runtime-verification/scripts/print_admin_login_inject_snippet.sh
-bash .agents/skills/infoq-vue-runtime-verification/scripts/fetch_admin_routes_with_token.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
+node .agents/skills/infoq-vue-runtime-verification/scripts/print_admin_login_inject_snippet.mjs
+node .agents/skills/infoq-vue-runtime-verification/scripts/fetch_admin_routes_with_token.mjs
 ```
 
 ## 全量质量门禁

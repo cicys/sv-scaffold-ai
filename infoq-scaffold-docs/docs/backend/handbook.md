@@ -41,6 +41,13 @@ outline: [2, 3]
 - `local`：显式执行 `-Plocal` 时启用。
 - `prod`：部署和打包时使用。
 
+`application-local.yml` 属于开发者本地配置，允许按个人调试环境指向本地或远端依赖；自动化脚本默认按 `application-local.yml -> application-dev.yml` 顺序解析配置。共享文档、示例命令和 skill 不得暴露个人测试环境的私有地址、账号或密码。
+
+共享示例的推荐基线保持为本地可复现环境：
+
+- MySQL：`127.0.0.1:3306/infoq`
+- Redis：`127.0.0.1:6379/0`
+
 ## 3. 认证与登录链路
 
 当前登录链路以 `AuthController` 为核心，路径位于：

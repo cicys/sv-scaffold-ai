@@ -88,4 +88,4 @@ test-results/
 .pnpm-store/
 .swc/
 
-.codex/tmp/
+doc/tmp/

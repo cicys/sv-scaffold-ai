@@ -3,14 +3,14 @@
 Skill Initializer - Creates a new skill from template
 
 Usage:
-    init_skill.py <skill-name> --path <path> [--resources scripts,references,assets] [--examples] [--interface key=value]
+    init_skill.mjs <skill-name> --path <path> [--resources scripts,references,assets] [--examples] [--interface key=value]
 
 Examples:
-    init_skill.py my-new-skill --path skills/public
-    init_skill.py my-new-skill --path skills/public --resources scripts,references
-    init_skill.py my-api-helper --path skills/private --resources scripts --examples
-    init_skill.py custom-skill --path /custom/location
-    init_skill.py my-skill --path skills/public --interface short_description="Short UI label"
+    init_skill.mjs my-new-skill --path skills/public
+    init_skill.mjs my-new-skill --path skills/public --resources scripts,references
+    init_skill.mjs my-api-helper --path skills/private --resources scripts --examples
+    init_skill.mjs custom-skill --path /custom/location
+    init_skill.mjs my-skill --path skills/public --interface short_description="Short UI label"
 """
 
 import argparse
@@ -79,7 +79,7 @@ Executable code (Python/Bash/etc.) that can be run directly to perform specific 
 
 **Examples from other skills:**
 - PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+- Browser automation skill: `playwright_cli.mjs`, `chrome_devtools_cli.mjs` - cross-platform Node CLIs
 
 **Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
 
@@ -110,26 +110,10 @@ Files not intended to be loaded into context, but rather used within the output 
 **Not every skill requires all three types of resources.**
 """
 
-EXAMPLE_SCRIPT = '''#!/usr/bin/env python3
+EXAMPLE_SCRIPT = """#!/usr/bin/env node
+console.log('This is an example script for {skill_name}');
+// TODO: Replace this placeholder with actual cross-platform script logic.
 """
-Example helper script for {skill_name}
-
-This is a placeholder script that can be executed directly.
-Replace with actual implementation or delete if not needed.
-
-Example real scripts from other skills:
-- pdf/scripts/fill_fillable_fields.py - Fills PDF form fields
-- pdf/scripts/convert_pdf_to_images.py - Converts PDF pages to images
-"""
-
-def main():
-    print("This is an example script for {skill_name}")
-    # TODO: Add actual script logic here
-    # This could be data processing, file conversion, API calls, etc.
-
-if __name__ == "__main__":
-    main()
-'''
 
 EXAMPLE_REFERENCE = """# Reference Documentation for {skill_title}
 
@@ -233,10 +217,10 @@ def create_resource_dirs(skill_dir, skill_name, skill_title, resources, include_
         resource_dir.mkdir(exist_ok=True)
         if resource == "scripts":
             if include_examples:
-                example_script = resource_dir / "example.py"
+                example_script = resource_dir / "example.mjs"
                 example_script.write_text(EXAMPLE_SCRIPT.format(skill_name=skill_name))
                 example_script.chmod(0o755)
-                print("[OK] Created scripts/example.py")
+                print("[OK] Created scripts/example.mjs")
             else:
                 print("[OK] Created scripts/")
         elif resource == "references":

@@ -35,6 +35,17 @@ outline: [2, 3]
 - `.agents/skills/infoq-browser-automation/scripts/playwright_cli.mjs`
 - `.agents/skills/infoq-browser-automation/scripts/chrome_devtools_cli.mjs`
 
+可选只读 `mysql` / `redis` MCP 的本地启动入口位于：
+
+- `.codex/scripts/start_mysql_mcp.mjs`
+- `.codex/scripts/start_redis_mcp.mjs`
+
+默认行为：
+
+- 按 `application-local.yml -> application-dev.yml` 顺序读取当前开发者后端依赖配置
+- 显式环境变量优先级高于解析出的 backend 配置值
+- 共享文档示例统一使用本地依赖基线：MySQL `127.0.0.1:3306/infoq`、Redis `127.0.0.1:6379/0`
+
 推荐关系：
 
 - 默认浏览器主流程：先用 repo-owned CLI

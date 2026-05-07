@@ -153,8 +153,8 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 
 可选但默认禁用：
 
-- `mysql`（只读；通过 `.codex/scripts/start_mysql_mcp.sh` 启动，并从 backend `application-local.yml` 派生连接配置）
-- `redis`（只读；通过 `.codex/scripts/start_redis_mcp.sh` 启动，并从 backend `application-local.yml` 派生连接配置）
+- `mysql`（只读；通过 `node .codex/scripts/start_mysql_mcp.mjs` 启动，默认按 `application-local.yml -> application-dev.yml` 顺序读取 backend 配置，并允许用环境变量覆盖；共享文档示例统一使用本地依赖 `127.0.0.1:3306/infoq`）
+- `redis`（只读；通过 `node .codex/scripts/start_redis_mcp.mjs` 启动，默认按 `application-local.yml -> application-dev.yml` 顺序读取 backend 配置，并允许用环境变量覆盖；共享文档示例统一使用本地依赖 `127.0.0.1:6379/0`）
 
 详见：
 
@@ -212,15 +212,15 @@ pnpm run dev
 如果要通过 skill 启动后端 + 管理端联调：
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.sh
-bash .agents/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
+node .agents/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.mjs
 ```
 
 停止对应 skill 启动的联调进程：
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.sh
-bash .agents/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.sh
+node .agents/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.mjs
+node .agents/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.mjs
 ```
 
 ### 3. 小程序端
@@ -343,16 +343,7 @@ pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli fl
 ```
 
 首次运行缺少浏览器二进制时，先执行 `pnpm --dir .agents/skills/infoq-browser-automation/scripts exec playwright install chromium`。
-
-如需兼容包装器：
-
-```bash
-sh .agents/skills/infoq-browser-automation/scripts/invoke_playwright_flow.sh --url "https://example.com" --wait-for-text "Example Domain"
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .agents/skills/infoq-browser-automation/scripts/invoke_playwright_flow.ps1 -Url "https://example.com" -WaitForText "Example Domain"
-```
+浏览器 skill 不再维护 `.sh` / `.ps1` 包装器，统一直接调用仓库内 CLI；仓库内临时文件统一写入 `doc/tmp/`。
 
 ## 项目能力概览
 

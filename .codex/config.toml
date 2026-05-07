@@ -54,8 +54,8 @@ approval_mode = "approve"
 # Optional MCP servers. Enable only after completing the documented local setup.
 
 [mcp_servers.mysql]
-command = "bash"
-args = [".codex/scripts/start_mysql_mcp.sh"]
+command = "node"
+args = [".codex/scripts/start_mysql_mcp.mjs"]
 enabled_tools = [
   "show_databases",
   "list_tables",
@@ -106,8 +106,8 @@ approval_mode = "approve"
 approval_mode = "approve"
 
 [mcp_servers.redis]
-command = "bash"
-args = [".codex/scripts/start_redis_mcp.sh"]
+command = "node"
+args = [".codex/scripts/start_redis_mcp.mjs"]
 enabled_tools = [
   "ping",
   "info",

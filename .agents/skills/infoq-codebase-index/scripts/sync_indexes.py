@@ -19,12 +19,12 @@ SKILL_TRIGGER_CLAUSE = (
     "in those workspaces so the index skill is refreshed before finishing."
 )
 INDEX_SKILL_LINE = (
-    "|Code Index Skill:.agents/skills/infoq-codebase-index:{SKILL.md,scripts/sync_indexes.py,"
-    "references/usage.md,references/backend-index.md,references/frontend-react-index.md,"
-    "references/frontend-vue-index.md}"
+    "|Code Index Skill:.agents/skills/infoq-codebase-index:{SKILL.md,scripts/sync_indexes.mjs,"
+    "scripts/sync_indexes.py,references/usage.md,references/backend-index.md,"
+    "references/frontend-react-index.md,references/frontend-vue-index.md}"
 )
 INDEX_REFRESH_LINE = (
-    "|Code Index Refresh:Run python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py "
+    "|Code Index Refresh:Run node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs "
     "after add/delete/rename/move/class-name change in infoq-scaffold-backend, "
     "infoq-scaffold-frontend-react, or infoq-scaffold-frontend-vue so the skill references and "
     "AGENTS routing stay current."
@@ -183,7 +183,10 @@ def check_synced() -> int:
 
 def main() -> None:
     if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] != "--check"):
-        print("Usage: python3 sync_indexes.py [--check]", file=sys.stderr)
+        print(
+            "Usage: node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs [--check]",
+            file=sys.stderr,
+        )
         raise SystemExit(2)
     if len(sys.argv) == 2 and sys.argv[1] == "--check":
         raise SystemExit(check_synced())

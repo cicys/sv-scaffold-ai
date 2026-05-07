@@ -22,5 +22,5 @@ Do not silently skip an impacted workspace. If backend, React, or Vue work is bl
 Update the task checklist as work lands so the active change reflects real execution state.
 Run targeted verification for every changed workspace before handing control back.
 If this turn adds, removes, renames, or moves files or changes class names under infoq-scaffold-backend, infoq-scaffold-frontend-react, or infoq-scaffold-frontend-vue, run:
-python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py
+node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs
 """

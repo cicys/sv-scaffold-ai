@@ -21,7 +21,7 @@ description: 编排本仓库高影响级别的 OpenSpec 工作流。适用于新
 3. 使用下列命令初始化变更目录：
 
 ```bash
-bash .agents/skills/infoq-openspec-delivery/scripts/init_change_dir.sh <change-id>
+node .agents/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs <change-id>
 ```
 
 4. 若用户未要求 subagent，先创建或更新 `proposal.md`、`tasks.md` 及必要 spec delta，再进入实现（L2 Lite 最低要求为 `proposal.md` + `tasks.md`）。

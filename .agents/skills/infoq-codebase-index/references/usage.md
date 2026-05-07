@@ -14,5 +14,5 @@
 4. 使用 `rg "<class-or-symbol>" <workspace>` 后打开真实源码文件。
 
 刷新规则：
-- 当三个工作区任意一个发生 add/delete/rename/move/class-name change 时，执行 `python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py`。
+- 当三个工作区任意一个发生 add/delete/rename/move/class-name change 时，执行 `node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs`。
 - 该脚本会重建生成索引，并重写相关 `AGENTS.md` 路由行，确保后续回合可自动触发本技能。

@@ -22,6 +22,7 @@ infoq-scaffold-frontend-react/GEMINI.md
 infoq-scaffold-frontend-react/eslint.config.js
 infoq-scaffold-frontend-react/index.html
 infoq-scaffold-frontend-react/package.json
+infoq-scaffold-frontend-react/pnpm-lock.yaml
 infoq-scaffold-frontend-react/public/favicon.ico
 infoq-scaffold-frontend-react/src/App.tsx
 infoq-scaffold-frontend-react/src/RootProviders.tsx

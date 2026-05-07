@@ -36,5 +36,5 @@ pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
 ## 运行态冒烟技能入口
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/run_weapp_smoke.sh --suite core
+node .agents/skills/infoq-vue-runtime-verification/scripts/run_weapp_smoke.mjs --suite core
 ```

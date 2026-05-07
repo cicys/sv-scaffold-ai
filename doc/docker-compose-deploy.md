@@ -11,7 +11,7 @@
 默认宿主机根目录是 `/infoq`。如果是在 macOS 本机配合 Docker Desktop 验证，建议先设置：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 ```
 
 然后再执行后续脚本或 `docker compose` 命令。
@@ -45,7 +45,7 @@ export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
 ## 2. 首次部署后端
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh prepare
 bash script/bin/infoq.sh deploy
 ```
@@ -74,7 +74,7 @@ bash script/bin/infoq.sh stop
 ## 3. 首次部署前端
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/deploy-frontend.sh prepare
 bash script/bin/deploy-frontend.sh deploy
 ```
@@ -106,7 +106,7 @@ bash script/bin/deploy-frontend.sh stop
 如果镜像已经构建过，且宿主机目录、数据库数据都还在，只需要执行启动命令，不必重新 `deploy`。
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 
 # 先启动后端依赖与 infoq-admin
 bash script/bin/infoq.sh start
@@ -131,7 +131,7 @@ bash script/bin/deploy-frontend.sh start
 建议先停前端和网关，再停后端与基础服务：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 
 # 先停止 Vue / React / nginx-web
 bash script/bin/deploy-frontend.sh stop
@@ -145,7 +145,7 @@ bash script/bin/infoq.sh stop
 查看状态：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh status
 bash script/bin/deploy-frontend.sh status
 ```
@@ -153,7 +153,7 @@ bash script/bin/deploy-frontend.sh status
 查看日志：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh logs infoq-admin
 bash script/bin/deploy-frontend.sh logs all
 ```
@@ -161,7 +161,7 @@ bash script/bin/deploy-frontend.sh logs all
 重启服务：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh restart
 bash script/bin/deploy-frontend.sh restart
 ```

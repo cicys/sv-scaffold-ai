@@ -20,31 +20,31 @@ TARO_APP_ID=wx_your_appid pnpm --dir infoq-scaffold-frontend-weapp-react build-o
 ## 默认完整冒烟
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs
 ```
 
 ## 核心冒烟
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh --suite core
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs --suite core
 ```
 
 ## 复用已有会话
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh --keep-existing-session
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs --keep-existing-session
 ```
 
 ## 启用微信合法域名校验
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh --url-check
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs --url-check
 ```
 
 ## 显式指定后端登录目标
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh \
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs \
   --base-url http://127.0.0.1:8080 \
   --username admin \
   --password admin123
@@ -53,7 +53,7 @@ bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh 
 ## 仅验证“登录成功进入首页”
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh \
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs \
   --suite smoke \
   --skip-build \
   --base-url http://127.0.0.1:8080 \

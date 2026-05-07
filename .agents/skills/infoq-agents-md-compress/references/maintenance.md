@@ -21,5 +21,5 @@
 2. 对照现有仓库结构和真值文件核验路径。
 3. 将长 SOP 下沉到 `doc/`、`references/` 或更近 `AGENTS.md`。
 4. 重新压缩为索引行，保证顺序为 `IMPORTANT -> scope -> retrievable roots -> commands/gates -> routing`。
-5. 运行 `scripts/example.py` 校验。
+5. 运行 `scripts/example.mjs` 校验。
 6. 提交变更并在 PR 描述中说明影响范围。

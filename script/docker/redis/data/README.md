@@ -3,7 +3,7 @@
 如果是在 macOS 本机配合 Docker Desktop 做验证，建议改用可写目录，例如：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 ```
 
 后端脚本 `script/bin/infoq.sh` 与前端脚本 `script/bin/deploy-frontend.sh` 都支持这个环境变量。

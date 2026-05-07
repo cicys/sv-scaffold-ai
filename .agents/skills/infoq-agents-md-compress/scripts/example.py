@@ -114,7 +114,7 @@ def validate_index_paths(lines: list[str], path: Path) -> int:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        return fail("Usage: python3 scripts/example.py <path-to-AGENTS.md>")
+        return fail("Usage: node .agents/skills/infoq-agents-md-compress/scripts/example.mjs <path-to-AGENTS.md>")
 
     path = Path(sys.argv[1])
     if not path.exists():

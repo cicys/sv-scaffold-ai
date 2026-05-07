@@ -21,6 +21,7 @@ outline: [2, 3]
 2. 除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀。
 3. `.agents/skills` 下不保留共享底座型、README-only 或 helper-only skill 目录。
 4. React 家族和 Vue 家族技能允许通过 `references/admin` 与 `references/weapp` 区分客户端，但仍必须保持单一职责。
+5. skill 的主执行入口必须兼容 Windows / macOS / Linux；统一使用 repo-owned Node CLI 或 `.mjs`，不再保留 `.sh` / `.ps1` / `.cmd` 作为 skill 入口。若内部仍需 Python 等实现，必须由跨平台 Node 入口调度。
 
 ## 2. 一个 skill 通常包含什么
 
@@ -61,7 +62,7 @@ outline: [2, 3]
 
 - 这两个 CLI 是 repo-owned 入口，适用于 Windows / macOS / Linux。
 - 为兼容不同平台和 `pnpm` 参数透传差异，也接受 `run <cli-name> -- ...` 形式，但默认推荐无 `--` 写法。
-- 兼容包装器同时提供两套：Windows 使用 `.ps1`，macOS / Linux 使用 `.sh`。
+- 不再维护平台包装脚本，直接调用仓库内 CLI。
 - `playwright` MCP 只用于临时交互探索。
 - `chrome-devtools` MCP 只用于深度诊断。
 

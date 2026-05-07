@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import signal
+import subprocess
 import sys
 import time
 
@@ -53,6 +54,18 @@ def build_redis_client():
         password=require_env("CLUSTER_SMOKE_REDIS_PASSWORD"),
         decode_responses=True,
     )
+
+
+def kill_process_tree(pid: int):
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return
+    os.kill(pid, signal.SIGKILL)
 
 
 def state_snapshot(client, user_id, node_id_a, node_id_b):
@@ -135,7 +148,7 @@ async def abnormal_exit_phase(args, headers, client, user_id):
         if str(user_id) not in snap["node_users_b"] or args.node_id_b not in snap["user_nodes"]:
             raise RuntimeError(f"node-b registration missing before kill -9: {snap}")
 
-        os.kill(args.server_b_pid, signal.SIGKILL)
+        kill_process_tree(args.server_b_pid)
         await asyncio.wait_for(ws_b.wait_closed(), timeout=10)
         print(f"ABNORMAL_EXIT_WS_CLOSED=code={ws_b.close_code}, reason={ws_b.close_reason!r}")
 

@@ -1,11 +1,11 @@
 # AGENTS.md
-|Code Index Skill:.agents/skills/infoq-codebase-index:{SKILL.md,scripts/sync_indexes.py,references/usage.md,references/backend-index.md,references/frontend-react-index.md,references/frontend-vue-index.md}
-|Code Index Refresh:Run python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py after add/delete/rename/move/class-name change in infoq-scaffold-backend, infoq-scaffold-frontend-react, or infoq-scaffold-frontend-vue so the skill references and AGENTS routing stay current.
+|Code Index Skill:.agents/skills/infoq-codebase-index:{SKILL.md,scripts/sync_indexes.mjs,scripts/sync_indexes.py,references/usage.md,references/backend-index.md,references/frontend-react-index.md,references/frontend-vue-index.md}
+|Code Index Refresh:Run node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs after add/delete/rename/move/class-name change in infoq-scaffold-backend, infoq-scaffold-frontend-react, or infoq-scaffold-frontend-vue so the skill references and AGENTS routing stay current.
 |IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any project tasks. Read repository files before relying on framework pretraining data.
 |Scope:本文件适用于仓库根目录及未被更近 `AGENTS.md` 或 `AGENTS.override.md` 覆盖的路径。
 |Encoding:所有项目文件必须使用 UTF-8 编码。
 |Package Manager:前端默认使用 pnpm 执行 install/dev/lint/test/build；仅在 pnpm 不可用时退回 npm。
-|Temporary Artifacts:仓库内工具、skill、脚本、验证过程新增的临时文件、临时目录、调试输出与一次性运行产物统一放在 `.codex/tmp/` 下；除非外部工具强制要求其他位置。|禁止把临时产物散落到仓库其他路径，便于后续统一清理。
+|Temporary Artifacts:仓库内工具、skill、脚本、验证过程新增的临时文件、临时目录、调试输出与一次性运行产物统一放在 `doc/tmp/` 下；除非外部工具强制要求其他位置。|禁止把临时产物散落到仓库其他路径，便于后续统一清理。
 |Failure Policy:产品代码优先显式失败，不接受静默 fallback、吞错或假成功；确需 fallback 时必须显式、可说明、易关闭，并经过用户批准。
 |Engineering Baseline:保持抽象务实；遵守 DRY/YAGNI/关注点分离；命名清晰、注释只写关键意图；优先直接修复，不保留无必要兼容层；兼容性不是明确要求时，删除死代码和过时分支。
 |Security And Validation:源码中禁止硬编码密钥；边界处校验外部输入；数据库访问使用参数化查询；保持代码可测试；优先自动化校验；后端单测总时长控制在 60 秒内。
@@ -20,6 +20,7 @@
 |Instruction Layering:根 `AGENTS.md` 只保留跨仓规则。|backend、Vue admin、React admin、weapp React、weapp Vue、docs site 使用更近的 `AGENTS.md` 或 `AGENTS.override.md` 写栈内细则。|当更近文件与根规则冲突时，以更近文件为准。
 |Workspace AGENTS:infoq-scaffold-backend/AGENTS.md|infoq-scaffold-frontend-vue/AGENTS.md|infoq-scaffold-frontend-react/AGENTS.md|infoq-scaffold-frontend-weapp-react/AGENTS.md|infoq-scaffold-frontend-weapp-vue/AGENTS.md|infoq-scaffold-docs/AGENTS.md
 |Repo Skill Policy:每个 skill 只解决一个工作。|除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀。|每个 skill 目录必须包含 `SKILL.md`。|所有仓库级 skill 默认维护 `agents/openai.yaml`，更新 `SKILL.md` 时必须同步校验 UI metadata 是否 stale。|`agents/openai.yaml` 的 `default_prompt` 必须显式包含 `$skill-name`。|`.agents/skills` 下不保留共享底座型、仅 README 型、或 helper-only skill 目录。|React 家族和 Vue 家族技能允许通过 `references/admin` 与 `references/weapp` 区分客户端，但仍必须保持单一职责。
+|Skill Runtime Policy:仓库级 skill 的主执行入口必须兼容 Windows/macOS/Linux。|统一使用 repo-owned Node CLI 或 `.mjs` 入口；不再保留 `.sh`/`.ps1`/`.cmd` 作为 skill 入口。|若内部仍需 Python 等实现，必须由跨平台 Node 入口调度。|新增或更新 skill 时，同时检查脚本帮助文案、默认命令和临时产物路径是否与该规则一致。
 |Skill Docs Localization:仓库级 skill（`.agents/skills`）的描述性文档默认中文优先（含 `SKILL.md`、`references/*.md`、`agents/openai.yaml` 的说明字段）。|翻译仅覆盖说明性自然语言；命令、路径、环境变量、标识符、代码块、API 参数、组件名与版本号保持原文。|新增或更新 skill 时必须同步执行中文化与术语一致性检查，避免文档中英混杂与语义漂移。
 |Repo Skill Location:仓库级 skills 统一放在 `.agents/skills`。|相关 references、helper scripts 和发现逻辑保持与该路径一致。
 |Docs Sync:变更 skill 名称、命令、env 前置条件、工作区入口路径、`.codex/config.toml` 中的 MCP server/工具白名单/审批模式/超时设置后，必须同步更新 `/AGENTS.md`、更近 `AGENTS.md`、`README.md` 与相关 `doc/*.md`，禁止出现文档和 skill 实际行为漂移。
@@ -34,4 +35,3 @@
 |Subagent Docs:openspec:{project.md,specs/README.md,changes/README.md}|doc:{agents-guide.md,skills-guide.md,subagents-guide.md}
 |Subagent Flow:OpenSpec 交付默认使用 `requirements_expert -> technical_designer -> code_implementer -> auto_fixer`。|重大 UI/UX 决策优先走 `infoq-ui-ux-three-phase-protocol`，或由主线程按需维护 `design.md`。|`materials.md` 与最终验收默认由主线程按需处理。|验证证据不要堆在主对话，显式总结 blocker。
 |Subagent Output:`requirements_expert` 负责 `proposal.md` 和 spec deltas。|`technical_designer` 产出 `tasks.md`。|`code_implementer` 负责实现与任务勾选更新。|`auto_fixer` 负责验证与真实修复。|主线程负责最终验收结论，以及按需写入 `design.md`/`materials.md`/`review.md`。
-|Code Index Refresh:当 `infoq-scaffold-backend`、`infoq-scaffold-frontend-react` 或 `infoq-scaffold-frontend-vue` 发生 add/delete/rename/move/class-name change 后，运行 `python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py`，保持 skill 引用和 AGENTS 路由同步。

@@ -63,7 +63,7 @@ enhance-user-import
 ### 5.2 初始化 change 目录
 
 ```bash
-bash .agents/skills/infoq-openspec-delivery/scripts/init_change_dir.sh enhance-user-import
+node .agents/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs enhance-user-import
 ```
 
 ### 5.3 明确告诉 Codex 使用 subagents

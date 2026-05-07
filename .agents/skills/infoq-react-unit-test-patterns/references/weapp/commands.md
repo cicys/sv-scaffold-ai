@@ -36,5 +36,5 @@ pnpm --dir infoq-scaffold-frontend-weapp-react build-open:weapp:dev
 ## 运行态冒烟技能入口
 
 ```bash
-bash .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.sh --suite core
+node .agents/skills/infoq-react-runtime-verification/scripts/run_weapp_smoke.mjs --suite core
 ```

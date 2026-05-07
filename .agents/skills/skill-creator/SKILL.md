@@ -79,7 +79,7 @@ skill-name/
 - 面向 UI 的 skill 列表与 chip 元数据
 - 生成前先阅读 `references/openai_yaml.md`，遵守其中的字段说明与约束
 - 通过阅读 skill 本身来生成人类可读的 `display_name`、`short_description` 和 `default_prompt`
-- 将这些值通过 `--interface key=value` 传给 `scripts/generate_openai_yaml.py` 或 `scripts/init_skill.py`，以确定性方式生成
+- 将这些值通过 `--interface key=value` 传给 `scripts/generate_openai_yaml.mjs` 或 `scripts/init_skill.mjs`，以确定性方式生成
 - 更新 skill 后，要校验 `agents/openai.yaml` 是否仍与 `SKILL.md` 一致；如果 stale，就重新生成
 - 其他可选 UI 字段（图标、品牌色等）只有在用户明确提供时才添加
 - 字段定义与示例见 `references/openai_yaml.md`
@@ -225,9 +225,9 @@ For simple edits, modify the XML directly.
 
 1. 用具体例子理解 skill 的使用场景
 2. 规划可复用内容（scripts、references、assets）
-3. 初始化 skill（运行 `init_skill.py`）
+3. 初始化 skill（运行 `init_skill.mjs`）
 4. 编辑 skill（补资源、写 `SKILL.md`）
-5. 校验 skill（运行 `quick_validate.py`）
+5. 校验 skill（运行 `quick_validate.mjs`）
 6. 依据真实使用持续迭代
 
 通常应按顺序执行，只有在明确不适用时才跳步。
@@ -287,20 +287,20 @@ For simple edits, modify the XML directly.
 
 只有当目标 skill 已经存在时，才可以跳过这一步，直接进入下一步。
 
-如果是从零新建 skill，始终先运行 `init_skill.py`。这个脚本会生成包含必需结构的新模板目录，能显著提升创建效率并减少遗漏。
+如果是从零新建 skill，始终先运行 `init_skill.mjs`。这个脚本会生成包含必需结构的新模板目录，能显著提升创建效率并减少遗漏。
 
 用法：
 
 ```bash
-scripts/init_skill.py <skill-name> --path <output-directory> [--resources scripts,references,assets] [--examples]
+scripts/init_skill.mjs <skill-name> --path <output-directory> [--resources scripts,references,assets] [--examples]
 ```
 
 示例：
 
 ```bash
-scripts/init_skill.py my-skill --path skills/public
-scripts/init_skill.py my-skill --path skills/public --resources scripts,references
-scripts/init_skill.py my-skill --path skills/public --resources scripts --examples
+scripts/init_skill.mjs my-skill --path skills/public
+scripts/init_skill.mjs my-skill --path skills/public --resources scripts,references
+scripts/init_skill.mjs my-skill --path skills/public --resources scripts --examples
 ```
 
 该脚本会：
@@ -313,10 +313,10 @@ scripts/init_skill.py my-skill --path skills/public --resources scripts --exampl
 
 初始化完成后，再继续定制 `SKILL.md` 并按需添加资源。如果使用了 `--examples`，记得把占位示例替换掉或删除。
 
-`display_name`、`short_description` 和 `default_prompt` 应先通过阅读 skill 内容来确定，再以 `--interface key=value` 传给 `init_skill.py`；如需重建，可运行：
+`display_name`、`short_description` 和 `default_prompt` 应先通过阅读 skill 内容来确定，再以 `--interface key=value` 传给 `init_skill.mjs`；如需重建，可运行：
 
 ```bash
-scripts/generate_openai_yaml.py <path/to/skill-folder> --interface key=value
+scripts/generate_openai_yaml.mjs <path/to/skill-folder> --interface key=value
 ```
 
 其他可选 interface 字段只有在用户明确提供时才添加。字段完整说明与示例见 `references/openai_yaml.md`。
@@ -358,7 +358,7 @@ YAML frontmatter 不要放其他字段。
 完成开发后，先运行校验脚本，尽早发现基础问题：
 
 ```bash
-scripts/quick_validate.py <path/to/skill-folder>
+scripts/quick_validate.mjs <path/to/skill-folder>
 ```
 
 校验脚本会检查 YAML frontmatter 格式、必填字段和命名规则。如果失败，就按报错修复后再执行一次。
