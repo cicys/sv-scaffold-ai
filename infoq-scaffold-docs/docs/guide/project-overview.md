@@ -17,14 +17,14 @@ outline: [2, 3]
 这意味着本项目有两层结构：
 
 - 业务交付层：Spring Boot 后端、Vue / React 管理端、Vue / React 小程序端。
-- 协作治理层：`AGENTS.md`、`.agents/skills`、`OpenSpec`、`.codex/config.toml`、部署脚本、运行验证脚本、文档。
+- 协作治理层：`AGENTS.md`、`.codex/skills`、`OpenSpec`、`.codex/config.toml`、部署脚本、运行验证脚本、文档。
 
 ## 2. 仓库结构
 
 ```text
 infoq-scaffold-ai
 ├── AGENTS.md
-├── .agents/skills
+├── .codex/skills
 ├── .codex/config.toml
 ├── openspec
 ├── infoq-scaffold-backend

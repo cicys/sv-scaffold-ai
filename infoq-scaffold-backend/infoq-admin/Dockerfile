@@ -9,6 +9,7 @@ ENV TZ=Asia/Shanghai \
     SERVER_PORT=8080 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    INFOQ_LOG_PATH=/infoq/server/logs \
     JAVA_OPTS=""
 
 # 预创建应用运行目录，并将容器时区固定为上海时区

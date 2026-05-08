@@ -17,7 +17,7 @@ outline: [2, 3]
 | 主题 | 真值文件 |
 | --- | --- |
 | 协作规则 | `AGENTS.md` 与更近工作区 `AGENTS.md` |
-| 仓库级技能 | `.agents/skills/*/SKILL.md` |
+| 仓库级技能 | `.codex/skills/*/SKILL.md` |
 | 规格与变更 | `openspec/project.md`、`openspec/specs/`、`openspec/changes/` |
 | MCP 配置 | `.codex/config.toml` |
 | 项目文档 | `README.md` 与 `doc/*.md` |
@@ -87,7 +87,7 @@ backend 工作区基线是 JDK 17。
 
 说明：
 
-- `playwright-cli` 与 `chrome-devtools-cli` 是仓库内跨平台 CLI，位于 `.agents/skills/infoq-browser-automation/scripts/`。
+- `playwright-cli` 与 `chrome-devtools-cli` 是仓库内跨平台 CLI，位于 `.codex/skills/infoq-browser-automation/scripts/`。
 - `playwright` MCP 用于临时交互探索。
 - `chrome-devtools` MCP 用于 Network / Console / Performance 深度诊断。
 - 不要回退到任何历史浏览器入口。

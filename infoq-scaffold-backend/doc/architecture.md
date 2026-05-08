@@ -271,7 +271,7 @@ MyBatis 层由 `MybatisPlusConfig` 注入 `PlusDataPermissionInterceptor` 和 `D
 
 ### 8.1 文件日志
 
-[logback-plus.xml](../infoq-admin/src/main/resources/logback-plus.xml) 当前会把日志写到 `./logs`：
+[logback-plus.xml](../infoq-admin/src/main/resources/logback-plus.xml) 默认会把日志写到仓库根 `logs/`；容器场景通过 `INFOQ_LOG_PATH=/infoq/server/logs` 覆盖：
 
 - `sys-console.log`
 - `sys-info.log`

@@ -15,7 +15,7 @@
 
 - `SysAdminApplication`：`@SpringBootApplication(scanBasePackages = "cc.infoq")`，把 `cc.infoq` 下所有模块统一纳入 Spring 容器。
 - `application*.yml`：定义 profile 分层、数据源、Redis、Quartz、mail、SSE、WebSocket、Springdoc 等运行开关。
-- `logback-plus.xml`：当前后端日志输出规则。
+- `logback-plus.xml`：当前后端日志输出规则，默认把文件日志写到仓库根 `logs/`，容器场景通过 `INFOQ_LOG_PATH` 覆盖。
 - `banner.txt`、`i18n/*.properties`、`ip2region_v4.xdb`：启动展示、多语言消息与 IP 归属地资源。
 
 ## 4. 上游依赖
@@ -48,7 +48,7 @@
 
 ## 9. 日志 / 监控切入点
 
-- `logback-plus.xml` 是日志输出真值入口。
+- `logback-plus.xml` 是日志输出真值入口，默认文件日志目录是仓库根 `logs/`。
 - `application.yml` 里的 Actuator / Spring Boot Admin 相关配置会影响健康检查暴露方式。
 - 具体监控接口实现仍在 `infoq-system` 与 `infoq-plugin-web` / `infoq-plugin-security`。
 

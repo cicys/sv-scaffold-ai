@@ -97,7 +97,7 @@
 可以把两者理解成两层系统：
 
 1. `AGENTS.md` 决定“该遵守什么规则”和“该触发什么能力”
-2. `.agents/skills` 决定“这类任务具体怎么做”
+2. `.codex/skills` 决定“这类任务具体怎么做”
 
 在这个仓库里，两者必须一起维护。只改 skill 不改 `AGENTS.md`，或者只改 `AGENTS.md` 不改文档，最后都会产生路由漂移。
 
@@ -164,5 +164,5 @@ admin 和 weapp 的差异留在 skill 的 `references/admin` 与 `references/wea
 - repo 级 custom agents：`/.codex/agents/`
 - skill 指南：`./skills-guide.md`
 - subagents 使用指南：`./subagents-guide.md`
-- 项目静态参考：`../.agents/skills/infoq-project-reference/references/project-reference.md`
-- 压缩维护 skill：`../.agents/skills/infoq-agents-md-compress/SKILL.md`
+- 项目静态参考：`../.codex/skills/infoq-project-reference/references/project-reference.md`
+- 压缩维护 skill：`../.codex/skills/infoq-agents-md-compress/SKILL.md`

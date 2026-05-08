@@ -4,7 +4,7 @@
 
 # InfoQ-Scaffold-AI
 
-> 一个以 AI 为主力研发者的全栈工程脚手架。仓库通过 `AGENTS.md` 约束协作规则，通过 `.agents/skills` 固化自动化 SOP，并以 `OpenSpec` 管理长期规格与变更，将能力落到 Spring Boot 3 后端、Vue/React 管理端、Vue/React 小程序端、脚本、SQL、MCP 与文档工作区中。社区：[Linux DO](https://linux.do)
+> 一个以 AI 为主力研发者的全栈工程脚手架。仓库通过 `AGENTS.md` 约束协作规则，通过 `.codex/skills` 固化自动化 SOP，并以 `OpenSpec` 管理长期规格与变更，将能力落到 Spring Boot 3 后端、Vue/React 管理端、Vue/React 小程序端、脚本、SQL、MCP 与文档工作区中。社区：[Linux DO](https://linux.do)
 
 ![Version](https://img.shields.io/badge/Version-2.1.3-f66a39)
 ![JDK](https://img.shields.io/badge/JDK-17-1677FF)
@@ -50,7 +50,7 @@
 ```text
 infoq-scaffold-ai
 ├── AGENTS.md
-├── .agents/skills
+├── .codex/skills
 ├── .codex/config.toml
 ├── openspec
 ├── infoq-scaffold-backend
@@ -72,7 +72,7 @@ infoq-scaffold-ai
 
 | 维度 | 技术栈 |
 | --- | --- |
-| AI 协作层 | Codex、`AGENTS.md`、`.agents/skills`、`OpenSpec`、`.codex/config.toml` |
+| AI 协作层 | Codex、`AGENTS.md`、`.codex/skills`、`OpenSpec`、`.codex/config.toml` |
 | 后端 | Spring Boot `3.5.10`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
 | Vue 管理端 | Vue `3.5.30`、TypeScript、Vite `6.4.1`、Element Plus `2.11.9`、Vitest |
 | React 管理端 | React `19.2.4`、TypeScript、Vite `7.3.1`、Ant Design `6.3.3`、React Router `7.13.1`、Vitest |
@@ -93,7 +93,7 @@ infoq-scaffold-ai
 - React 小程序规则：[`infoq-scaffold-frontend-weapp-react/AGENTS.md`](./infoq-scaffold-frontend-weapp-react/AGENTS.md)
 - 文档站规则：[`infoq-scaffold-docs/AGENTS.md`](./infoq-scaffold-docs/AGENTS.md)
 
-### 2. `.agents/skills`
+### 2. `.codex/skills`
 
 当前仓库的 skill 结构遵循两条规则：
 
@@ -211,15 +211,15 @@ pnpm run dev
 如果要通过 skill 启动后端 + 管理端联调：
 
 ```bash
-node .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
-node .agents/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.mjs
+node .codex/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
+node .codex/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.mjs
 ```
 
 停止对应 skill 启动的联调进程：
 
 ```bash
-node .agents/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.mjs
-node .agents/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.mjs
+node .codex/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.mjs
+node .codex/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.mjs
 ```
 
 ### 3. 小程序端
@@ -337,16 +337,16 @@ bash script/bin/deploy-frontend.sh deploy
 若要直接执行最小浏览器探测，可使用：
 
 ```bash
-pnpm --dir .agents/skills/infoq-browser-automation/scripts install
-pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli flow --url "https://example.com" --wait-for-text "Example Domain"
+pnpm --dir .codex/skills/infoq-browser-automation/scripts install
+pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli flow --url "https://example.com" --wait-for-text "Example Domain"
 ```
 
-首次运行缺少浏览器二进制时，先执行 `pnpm --dir .agents/skills/infoq-browser-automation/scripts exec playwright install chromium`。
+首次运行缺少浏览器二进制时，先执行 `pnpm --dir .codex/skills/infoq-browser-automation/scripts exec playwright install chromium`。
 浏览器 skill 不再维护 `.sh` / `.ps1` 包装器，统一直接调用仓库内 CLI；仓库内临时文件统一写入 `doc/tmp/`。
 
 ## 项目能力概览
 
-- AI 协作治理：根级 / 工作区级 `AGENTS.md` 与 `.agents/skills`
+- AI 协作治理：根级 / 工作区级 `AGENTS.md` 与 `.codex/skills`
 - 研发自动化：后端冒烟、登录校验、浏览器验证、小程序 DevTools 打开、版本升级（含文档站同步）
 - 后端业务基线：认证授权、组织权限、字典参数、通知客户端、OSS、日志监控、服务监控与 Hikari 连接池监控
 - 多前端交付：Vue/React 管理端 + Vue/React 小程序端

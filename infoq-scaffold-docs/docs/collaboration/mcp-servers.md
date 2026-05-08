@@ -32,8 +32,8 @@ outline: [2, 3]
 
 它们位于：
 
-- `.agents/skills/infoq-browser-automation/scripts/playwright_cli.mjs`
-- `.agents/skills/infoq-browser-automation/scripts/chrome_devtools_cli.mjs`
+- `.codex/skills/infoq-browser-automation/scripts/playwright_cli.mjs`
+- `.codex/skills/infoq-browser-automation/scripts/chrome_devtools_cli.mjs`
 
 可选只读 `mysql` / `redis` MCP 的本地启动入口位于：
 

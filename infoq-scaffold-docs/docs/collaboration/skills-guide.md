@@ -10,7 +10,7 @@ outline: [2, 3]
 
 # Skills 指南
 
-`.agents/skills` 是本仓库的能力库。
+`.codex/skills` 是本仓库的能力库。
 它不是提示词堆积目录，而是把稳定、可复用的研发动作沉淀成仓库内 SOP。
 
 ## 1. 设计原则
@@ -19,7 +19,7 @@ outline: [2, 3]
 
 1. 每个 skill 只解决一类工作。
 2. 除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀。
-3. `.agents/skills` 下不保留共享底座型、README-only 或 helper-only skill 目录。
+3. `.codex/skills` 下不保留共享底座型、README-only 或 helper-only skill 目录。
 4. React 家族和 Vue 家族技能允许通过 `references/admin` 与 `references/weapp` 区分客户端，但仍必须保持单一职责。
 5. skill 的主执行入口必须兼容 Windows / macOS / Linux；统一使用 repo-owned Node CLI 或 `.mjs`，不再保留 `.sh` / `.ps1` / `.cmd` 作为 skill 入口。若内部仍需 Python 等实现，必须由跨平台 Node 入口调度。
 
@@ -54,8 +54,8 @@ outline: [2, 3]
 
 `infoq-browser-automation` 的默认主路径已经切换为仓库内跨平台 CLI：
 
-- `pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli ...`
-- `pnpm --dir .agents/skills/infoq-browser-automation/scripts run chrome-devtools-cli ...`
+- `pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli ...`
+- `pnpm --dir .codex/skills/infoq-browser-automation/scripts run chrome-devtools-cli ...`
 
 说明：
 
