@@ -30,6 +30,14 @@
 - [`weapp-handbook.md`](./weapp-handbook.md)：Vue / React 小程序端环境变量、页面清单、DevTools 和 e2e。
 - [`development-workflow.md`](./development-workflow.md)：AGENTS、OpenSpec、skills、MCP、验证顺序和日常开发闭环。
 
+### 工作区实现入口
+
+- `infoq-scaffold-docs`：[`README.md`](../infoq-scaffold-docs/README.md) -> [`doc/architecture.md`](../infoq-scaffold-docs/doc/architecture.md) -> [`doc/data-flow.md`](../infoq-scaffold-docs/doc/data-flow.md)
+- `infoq-scaffold-frontend-react`：[`README.md`](../infoq-scaffold-frontend-react/README.md) -> [`doc/architecture.md`](../infoq-scaffold-frontend-react/doc/architecture.md) -> [`doc/data-flow.md`](../infoq-scaffold-frontend-react/doc/data-flow.md)
+- `infoq-scaffold-frontend-vue`：[`README.md`](../infoq-scaffold-frontend-vue/README.md) -> [`doc/architecture.md`](../infoq-scaffold-frontend-vue/doc/architecture.md) -> [`doc/data-flow.md`](../infoq-scaffold-frontend-vue/doc/data-flow.md)
+- `infoq-scaffold-frontend-weapp-react`：[`README.md`](../infoq-scaffold-frontend-weapp-react/README.md) -> [`doc/architecture.md`](../infoq-scaffold-frontend-weapp-react/doc/architecture.md) -> [`doc/data-flow.md`](../infoq-scaffold-frontend-weapp-react/doc/data-flow.md)
+- `infoq-scaffold-frontend-weapp-vue`：[`README.md`](../infoq-scaffold-frontend-weapp-vue/README.md) -> [`doc/architecture.md`](../infoq-scaffold-frontend-weapp-vue/doc/architecture.md) -> [`doc/data-flow.md`](../infoq-scaffold-frontend-weapp-vue/doc/data-flow.md)
+
 ### 部署与运维
 
 - [`deploy-prerequisites.md`](./deploy-prerequisites.md)：部署前硬性检查项。

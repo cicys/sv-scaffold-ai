@@ -17,3 +17,5 @@
 |Patch Policy:保持 `pnpm.patchedDependencies` 与 `patches/` 同步。|若某个 patch 是为了小程序 runtime 安全，必须说明原因；废弃 patch 要及时删除，不留死文件。
 |Verification:行为或 tooling 变更先验证 main flow，再运行受影响的 typecheck/test/build 命令，最后 diff review。|request/store/utils 变更至少跑 `typecheck` + `test` 或 targeted Vitest。|build-open/DevTools 流程验证使用精确命令 `pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev`。|更大范围回归优先跑 `pnpm run verify:local` 或 `pnpm run verify:build`。
 |Boundaries:小程序 Vue 专属规则只留在本工作区；Vue admin 规则归 `infoq-scaffold-frontend-vue`，React 规则归 `infoq-scaffold-frontend-react` 与 `infoq-scaffold-frontend-weapp-react`。
+|Doc Entrypoints:`README.md`|`doc/architecture.md`|`doc/data-flow.md`|`src/README.md`|`src/api/README.md`|`src/store/README.md`|`src/pages/README.md`
+|Doc Sync Rule:页面注册、会话边界、页面级鉴权、请求封装、build-open 或 e2e 主链路变更时，先更新离代码最近的 `src/*/README.md`，再同步 `README.md`、`doc/*.md` 与本文件；信息不足时回退为“当前实现说明”。

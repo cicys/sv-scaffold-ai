@@ -40,6 +40,14 @@ outline: [2, 3]
 - [`weapp-handbook.md`](/weapp/handbook)：Vue / React 小程序端环境变量、页面清单、DevTools 和 e2e。
 - [`development-workflow.md`](/collaboration/development-workflow)：AGENTS、OpenSpec、skills、MCP、验证顺序和日常开发闭环。
 
+### 工作区实现入口
+
+- `infoq-scaffold-docs`：[`README.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-docs/README.md) -> [`doc/architecture.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-docs/doc/architecture.md) -> [`doc/data-flow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-docs/doc/data-flow.md)
+- `infoq-scaffold-frontend-react`：[`README.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-react/README.md) -> [`doc/architecture.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-react/doc/architecture.md) -> [`doc/data-flow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-react/doc/data-flow.md)
+- `infoq-scaffold-frontend-vue`：[`README.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-vue/README.md) -> [`doc/architecture.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-vue/doc/architecture.md) -> [`doc/data-flow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-vue/doc/data-flow.md)
+- `infoq-scaffold-frontend-weapp-react`：[`README.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-weapp-react/README.md) -> [`doc/architecture.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-weapp-react/doc/architecture.md) -> [`doc/data-flow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-weapp-react/doc/data-flow.md)
+- `infoq-scaffold-frontend-weapp-vue`：[`README.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-weapp-vue/README.md) -> [`doc/architecture.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-weapp-vue/doc/architecture.md) -> [`doc/data-flow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-weapp-vue/doc/data-flow.md)
+
 ### 部署与运维
 
 - [`deploy-prerequisites.md`](/devops/deploy-prerequisites)：部署前硬性检查项。
@@ -53,6 +61,7 @@ outline: [2, 3]
 - [`subagents-guide.md`](/collaboration/subagents-guide)：subagent 角色与职责边界。
 - [`mcp-servers.md`](/collaboration/mcp-servers)：项目级 MCP server 真值与审批策略。
 - [`plugin-catalog.md`](/collaboration/plugin-catalog)：插件分类和软开关矩阵。
+- [`module-doc-governance.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/module-doc-governance.md)：模块文档如何分层、聚合、同步与写入 `AGENTS.md` 路由。
 
 ## 文档覆盖范围
 

@@ -12,3 +12,5 @@
 |Testing Boundary:React 家族单测与 coverage 工作使用 infoq-react-unit-test-patterns；本工作区只加载其 `references/admin/*`。|`src/api/**/*.ts`、`src/router/**/*`、`src/store/**/*`、`src/utils/request*` 改动必须补 targeted tests。|优先 Vitest + Testing Library 的行为断言、MemoryRouter helpers 与直接 Zustand store setup，不做实现细节测试。
 |Verification:React 行为变更先验证 main flow，再根据影响范围跑 targeted 或 full unit tests，然后 lint，最后 production build。|渲染流程如 `/login`、route guards、request interceptors、页面首屏渲染 受影响时使用 infoq-react-runtime-verification。|本地 backend + React admin 栈启动或重启也归 infoq-react-runtime-verification。
 |Boundaries:React admin 专属规则只留在本工作区；weapp React 细则归 `infoq-scaffold-frontend-weapp-react`，Vue 规则归 `infoq-scaffold-frontend-vue`。
+|Doc Entrypoints:`README.md`|`doc/architecture.md`|`doc/data-flow.md`|`src/README.md`|`src/api/README.md`|`src/router/README.md`|`src/store/README.md`|`src/pages/README.md`
+|Doc Sync Rule:工作区定位、动态路由装配、请求封装、登录链路、页面分组或 store 边界变更时，先更新离代码最近的 `src/*/README.md`，再同步 `README.md`、`doc/*.md` 与本文件；信息不足时回退为“当前实现说明”。

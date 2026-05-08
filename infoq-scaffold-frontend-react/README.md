@@ -1,0 +1,56 @@
+# infoq-scaffold-frontend-react
+
+这份 README 只描述 `infoq-scaffold-frontend-react` 当前仓库实现，不把它抽象成通用 React 管理端模板。
+
+## 当前实现概览
+
+`infoq-scaffold-frontend-react` 是当前仓库的 React 管理端工作区，基于 React 19、Vite 7、Ant Design 6、React Router 7 与 Zustand。应用入口是 `src/main.tsx -> src/RootProviders.tsx -> src/App.tsx -> src/router/AppRouter.tsx`；固定路由只覆盖登录、注册、首页和少量壳路由，后台菜单路由依赖 `usePermissionStore().generateRoutes()` 在登录后动态装配。
+
+当前代码能直接确认的几个关键事实：
+
+- `RootProviders.tsx` 负责 Ant Design locale、主题 token、暗色模式和全局样式变量。
+- `AuthGuard.tsx` 负责 token 检查、登录后 `getInfo()` 和动态路由装配的引导。
+- `BackendRouteView.tsx` 负责把后端返回的 `component` 字符串解析成真实页面组件，并同步 tags view。
+- `src/api/login.ts` 的登录和注册请求默认携带 `clientId`，并在 `isEncrypt: true` 时通过 `utils/request.ts` 走请求加密。
+- `useUserStore` 登录成功后会初始化 SSE 和 WebSocket；登出时会显式关闭连接。
+
+## 模块导航
+
+| 模块 | 当前职责 | 主要证据 |
+| --- | --- | --- |
+| `src/api` | 后端接口契约与请求入口 | [`src/api/README.md`](./src/api/README.md) |
+| `src/router` | 固定路由、鉴权守卫、动态组件解析 | [`src/router/README.md`](./src/router/README.md) |
+| `src/store` | 用户、权限、设置、标签页等前端状态 | [`src/store/README.md`](./src/store/README.md) |
+| `src/pages` | 登录、首页、系统管理、监控与错误页 | [`src/pages/README.md`](./src/pages/README.md) |
+| `src/layouts`、`src/components`、`src/utils` | 布局壳、通用组件、请求/权限/缓存/加密工具 | [`src/README.md`](./src/README.md) |
+
+## 建议阅读顺序
+
+1. [`doc/architecture.md`](./doc/architecture.md)
+   先看模块分层、动态路由装配和请求/鉴权边界。
+2. [`doc/data-flow.md`](./doc/data-flow.md)
+   再看登录、菜单路由和典型页面请求链路。
+3. [`src/README.md`](./src/README.md)
+   最后按 `src/` 模块入口继续下钻。
+
+## 源码入口
+
+- 应用入口：
+  - `src/main.tsx`
+  - `src/RootProviders.tsx`
+  - `src/App.tsx`
+- 路由与鉴权：
+  - `src/router/AppRouter.tsx`
+  - `src/router/AuthGuard.tsx`
+  - `src/router/BackendRouteView.tsx`
+  - `src/store/modules/permission.ts`
+- 登录与请求：
+  - `src/api/login.ts`
+  - `src/utils/request.ts`
+  - `src/store/modules/user.ts`
+
+## 当前实现提醒
+
+- 后端菜单返回的 `component` 字符串必须能被前端组件映射解析；否则 `BackendRouteView` 只能按 fallback 规则处理。
+- 请求加密、SSE、WebSocket 都受环境变量控制；文档里只记录当前代码中已经能直接确认的行为，不把可选链路写成默认能力。
+- `AGENTS.md` 只负责登记阅读入口和同步门禁，不代替这些正文说明。
