@@ -146,7 +146,7 @@
 | WebSocket | `websocket.enabled` |
 | 接口文档 | `springdoc.api-docs.enabled` |
 
-插件治理的详细矩阵见 [`plugin-catalog.md`](./plugin-catalog.md)。
+插件治理的详细矩阵见 [`plugin-catalog.md`](../collaboration/plugin-catalog.md)。
 
 ## 7. 当前默认的基础安全与校验策略
 
@@ -213,7 +213,7 @@ mvn clean package -P prod -pl infoq-admin -am
 
 ## 10. 相关文档
 
-- 快速启动：[`quick-start.md`](./quick-start.md)
-- 部署前准备：[`deploy-prerequisites.md`](./deploy-prerequisites.md)
-- Compose 部署：[`docker-compose-deploy.md`](./docker-compose-deploy.md)
-- 插件治理：[`plugin-catalog.md`](./plugin-catalog.md)
+- 快速启动：[`quick-start.md`](../guide/quick-start.md)
+- 部署前准备：[`deploy-prerequisites.md`](../devops/deploy-prerequisites.md)
+- Compose 部署：[`docker-compose-deploy.md`](../devops/docker-compose-deploy.md)
+- 插件治理：[`plugin-catalog.md`](../collaboration/plugin-catalog.md)

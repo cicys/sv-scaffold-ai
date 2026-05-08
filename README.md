@@ -117,9 +117,9 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 
 详见：
 
-- [`doc/skills-guide.md`](./doc/skills-guide.md)
-- [`doc/agents-guide.md`](./doc/agents-guide.md)
-- [`doc/subagents-guide.md`](./doc/subagents-guide.md)
+- [`doc/collaboration/skills-guide.md`](./doc/collaboration/skills-guide.md)
+- [`doc/collaboration/agents-guide.md`](./doc/collaboration/agents-guide.md)
+- [`doc/collaboration/subagents-guide.md`](./doc/collaboration/subagents-guide.md)
 
 ### 3. `OpenSpec`
 
@@ -157,7 +157,7 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 
 详见：
 
-- [`doc/mcp-servers.md`](./doc/mcp-servers.md)
+- [`doc/collaboration/mcp-servers.md`](./doc/collaboration/mcp-servers.md)
 
 ## 环境要求
 
@@ -317,9 +317,9 @@ bash script/bin/deploy-frontend.sh deploy
 详见：
 
 - [`sql/infoq_scaffold_2.0.0.sql`](./sql/infoq_scaffold_2.0.0.sql)
-- [`doc/deploy-prerequisites.md`](./doc/deploy-prerequisites.md)
-- [`doc/manual-deploy.md`](./doc/manual-deploy.md)
-- [`doc/docker-compose-deploy.md`](./doc/docker-compose-deploy.md)
+- [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md)
+- [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md)
+- [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md)
 
 ## 验证建议
 
@@ -357,17 +357,17 @@ pnpm --dir .agents/skills/infoq-browser-automation/scripts run playwright-cli fl
 - 项目文档中心：[`doc/README.md`](./doc/README.md)
 - 文档站展示层：[`infoq-scaffold-docs/README.md`](./infoq-scaffold-docs/README.md)
 - 协作体系：
-  - [`doc/agents-guide.md`](./doc/agents-guide.md)
-  - [`doc/skills-guide.md`](./doc/skills-guide.md)
-  - [`doc/subagents-guide.md`](./doc/subagents-guide.md)
+  - [`doc/collaboration/agents-guide.md`](./doc/collaboration/agents-guide.md)
+  - [`doc/collaboration/skills-guide.md`](./doc/collaboration/skills-guide.md)
+  - [`doc/collaboration/subagents-guide.md`](./doc/collaboration/subagents-guide.md)
 - MCP：
-  - [`doc/mcp-servers.md`](./doc/mcp-servers.md)
+  - [`doc/collaboration/mcp-servers.md`](./doc/collaboration/mcp-servers.md)
 - 部署交付：
-  - [`doc/deploy-prerequisites.md`](./doc/deploy-prerequisites.md)
-  - [`doc/manual-deploy.md`](./doc/manual-deploy.md)
-  - [`doc/docker-compose-deploy.md`](./doc/docker-compose-deploy.md)
+  - [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md)
+  - [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md)
+  - [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md)
 - 扩展治理：
-  - [`doc/plugin-catalog.md`](./doc/plugin-catalog.md)
+  - [`doc/collaboration/plugin-catalog.md`](./doc/collaboration/plugin-catalog.md)
 
 ## Admin后台演示图例
 

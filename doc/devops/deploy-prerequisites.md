@@ -38,9 +38,9 @@
 
 说明：
 
-- 后端运行镜像基于 JDK 17：[infoq-scaffold-backend/infoq-admin/Dockerfile](../infoq-scaffold-backend/infoq-admin/Dockerfile)
-- 前端构建镜像基于 Node 20.20.1：[infoq-scaffold-frontend-vue/Dockerfile](../infoq-scaffold-frontend-vue/Dockerfile) [infoq-scaffold-frontend-react/Dockerfile](../infoq-scaffold-frontend-react/Dockerfile)
-- Docker Compose 默认依赖 MySQL 8.0、Redis 7.2、Nginx 1.28：[script/docker/docker-compose.yml](../script/docker/docker-compose.yml)
+- 后端运行镜像基于 JDK 17：[infoq-scaffold-backend/infoq-admin/Dockerfile](../../infoq-scaffold-backend/infoq-admin/Dockerfile)
+- 前端构建镜像基于 Node 20.20.1：[infoq-scaffold-frontend-vue/Dockerfile](../../infoq-scaffold-frontend-vue/Dockerfile) [infoq-scaffold-frontend-react/Dockerfile](../../infoq-scaffold-frontend-react/Dockerfile)
+- Docker Compose 默认依赖 MySQL 8.0、Redis 7.2、Nginx 1.28：[script/docker/docker-compose.yml](../../script/docker/docker-compose.yml)
 
 ## 3. 端口与网络准备
 
@@ -120,14 +120,14 @@
 - `spring.servlet.multipart.location`
 - `sa-token.jwt-secret-key`
 - `api-decrypt` 公私钥
-- `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`
+- `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`
 - 邮件、OSS 或其他插件相关配置
 
 主要配置来源：
 
-- 默认生产配置：[infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml)
-- 通用配置：[infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml](../infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml)
-- Compose 覆盖模板：[script/docker/server/application-prod.yml](../script/docker/server/application-prod.yml)
+- 默认生产配置：[infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml)
+- 通用配置：[infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml)
+- Compose 覆盖模板：[script/docker/server/application-prod.yml](../../script/docker/server/application-prod.yml)
 
 生产环境不要直接保留仓库内默认密钥、默认数据库密码和示例邮箱配置。
 如果同一版本需要再次发布，请直接更新 `infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml` 中的 `infoq.quartz.bootstrap.deploy-id`，再重新构建和发布；不要再通过环境变量临时拼接同名值。
@@ -144,8 +144,8 @@
 
 配置入口：
 
-- Vue：[infoq-scaffold-frontend-vue/.env.production](../infoq-scaffold-frontend-vue/.env.production)
-- React：[infoq-scaffold-frontend-react/.env.production](../infoq-scaffold-frontend-react/.env.production)
+- Vue：[infoq-scaffold-frontend-vue/.env.production](../../infoq-scaffold-frontend-vue/.env.production)
+- React：[infoq-scaffold-frontend-react/.env.production](../../infoq-scaffold-frontend-react/.env.production)
 
 ### 5.3 网关配置
 
@@ -158,19 +158,19 @@
 
 现有 Compose 网关基线配置见：
 
-- [script/docker/nginx/conf/nginx.conf](../script/docker/nginx/conf/nginx.conf)
+- [script/docker/nginx/conf/nginx.conf](../../script/docker/nginx/conf/nginx.conf)
 
 运维交付示例文件见：
 
-- [doc/examples/systemd/infoq-admin.service](./examples/systemd/infoq-admin.service)
-- [doc/examples/nginx/infoq-http.conf](./examples/nginx/infoq-http.conf)
-- [doc/examples/nginx/infoq-https.conf](./examples/nginx/infoq-https.conf)
+- [doc/examples/systemd/infoq-admin.service](../examples/systemd/infoq-admin.service)
+- [doc/examples/nginx/infoq-http.conf](../examples/nginx/infoq-http.conf)
+- [doc/examples/nginx/infoq-https.conf](../examples/nginx/infoq-https.conf)
 
 ## 6. 数据初始化准备
 
 当前仓库默认初始化 SQL 文件为：
 
-- [sql/infoq_scaffold_2.0.0.sql](../sql/infoq_scaffold_2.0.0.sql)
+- [sql/infoq_scaffold_2.0.0.sql](../../sql/infoq_scaffold_2.0.0.sql)
 
 部署前需要确认：
 

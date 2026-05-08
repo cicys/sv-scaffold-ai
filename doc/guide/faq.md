@@ -110,7 +110,7 @@ java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --ca
 ## 12. 我要继续深挖哪个文档
 
 - 环境和启动：[`quick-start.md`](./quick-start.md)
-- 后端结构：[`backend-handbook.md`](./backend-handbook.md)
-- 管理端结构：[`admin-handbook.md`](./admin-handbook.md)
-- 小程序结构：[`weapp-handbook.md`](./weapp-handbook.md)
-- 协作规则：[`development-workflow.md`](./development-workflow.md)
+- 后端结构：[`backend-handbook.md`](../backend/handbook.md)
+- 管理端结构：[`admin-handbook.md`](../admin/handbook.md)
+- 小程序结构：[`weapp-handbook.md`](../weapp/handbook.md)
+- 协作规则：[`development-workflow.md`](../collaboration/development-workflow.md)

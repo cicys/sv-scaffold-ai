@@ -215,6 +215,6 @@ pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
 
 ## 8. 相关文档
 
-- 快速开始：[`quick-start.md`](./quick-start.md)
-- 管理端手册：[`admin-handbook.md`](./admin-handbook.md)
-- FAQ：[`faq.md`](./faq.md)
+- 快速开始：[`quick-start.md`](../guide/quick-start.md)
+- 管理端手册：[`admin-handbook.md`](../admin/handbook.md)
+- FAQ：[`faq.md`](../guide/faq.md)

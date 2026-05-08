@@ -5,7 +5,7 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/mcp-servers.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/mcp-servers.md)
+> 内容真值源：[`doc/collaboration/mcp-servers.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/collaboration/mcp-servers.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # 项目 MCP Server 说明

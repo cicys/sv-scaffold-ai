@@ -84,5 +84,5 @@
 
 1. `AGENTS.md` 是否需要新增或调整路由。
 2. `README.md` 与 `doc/*.md` 是否仍然准确。
-3. 如果 skill 依赖仓库级 MCP，`.codex/config.toml` 与 `doc/mcp-servers.md` 是否仍然一致。
+3. 如果 skill 依赖仓库级 MCP，`.codex/config.toml` 与 `doc/collaboration/mcp-servers.md` 是否仍然一致。
 4. 若变更了命令、环境变量、入口路径或默认行为，是否已执行 docs 站点同步。

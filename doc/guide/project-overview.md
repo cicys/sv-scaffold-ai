@@ -104,7 +104,7 @@ infoq-scaffold-ai
 - 文档 `doc`
 - 翻译、敏感词、Excel、日志、OSS 等插件
 
-插件并不是“演示目录”，而是后端结构的一部分。哪些是固定基座、哪些是软开关，见 [`plugin-catalog.md`](./plugin-catalog.md)。
+插件并不是“演示目录”，而是后端结构的一部分。哪些是固定基座、哪些是软开关，见 [`plugin-catalog.md`](../collaboration/plugin-catalog.md)。
 
 ### 5.5 小程序端能力
 
@@ -170,7 +170,7 @@ infoq-scaffold-ai
 ## 9. 先读哪篇文档
 
 - 想尽快联调：看 [`quick-start.md`](./quick-start.md)
-- 想理解后端：看 [`backend-handbook.md`](./backend-handbook.md)
-- 想改管理端页面：看 [`admin-handbook.md`](./admin-handbook.md)
-- 想改小程序：看 [`weapp-handbook.md`](./weapp-handbook.md)
-- 想理解仓库规约：看 [`development-workflow.md`](./development-workflow.md)
+- 想理解后端：看 [`backend-handbook.md`](../backend/handbook.md)
+- 想改管理端页面：看 [`admin-handbook.md`](../admin/handbook.md)
+- 想改小程序：看 [`weapp-handbook.md`](../weapp/handbook.md)
+- 想理解仓库规约：看 [`development-workflow.md`](../collaboration/development-workflow.md)

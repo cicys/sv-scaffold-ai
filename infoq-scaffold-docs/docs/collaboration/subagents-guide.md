@@ -5,7 +5,7 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/subagents-guide.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/subagents-guide.md)
+> 内容真值源：[`doc/collaboration/subagents-guide.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/collaboration/subagents-guide.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # Subagents 使用指南

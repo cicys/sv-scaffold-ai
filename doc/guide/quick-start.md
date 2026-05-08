@@ -16,7 +16,7 @@
 | Redis | 7.x |
 | WeChat DevTools | 小程序调试时需要 |
 
-如果你后面要做部署，再额外准备 Docker Compose、Nginx 和 MinIO。部署细节不在本文展开，见 [`deploy-prerequisites.md`](./deploy-prerequisites.md)。
+如果你后面要做部署，再额外准备 Docker Compose、Nginx 和 MinIO。部署细节不在本文展开，见 [`deploy-prerequisites.md`](../devops/deploy-prerequisites.md)。
 
 ## 2. 先理解 profile 和环境文件
 
@@ -209,11 +209,11 @@ pnpm run verify:local
 | 管理端 401 / 登录失败 | 前端 env、后端 `sys_client`、加密开关、`/auth/code` |
 | Vue / React 页面白屏 | `pnpm run dev` 控制台、浏览器 Console、路由组件路径 |
 | 小程序请求失败 | `TARO_APP_API_ORIGIN`、合法域名、DevTools Network |
-| 部署跑不通 | [`deploy-prerequisites.md`](./deploy-prerequisites.md)、[`docker-compose-deploy.md`](./docker-compose-deploy.md)、[`manual-deploy.md`](./manual-deploy.md) |
+| 部署跑不通 | [`deploy-prerequisites.md`](../devops/deploy-prerequisites.md)、[`docker-compose-deploy.md`](../devops/docker-compose-deploy.md)、[`manual-deploy.md`](../devops/manual-deploy.md) |
 
 ## 10. 下一步读什么
 
-- 需要理解后端：看 [`backend-handbook.md`](./backend-handbook.md)
-- 需要改管理端：看 [`admin-handbook.md`](./admin-handbook.md)
-- 需要改小程序：看 [`weapp-handbook.md`](./weapp-handbook.md)
-- 需要理解仓库协作规则：看 [`development-workflow.md`](./development-workflow.md)
+- 需要理解后端：看 [`backend-handbook.md`](../backend/handbook.md)
+- 需要改管理端：看 [`admin-handbook.md`](../admin/handbook.md)
+- 需要改小程序：看 [`weapp-handbook.md`](../weapp/handbook.md)
+- 需要理解仓库协作规则：看 [`development-workflow.md`](../collaboration/development-workflow.md)

@@ -18,7 +18,7 @@ export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 
 ## 1. 准备宿主机目录
 
-先按 [script/docker/redis/data/README.md](../script/docker/redis/data/README.md) 创建 `${INFOQ_DEPLOY_ROOT:-/infoq}/...` 目录。
+先按 [script/docker/redis/data/README.md](../../script/docker/redis/data/README.md) 创建 `${INFOQ_DEPLOY_ROOT:-/infoq}/...` 目录。
 
 最少要有：
 

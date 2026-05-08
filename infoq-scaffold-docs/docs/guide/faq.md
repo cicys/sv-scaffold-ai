@@ -5,7 +5,7 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/faq.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/faq.md)
+> 内容真值源：[`doc/guide/faq.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/guide/faq.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # 常见问题

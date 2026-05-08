@@ -48,9 +48,9 @@ infoq-release/
 
 仓库内对应的运维示例文件：
 
-- systemd 服务文件：[doc/examples/systemd/infoq-admin.service](./examples/systemd/infoq-admin.service)
-- HTTP Nginx 配置：[doc/examples/nginx/infoq-http.conf](./examples/nginx/infoq-http.conf)
-- HTTPS Nginx 配置：[doc/examples/nginx/infoq-https.conf](./examples/nginx/infoq-https.conf)
+- systemd 服务文件：[doc/examples/systemd/infoq-admin.service](../examples/systemd/infoq-admin.service)
+- HTTP Nginx 配置：[doc/examples/nginx/infoq-http.conf](../examples/nginx/infoq-http.conf)
+- HTTPS Nginx 配置：[doc/examples/nginx/infoq-https.conf](../examples/nginx/infoq-https.conf)
 
 原则：
 
@@ -91,8 +91,8 @@ cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
 
 准备生产配置文件时，建议以仓库默认生产配置为基础，再按环境修改：
 
-- [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml)
-- [infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml](../infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml)
+- [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml)
+- [infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application.yml)
 
 ### 3.3 修改生产配置
 
@@ -104,7 +104,7 @@ cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
 - `sa-token.jwt-secret-key`
 - `api-decrypt` 的示例密钥
 - 如启用邮件、OSS、SSE、WebSocket，对应配置也要同步确认
-- `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`
+- `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`
 
 如果服务器目录不是 `/infoq/server/temp`，同步修改：
 
@@ -124,7 +124,7 @@ mysql -u root -p < sql/infoq_scaffold_2.0.0.sql
 
 SQL 文件：
 
-- [sql/infoq_scaffold_2.0.0.sql](../sql/infoq_scaffold_2.0.0.sql)
+- [sql/infoq_scaffold_2.0.0.sql](../../sql/infoq_scaffold_2.0.0.sql)
 
 如果目标库已经有业务数据，先做备份，不要直接覆盖导入。
 
@@ -155,7 +155,7 @@ nohup java \
 
 仓库已提供运维示例文件：
 
-- [doc/examples/systemd/infoq-admin.service](./examples/systemd/infoq-admin.service)
+- [doc/examples/systemd/infoq-admin.service](../examples/systemd/infoq-admin.service)
 
 推荐安装方式：
 
@@ -237,14 +237,14 @@ cp -R infoq-scaffold-frontend-react/dist/* /infoq/nginx/html/react/
 
 配置文件参考：
 
-- [infoq-scaffold-frontend-vue/.env.production](../infoq-scaffold-frontend-vue/.env.production)
-- [infoq-scaffold-frontend-react/.env.production](../infoq-scaffold-frontend-react/.env.production)
+- [infoq-scaffold-frontend-vue/.env.production](../../infoq-scaffold-frontend-vue/.env.production)
+- [infoq-scaffold-frontend-react/.env.production](../../infoq-scaffold-frontend-react/.env.production)
 
 ## 5. Nginx 网关部署
 
 当前仓库 Compose 版本的网关配置基线见：
 
-- [script/docker/nginx/conf/nginx.conf](../script/docker/nginx/conf/nginx.conf)
+- [script/docker/nginx/conf/nginx.conf](../../script/docker/nginx/conf/nginx.conf)
 
 手动部署时，核心差异是：
 
@@ -256,7 +256,7 @@ cp -R infoq-scaffold-frontend-react/dist/* /infoq/nginx/html/react/
 
 仅启用 HTTP 时，使用：
 
-- [doc/examples/nginx/infoq-http.conf](./examples/nginx/infoq-http.conf)
+- [doc/examples/nginx/infoq-http.conf](../examples/nginx/infoq-http.conf)
 
 安装方式：
 
@@ -270,7 +270,7 @@ systemctl reload nginx
 
 启用 HTTPS 时，使用：
 
-- [doc/examples/nginx/infoq-https.conf](./examples/nginx/infoq-https.conf)
+- [doc/examples/nginx/infoq-https.conf](../examples/nginx/infoq-https.conf)
 
 安装方式：
 

@@ -89,7 +89,7 @@
 
 其中 MCP 相关变更还要额外满足两条：
 
-- `.codex/config.toml` 是仓库级 MCP 真值源，`doc/mcp-servers.md` 只能描述它当前显式配置出来的内容
+- `.codex/config.toml` 是仓库级 MCP 真值源，`doc/collaboration/mcp-servers.md` 只能描述它当前显式配置出来的内容
 - 如果文档里出现 MCP server / tool 名称、默认启用状态、只读范围、审批模式或本地启动脚本路径，这些字段必须和 `.codex/config.toml`、`.codex/scripts/*` 保持逐项一致
 
 ## 5. AGENTS 与 skill 的关系
