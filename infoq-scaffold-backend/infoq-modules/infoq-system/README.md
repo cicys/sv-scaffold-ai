@@ -1,0 +1,62 @@
+# infoq-system
+
+## 1. 模块职责
+
+`infoq-system` 是当前 backend 唯一的业务模块，承载登录注册、系统管理、监控与调度相关的 Controller 和 Service 实现。
+
+## 2. 关键入口
+
+- 登录入口：[`controller/login/AuthController`](./src/main/java/cc/infoq/system/controller/login/AuthController.java)、[`CaptchaController`](./src/main/java/cc/infoq/system/controller/login/CaptchaController.java)、[`IndexController`](./src/main/java/cc/infoq/system/controller/login/IndexController.java)
+- 系统管理入口：[`controller/system`](./src/main/java/cc/infoq/system/controller/system)
+- 监控入口：[`controller/monitor`](./src/main/java/cc/infoq/system/controller/monitor)
+- 业务实现：[`service/impl`](./src/main/java/cc/infoq/system/service/impl)
+- 运行 runner：[`runner`](./src/main/java/cc/infoq/system/runner)
+- 事件监听：[`listener`](./src/main/java/cc/infoq/system/listener)
+
+## 3. 核心类 / 文件
+
+- 认证：`AuthStrategy`、`PasswordAuthStrategy`、`EmailAuthStrategy`、`SysLoginServiceImpl`
+- 用户与权限：`SysUserServiceImpl`、`SysRoleServiceImpl`、`SysMenuServiceImpl`、`SysPermissionServiceImpl`
+- 监控：`ServerMonitorServiceImpl`、`DataSourceMonitorServiceImpl`
+- 调度：`SchedulerApplicationRunner`、`QuartzBootstrapCoordinator`、`SysJobServiceImpl`
+- 插件桥接：`OptionalMailHelper`、`OptionalSseHelper`
+
+## 4. 上游依赖
+
+- `infoq-admin` 启动后直接扫描并暴露这里的 Controller。
+- 前端管理端和小程序端主要调用这里提供的登录、菜单、用户、监控等接口。
+
+## 5. 下游依赖
+
+- 数据层：`infoq-core-data` 的 Entity、Bo、Vo、Mapper、XML
+- 公共层：`infoq-core-common` 的异常、工具、DTO、服务契约
+- 插件层：`oss`、`security`、`web`、`doc`、`encrypt`、`sse`、`quartz`、`mail`、`websocket`
+
+## 6. 关键配置
+
+- `AuthController` 登录时要求请求体能解析出 `clientId` 与 `grantType`。
+- Quartz 相关 runner、Controller 和部分任务处理通过 `infoq.quartz.enabled` 控制是否装配。
+- 登录成功后会经 `OptionalSseHelper` 延迟推送欢迎消息，是否真正推送取决于 SSE 能力是否开启。
+
+## 7. 关键数据流
+
+1. 请求从 `controller/login`、`controller/system`、`controller/monitor` 进入。
+2. Service 实现调用 `infoq-core-data` 的 Mapper 和域对象。
+3. 安全、加密、日志、缓存、监控等横切语义由插件层介入。
+4. 结果再组装成 `Vo` 返回前端，或进入 Quartz / SSE / WebSocket / mail 等外部链路。
+
+## 8. 扩展点
+
+- 认证策略通过 `AuthStrategy` 与具体 `*AuthStrategy` 实现扩展。
+- Quartz 启动与调度行为通过 `runner/*` 和任务处理器扩展。
+- 可选插件通过 `OptionalMailHelper`、`OptionalSseHelper` 以保守方式接线。
+
+## 9. 日志 / 监控切入点
+
+- 登录日志、操作日志、在线用户、任务日志、缓存、服务监控、数据源监控均在当前模块内提供控制器或服务。
+- 运行时审计与日志记录由 `infoq-plugin-log`、`infoq-plugin-web`、`infoq-plugin-security` 等插件配合完成。
+
+## 10. 已知边界
+
+- 当前只有一个业务模块，因此这里既承载系统管理也承载监控接口。
+- 插件真实是否启用，仍要以运行配置和插件文档为准，不能仅凭这里的依赖声明做结论。

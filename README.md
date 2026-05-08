@@ -109,7 +109,6 @@ infoq-scaffold-ai
 - Vue 家族单测：`infoq-vue-unit-test-patterns`
 - 后端单测与回归补测：`infoq-backend-unit-test-patterns`
 - 后端冒烟、双机集群 smoke 与登录校验：`infoq-backend-smoke-test`、`infoq-login-success-check`
-- 仓库定位与索引刷新：`infoq-codebase-index`
 - OpenSpec 与项目参考：`infoq-openspec-delivery`、`infoq-project-reference`
 
 其中浏览器自动化默认路径已经收敛为“仓库脚本 + skill 内本地 Playwright 依赖”。`playwright` MCP 只用于临时交互探索，`chrome-devtools` MCP 只用于 Network / Console / Performance 深度诊断。

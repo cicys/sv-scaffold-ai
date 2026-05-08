@@ -101,15 +101,7 @@ pnpm --dir infoq-scaffold-docs run docs:check-links
 pnpm --dir infoq-scaffold-docs run docs:build
 ```
 
-## 8. 索引与额外维护
-
-当 `infoq-scaffold-backend`、`infoq-scaffold-frontend-react`、`infoq-scaffold-frontend-vue` 发生 add/delete/rename/move/class-name change 时，执行：
-
-```bash
-node .agents/skills/infoq-codebase-index/scripts/sync_indexes.mjs
-```
-
-## 9. 核心原则
+## 8. 核心原则
 
 - retrieval-first：先读仓库，再下判断
 - explicit failure：宁可显式失败，不做静默 fallback

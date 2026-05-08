@@ -43,6 +43,7 @@
 - [`subagents-guide.md`](./subagents-guide.md)：subagent 角色与职责边界。
 - [`mcp-servers.md`](./mcp-servers.md)：项目级 MCP server 真值与审批策略。
 - [`plugin-catalog.md`](./plugin-catalog.md)：插件分类和软开关矩阵。
+- [`module-doc-governance.md`](./module-doc-governance.md)：模块文档如何分层、聚合、同步与写入 `AGENTS.md` 路由。
 
 ## 文档覆盖范围
 

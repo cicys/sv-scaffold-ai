@@ -47,7 +47,6 @@ outline: [2, 3]
 | `infoq-backend-unit-test-patterns` | backend 单测 | service / controller / mapper / plugin / aspect |
 | `infoq-backend-smoke-test` | backend 冒烟测试 | HTTP smoke、登录、菜单、导出、受保护接口 |
 | `infoq-login-success-check` | 登录链路验证 | `/auth/login`、token、受保护接口 |
-| `infoq-codebase-index` | 文件与类定位、索引同步 | 查类、找文件、同步索引 |
 | `infoq-openspec-delivery` | OpenSpec 交付编排 | L3 / L2 变更、跨工作区交付 |
 | `infoq-project-reference` | 仓库静态参考 | 目录、入口、命令、规范 |
 
