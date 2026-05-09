@@ -154,15 +154,15 @@
 
 - 正文真值源：
   - `doc/README.md`
-  - `doc/project-overview.md`
-  - `doc/quick-start.md`
-  - `doc/backend-handbook.md`
-  - `doc/admin-handbook.md`
-  - `doc/weapp-handbook.md`
-  - `doc/deploy-prerequisites.md`
-  - `doc/docker-compose-deploy.md`
-  - `doc/manual-deploy.md`
-  - `doc/development-workflow.md`
+  - `doc/guide/project-overview.md`
+  - `doc/guide/quick-start.md`
+  - `doc/backend/handbook.md`
+  - `doc/admin/handbook.md`
+  - `doc/weapp/handbook.md`
+  - `doc/devops/deploy-prerequisites.md`
+  - `doc/devops/docker-compose-deploy.md`
+  - `doc/devops/manual-deploy.md`
+  - `doc/collaboration/development-workflow.md`
 - 文档站工作区：
   - `infoq-scaffold-docs/package.json`
   - `infoq-scaffold-docs/site-map.mjs`

@@ -18,10 +18,10 @@
   - 顶层 `"version"`
 - `README.md`
   - `![Version](https://img.shields.io/badge/Version-x.y.z-...)`
-- `doc/docker-compose-deploy.md`
+- `doc/devops/docker-compose-deploy.md`
   - `当前文档对应项目基线版本为 \`x.y.z\`。`
 - `infoq-scaffold-docs/docs/devops/docker-compose-deploy.md`
-  - 由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 从根 `doc/docker-compose-deploy.md` 自动同步
+  - 由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 从根 `doc/devops/docker-compose-deploy.md` 自动同步
   - `当前文档对应项目基线版本为 \`x.y.z\`。`
 - `script/docker/docker-compose.yml`
   - `infoq/infoq-admin:x.y.z`
@@ -41,7 +41,7 @@
 它会从 `sql/infoq_scaffold_x.y.z.sql` 中识别唯一的初始化 SQL，并忽略 `sql/infoq_scaffold_update_*.sql` 升级脚本；随后校验以下文件是否仍引用该初始化 SQL：
 
 - `README.md`
-- `doc/docker-compose-deploy.md`
+- `doc/devops/docker-compose-deploy.md`
 - `script/bin/infoq.sh`
 - `script/docker/docker-compose.yml`
 - `.codex/skills/infoq-project-reference/references/project-reference.md`

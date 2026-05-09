@@ -93,3 +93,20 @@
 node .codex/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs <change-id>
 node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>
 ```
+
+## 8. `.codex/lib` 共享运行时边界
+
+`.codex/lib` 不是 skill 目录，也不对外承诺独立 CLI。
+它是 repo-owned skills / scripts 的共享运行时层，当前只保留 3 个跨 skill 复用模块：
+
+| 路径 | 当前职责 | 当前主要消费者 |
+| --- | --- | --- |
+| `.codex/lib/skill_runtime.mjs` | repo root 解析、`doc/tmp/` 路径、命令执行、进程管理、HTTP/文件辅助等通用运行时能力 | 多数 repo-level skills 与脚本 |
+| `.codex/lib/admin_dev_stack.mjs` | 本地 admin backend + frontend 栈的启动、停止、状态文件与日志管理 | `infoq-react-runtime-verification`、`infoq-vue-runtime-verification` 的 `start_admin_dev_stack.mjs` / `stop_admin_dev_stack.mjs` |
+| `.codex/lib/weapp_smoke.mjs` | weapp 构建、backend 健康探测、WeChat DevTools smoke runner 编排 | `infoq-react-runtime-verification`、`infoq-vue-runtime-verification` 的 `run_weapp_smoke.mjs` |
+
+维护约束：
+
+- 修改 `.codex/lib/*` 的 CLI 参数、默认端口、日志落点或 env 语义时，必须同步检查对应 skill 的 `SKILL.md`、`references/*.md`、`README.md` 与相关 `doc/*.md`。
+- `.codex/lib` 只沉淀跨 skill 复用的运行时能力，不把单个 skill 的私有流程提前抽成共享层。
+- 共享 helper 产生的状态文件、日志和一次性产物仍统一落在 `doc/tmp/`。

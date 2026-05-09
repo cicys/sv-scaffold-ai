@@ -72,13 +72,20 @@ const weappReactPackage = path.join(repoRoot, 'infoq-scaffold-frontend-weapp-rea
 const weappVuePackage = path.join(repoRoot, 'infoq-scaffold-frontend-weapp-vue', 'package.json');
 const docsPackage = path.join(repoRoot, 'infoq-scaffold-docs', 'package.json');
 const readmeFile = path.join(repoRoot, 'README.md');
-const deployDoc = path.join(repoRoot, 'doc', 'docker-compose-deploy.md');
+const deployDoc = path.join(repoRoot, 'doc', 'devops', 'docker-compose-deploy.md');
 const docsSyncScript = path.join(repoRoot, 'infoq-scaffold-docs', 'scripts', 'sync-from-root-doc.mjs');
 const docsSiteMap = path.join(repoRoot, 'infoq-scaffold-docs', 'site-map.mjs');
 const docsSyncedDeployDoc = path.join(repoRoot, 'infoq-scaffold-docs', 'docs', 'devops', 'docker-compose-deploy.md');
 const composeFile = path.join(repoRoot, 'script', 'docker', 'docker-compose.yml');
 const backendDeployScript = path.join(repoRoot, 'script', 'bin', 'infoq.sh');
-const projectReferenceFile = path.join(repoRoot, '.agents', 'skills', 'infoq-project-reference', 'references', 'project-reference.md');
+const projectReferenceFile = path.join(
+  repoRoot,
+  '.codex',
+  'skills',
+  'infoq-project-reference',
+  'references',
+  'project-reference.md'
+);
 const springDocConfigTest = path.join(
   repoRoot,
   'infoq-scaffold-backend',

@@ -52,7 +52,7 @@ node .codex/skills/infoq-plugin-introducer/scripts/generate_plugin_plan.mjs \
 - 如前端依赖该能力，增加配套 `VITE_APP_*` 开关。
 
 若分类不清晰，请先阅读：
-- `doc/plugin-catalog.md`
+- `doc/collaboration/plugin-catalog.md`
 - `references/plugin-matrix.md`
 
 ## 后端集成
@@ -120,5 +120,5 @@ cd infoq-scaffold-frontend-vue && pnpm run build:prod
 
 ## 参考资源
 
-- 治理真值：`doc/plugin-catalog.md`
+- 治理真值：`doc/collaboration/plugin-catalog.md`
 - 快速矩阵：`references/plugin-matrix.md`

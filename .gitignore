@@ -86,7 +86,7 @@ test-results/
 .pnpm-store/
 .swc/
 
-# 临时验证输出、脚本产物和一次性文件统一放在 doc/tmp/
+# 忽略 doc/tmp/ doc/plan/ openspec/changes/*/ 这些目录，不要加入git diff
 doc/tmp/
 doc/plan/
 openspec/changes/*/

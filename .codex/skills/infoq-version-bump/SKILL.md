@@ -44,7 +44,7 @@ node .codex/skills/infoq-version-bump/scripts/bump_version.mjs \
 - `infoq-scaffold-frontend-weapp-vue/package.json`
 - `infoq-scaffold-docs/package.json`
 - `README.md` version badge
-- `doc/docker-compose-deploy.md`
+- `doc/devops/docker-compose-deploy.md`
 - `infoq-scaffold-docs/docs/devops/docker-compose-deploy.md`（由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步）
 - `script/docker/docker-compose.yml`
 - `infoq-scaffold-backend/infoq-plugin/infoq-plugin-doc/.../SpringDocConfigTest.java`
@@ -64,7 +64,7 @@ node .codex/skills/infoq-version-bump/scripts/bump_version.mjs \
 
 - `infoq-scaffold-docs/package.json` 是 docs 工作区的直接版本字段。
 - `infoq-scaffold-docs/docs/**` 是根 `doc/` 的镜像展示层，不手工维护第二份正文真值。
-- 脚本在更新根 `doc/docker-compose-deploy.md` 后，会调用 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs`，把版本变更同步到文档站产物。
+- 脚本在更新根 `doc/devops/docker-compose-deploy.md` 后，会调用 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs`，把版本变更同步到文档站产物。
 
 ## 失败规则
 

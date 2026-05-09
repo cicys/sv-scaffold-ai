@@ -180,7 +180,7 @@ ${renderClassNote()}
 4. 代码耦合控制：
    - 通过注解/接口/facade 暴露能力，避免业务直接依赖插件内部实现。
 5. 文档归档：
-   - 更新 \`doc/plugin-catalog.md\`，标注插件分档与开关策略。
+   - 更新 \`doc/collaboration/plugin-catalog.md\`，标注插件分档与开关策略。
 
 ${renderConfigNote()}
 

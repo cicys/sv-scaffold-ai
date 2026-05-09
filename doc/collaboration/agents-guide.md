@@ -49,7 +49,7 @@
 
 ### 根 AGENTS
 
-根 `AGENTS.md` 只保留跨仓规则，并额外承担三件事：
+根 `AGENTS.md` 只保留跨仓规则，并额外承担几类治理职责：
 
 - skill 命名与路由真相
 - skill 元数据约束真相
@@ -61,6 +61,8 @@
 其中仓库内工具、skill、脚本、验证过程新增的临时文件、临时目录、调试输出和一次性运行产物，默认统一放在 `doc/tmp/` 下，便于后续集中清理。只有在外部工具强制要求其他位置时才允许例外，并且需要显式说明原因。
 
 另一个新增约束是：仓库级 skill 的主执行入口必须兼容 Windows / macOS / Linux。统一使用 repo-owned Node CLI 或 `.mjs` 入口；不再保留 `.sh` / `.ps1` / `.cmd` 作为 skill 入口。若内部仍需 Python 等实现，必须由跨平台 Node 入口调度。
+
+像 `.codex/scripts/`、`.codex/lib/` 这类实现层清单，不要求直接展开到根 `AGENTS.md`；它们的真值边界分别留在 `doc/collaboration/mcp-servers.md` 与 `doc/collaboration/skills-guide.md` 维护。
 
 ### 工作区 AGENTS
 

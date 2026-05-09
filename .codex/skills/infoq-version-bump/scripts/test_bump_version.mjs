@@ -25,7 +25,7 @@ export const repoBlobBase = \`\${repoUrl}/blob/main\`;
 export const sourceDocRoot = 'doc';
 export const generatedPages = [
   {
-    source: 'docker-compose-deploy.md',
+    source: 'devops/docker-compose-deploy.md',
     target: 'devops/docker-compose-deploy.md',
     title: 'Docker Compose 部署',
     description: 'Fixture docs page',
@@ -47,7 +47,7 @@ function assertContainsFixed(filePath, text) {
 
 const files = [
   'README.md',
-  'doc/docker-compose-deploy.md',
+  'doc/devops/docker-compose-deploy.md',
   'script/bin/infoq.sh',
   'script/docker/docker-compose.yml',
   '.codex/skills/infoq-project-reference/references/project-reference.md',
@@ -87,7 +87,7 @@ assertContainsFixed(path.join(fixtureRoot, 'infoq-scaffold-frontend-weapp-react'
 assertContainsFixed(path.join(fixtureRoot, 'infoq-scaffold-frontend-weapp-vue', 'package.json'), '"version": "9.9.9"');
 assertContainsFixed(path.join(fixtureRoot, 'infoq-scaffold-docs', 'package.json'), '"version": "9.9.9"');
 assertContainsFixed(path.join(fixtureRoot, 'README.md'), '![Version](https://img.shields.io/badge/Version-9.9.9-');
-assertContainsFixed(path.join(fixtureRoot, 'doc', 'docker-compose-deploy.md'), '当前文档对应项目基线版本为 `9.9.9`。');
+assertContainsFixed(path.join(fixtureRoot, 'doc', 'devops', 'docker-compose-deploy.md'), '当前文档对应项目基线版本为 `9.9.9`。');
 assertContainsFixed(path.join(fixtureRoot, 'infoq-scaffold-docs', 'docs', 'devops', 'docker-compose-deploy.md'), '当前文档对应项目基线版本为 `9.9.9`。');
 assertContainsFixed(path.join(fixtureRoot, 'script', 'docker', 'docker-compose.yml'), 'image: infoq/infoq-admin:9.9.9');
 assertContainsFixed(path.join(fixtureRoot, 'script', 'docker', 'docker-compose.yml'), 'image: infoq/infoq-frontend-vue:9.9.9');
@@ -95,7 +95,10 @@ assertContainsFixed(path.join(fixtureRoot, 'script', 'docker', 'docker-compose.y
 assertContainsFixed(path.join(fixtureRoot, 'README.md'), 'sql/infoq_scaffold_2.0.0.sql');
 assertContainsFixed(path.join(fixtureRoot, 'script', 'bin', 'infoq.sh'), 'sql/infoq_scaffold_2.0.0.sql');
 assertContainsFixed(path.join(fixtureRoot, 'script', 'docker', 'docker-compose.yml'), 'sql/infoq_scaffold_2.0.0.sql');
-assertContainsFixed(path.join(fixtureRoot, '.agents', 'skills', 'infoq-project-reference', 'references', 'project-reference.md'), 'sql/infoq_scaffold_2.0.0.sql');
+assertContainsFixed(
+  path.join(fixtureRoot, '.codex', 'skills', 'infoq-project-reference', 'references', 'project-reference.md'),
+  'sql/infoq_scaffold_2.0.0.sql'
+);
 
 console.log('[version-bump-test] pass');
 console.log(`[version-bump-test] fixture root: ${fixtureRoot}`);
