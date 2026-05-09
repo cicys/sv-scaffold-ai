@@ -66,6 +66,12 @@ enhance-user-import
 node .codex/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs enhance-user-import
 ```
 
+初始化后先执行：
+
+```bash
+node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs enhance-user-import
+```
+
 ### 5.3 明确告诉 Codex 使用 subagents
 
 推荐提示词：
@@ -99,9 +105,11 @@ requirements_expert
 
 必须说清楚：
 
-- 核心业务目标
+- 背景与问题陈述
+- 核心业务目标与成功指标
 - 用户角色与场景
 - 本次范围与非目标
+- 约束与延期范围
 - 验收契约
 - 风险、阻塞、待确认问题
 
@@ -119,7 +127,7 @@ requirements_expert
 
 必须说清楚：
 
-- backend、React admin、Vue admin、React weapp、Vue weapp 的实现矩阵
+- backend、React admin、Vue admin、React weapp、Vue weapp、docs、script/deploy 的实现矩阵
 - 哪些端不改，以及原因
 - 验证命令
 - 观测点、日志与回滚条件
@@ -134,17 +142,19 @@ openspec/changes/<change-id>/specs/<capability>/spec.md
 
 ## 8. 多工作区闭环要求
 
-本仓库的 subagent 工作流默认评估五个工作区：
+本仓库的 subagent 工作流默认评估七个交付面：
 
 - `infoq-scaffold-backend`
 - `infoq-scaffold-frontend-react`
 - `infoq-scaffold-frontend-vue`
 - `infoq-scaffold-frontend-weapp-react`
 - `infoq-scaffold-frontend-weapp-vue`
+- `infoq-scaffold-docs`
+- `script / deploy`
 
-这不代表每个需求都必须同时改五端，而是：
+这不代表每个需求都必须同时改完所有交付面，而是：
 
-- 每个需求都必须显式评估五个工作区是否受影响
+- 每个需求都必须显式评估统一交付面是否受影响
 - 如果不改某一端，必须在 `tasks.md` 里写出理由
 - 不允许“默认跳过某个端但文档里不说明”
 

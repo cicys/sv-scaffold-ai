@@ -36,11 +36,13 @@ outline: [2, 3]
 
 | 级别 | 适用场景 | 要求 |
 | --- | --- | --- |
-| L3 强制 | 新功能、API 契约变更、跨工作区交付 | 建立 `openspec/changes/<change-id>/` 全套工件 |
-| L2 Lite | 单工作区行为变更，不改 API 契约 | 至少 `proposal.md` + `tasks.md` |
+| L3 强制 | 新功能、API 契约变更、跨工作区交付 | 建立 `openspec/changes/<change-id>/`，维护全套工件，并通过 `openspec-check` |
+| L2 Lite | 单工作区行为变更，不改 API 契约 | 至少 `proposal.md` + `tasks.md`，交付前通过 `openspec-check` |
 | L1 可豁免 | 小修复、不改契约、范围很小 | 可不建 OpenSpec，但必须先写 acceptance contract |
 
 不确定时按更高一级处理。
+
+repo-level 或高风险治理变更，除 active change 外，还应在 `doc/plan/YYYY-MM-DD-topic-plan.md` 中保留执行计划。
 
 ## 4. 默认执行顺序
 
@@ -48,13 +50,16 @@ outline: [2, 3]
 
 1. 读取相关工作区规则和仓库文件。
 2. 明确 acceptance contract。
-3. 不靠记忆假设项目结构、脚本名或环境。
+3. 若本次使用 active change，先补 `proposal.md` / `tasks.md` 并执行 `openspec-check`。
+4. repo-level 或高风险治理变更，补 `doc/plan/` 计划文档。
+5. 不靠记忆假设项目结构、脚本名或环境。
 
 ### 4.2 修改中
 
 1. 一次只改一类问题。
 2. 优先最小闭环，不绑无关重构。
-3. 任何命令、环境变量、skill 入口、文档站同步链路或 MCP 配置变更，都要同步更新 `README.md` 与 `doc/*.md`。
+3. `tasks.md` 默认显式评估 backend、React admin、Vue admin、React weapp、Vue weapp、docs、script/deploy。
+4. 任何命令、环境变量、skill 入口、文档站同步链路或 MCP 配置变更，都要同步更新 `README.md` 与 `doc/*.md`。
 
 ### 4.3 修改后
 
@@ -64,6 +69,8 @@ outline: [2, 3]
 2. `targeted tests`
 3. `lint/build or equivalent checks`
 4. `diff review`
+
+说明：`openspec-check` 是 active change 的结构前置校验，不替代上述运行态或构建验证。
 
 ## 5. Java 17 预检
 

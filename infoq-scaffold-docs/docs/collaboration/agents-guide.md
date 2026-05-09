@@ -42,6 +42,7 @@ outline: [2, 3]
 - acceptance contract 约束
 - 默认验证顺序
 - OpenSpec 路由
+- active change 结构校验要求
 - skill 路由与优先级
 - 本工作区最关键的命令和边界
 
@@ -63,6 +64,7 @@ outline: [2, 3]
 - skill 命名与路由真相
 - skill 元数据约束真相
 - `OpenSpec` 分级路由
+- `openspec-check` 与 `doc/plan/` 的治理要求
 - 文档同步约束
 - 临时产物目录约束
 

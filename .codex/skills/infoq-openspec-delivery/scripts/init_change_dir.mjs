@@ -28,45 +28,104 @@ function createIfMissing(targetPath, content) {
 
 createIfMissing(path.join(changeDir, 'proposal.md'), `# Proposal: ${changeId}
 
-## Why
+## 背景
 
-## What Changes
+## 问题陈述
 
-### Scope
+## 目标与成功指标
 
-### Non-Goals
+- 成功指标 1：
+- 成功指标 2：
 
-## Acceptance Contract
+## 变更内容
 
-- Functional scope:
-- Non-goals:
-- Exception handling and blockers:
-- Required verification evidence:
-- Rollback trigger or rollback conditions:
+### 用户故事
 
-## Risks And Open Questions
+- 作为：
+- 我希望：
+- 以便：
+
+### 范围
+
+- 
+
+### 非目标
+
+- 
+
+### 约束
+
+- 
+
+## 验收约定
+
+- 功能范围：
+- 非目标：
+- 异常处理与阻塞：
+- 必需日志/验证证据：
+- 回滚触发条件：
+
+## 延期范围
+
+- 无；若后续确认延期范围，请显式记录在此。
+
+## 风险与待确认
+
+- 
 `);
 
 createIfMissing(path.join(changeDir, 'tasks.md'), `# Tasks: ${changeId}
 
-## Backend
+## 交付概览
 
-- [ ] Assess backend impact
+- [ ] 明确本次 change 的主交付物与退出条件
 
-## React
+## 影响矩阵
 
-- [ ] Assess React impact
+- [ ] infoq-scaffold-backend：
+- [ ] infoq-scaffold-frontend-react：
+- [ ] infoq-scaffold-frontend-vue：
+- [ ] infoq-scaffold-frontend-weapp-react：
+- [ ] infoq-scaffold-frontend-weapp-vue：
+- [ ] infoq-scaffold-docs：
+- [ ] script / deploy：
 
-## Vue
+## 实施任务
 
-- [ ] Assess Vue impact
+### 规格与方案
 
-## Verification
+- [ ] 完成 \`proposal.md\`、\`tasks.md\` 与必要 spec delta
+- [ ] 如存在重大技术或 UI 决策，补 \`design.md\`
 
-- [ ] Define main-flow verification
-- [ ] Define targeted tests
-- [ ] Define lint/build checks
-- [ ] Record residual risks or blockers
+### 实现
+
+- [ ] 按影响矩阵逐项实现或显式记录“不受影响原因”
+
+## 验证映射
+
+### 主流程验证
+
+- [ ] 记录主流程步骤、预期结果与留证方式
+
+### 定向测试
+
+- [ ] 记录受影响工作区的定向测试命令或 blocker
+
+### lint / build
+
+- [ ] 记录受影响工作区的 lint / build 命令或 blocker
+
+### 差异审查
+
+- [ ] 审核 diff、计划文件、active change 和 stable specs 是否一致
+
+## 延期范围
+
+- [ ] 无；若本轮显式延期，请在此记录
+
+## 阻塞与残余风险
+
+- [ ] 无；若验证受阻或有残余风险，请在此记录
 `);
 
 console.log(`Initialized ${path.relative(repoRoot, changeDir)}`);

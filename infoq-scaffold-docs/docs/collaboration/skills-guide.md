@@ -47,7 +47,7 @@ outline: [2, 3]
 | `infoq-backend-unit-test-patterns` | backend 单测 | service / controller / mapper / plugin / aspect |
 | `infoq-backend-smoke-test` | backend 冒烟测试 | HTTP smoke、登录、菜单、导出、受保护接口 |
 | `infoq-login-success-check` | 登录链路验证 | `/auth/login`、token、受保护接口 |
-| `infoq-openspec-delivery` | OpenSpec 交付编排 | L3 / L2 变更、跨工作区交付 |
+| `infoq-openspec-delivery` | OpenSpec 交付编排 | L3 / L2 变更、跨工作区交付、stable spec 回填、`openspec-check` |
 | `infoq-project-reference` | 仓库静态参考 | 目录、入口、命令、规范 |
 
 ## 4. 浏览器 skill 的当前真值
@@ -96,3 +96,10 @@ outline: [2, 3]
 2. `README.md` 与 `doc/*.md` 是否仍然准确。
 3. 如果 skill 依赖仓库级 MCP，`.codex/config.toml` 与 `doc/collaboration/mcp-servers.md` 是否仍然一致。
 4. 若变更了命令、环境变量、入口路径或默认行为，是否已执行 docs 站点同步。
+
+`infoq-openspec-delivery` 当前最小命令集合是：
+
+```bash
+node .codex/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs <change-id>
+node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>
+```

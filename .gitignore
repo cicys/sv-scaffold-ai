@@ -80,12 +80,13 @@ yarn.lock
 auto-imports.d.ts
 components.d.ts
 logs/
-openspec/
-doc/plan/
 test-results/
 
 .playwright-mcp/
 .pnpm-store/
 .swc/
 
+# 临时验证输出、脚本产物和一次性文件统一放在 doc/tmp/
 doc/tmp/
+doc/plan/
+openspec/changes/*/

@@ -29,9 +29,12 @@
 - L2 变更（单工作区行为变更且不改 API 契约）可使用 OpenSpec 精简流程，至少维护 `proposal.md` 与 `tasks.md`
 - L1 变更（单工作区小修复且不改契约、改动范围小）可不创建 OpenSpec，但必须先写验收约定
 - 不确定分级时默认按 L3 执行
+- repo-level 或高风险治理变更，除 active change 外，还应在 `doc/plan/YYYY-MM-DD-topic-plan.md` 中保留执行计划
 - 活跃变更规划放在 `openspec/changes/<change-id>/`
 - 当前稳定真值规范放在 `openspec/specs/`
 - 执行期间以 `proposal.md`、`tasks.md` 与相关规范增量作为真值
+- active change 在实现前和交付前都必须通过 `node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>` 结构校验
+- `tasks.md` 默认显式评估 `infoq-scaffold-backend`、`infoq-scaffold-frontend-react`、`infoq-scaffold-frontend-vue`、`infoq-scaffold-frontend-weapp-react`、`infoq-scaffold-frontend-weapp-vue`、`infoq-scaffold-docs`、`script / deploy`
 - 每个变更只维护一个验收约定
 - 验证顺序固定为：主流程验证 -> 目标测试 -> lint/build -> 差异评审
 
@@ -39,8 +42,10 @@
 
 - OpenSpec 文档正文默认使用中文
 - 路径名称、命令、文件名保持英文原样（例如 `openspec/changes/<change-id>/`、`pnpm`、`mvn`、`proposal.md`）
+- `openspec/` 与 `doc/plan/` 属于仓库真值资产，默认纳入版本控制
+- OpenSpec 相关临时验证输出不得放在 `openspec/` 下规避提交；一次性产物统一放在 `doc/tmp/`
 - 前端命令优先使用 `pnpm`
 - 后端构建与测试使用 `mvn`
-- L3/L2 交付优先使用 `infoq-openspec-delivery` 做 OpenSpec 文档产物编排
+- L3/L2 交付优先使用 `infoq-openspec-delivery` 做 OpenSpec 文档产物编排；其当前主入口是 `init_change_dir.mjs` 与 `openspec_check.mjs`
 - 对重复验证流程优先复用仓库技能
 - 仅当用户明确要求子代理或多专家执行时才使用子代理

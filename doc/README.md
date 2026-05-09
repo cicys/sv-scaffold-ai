@@ -58,6 +58,8 @@
 - 根 `doc/` 顶层只保留导航入口、正文分类子目录和非正文目录：`README.md`、`guide/`、`backend/`、`admin/`、`weapp/`、`devops/`、`collaboration/`、`examples/`、`images/`、`plan/`、`ui-demos/`。
 - 专题正文统一落在 `guide/`、`backend/`、`admin/`、`weapp/`、`devops/`、`collaboration/`。
 - 新增正文时先选分类目录，再决定是否需要同步到 `infoq-scaffold-docs` 的栏目映射。
+- `doc/plan/` 存放 repo-level 或高风险治理变更的执行计划，属于受版本控制资产，不作为临时目录使用。
+- 仓库内工具、验证、脚本的一次性输出继续统一放在 `doc/tmp/`，该目录才是默认忽略的临时产物目录。
 
 ## 文档覆盖范围
 
