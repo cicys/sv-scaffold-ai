@@ -5,7 +5,7 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/quick-start.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/quick-start.md)
+> 内容真值源：[`doc/guide/quick-start.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/guide/quick-start.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # 快速开始
@@ -33,8 +33,8 @@ outline: [2, 3]
 ### 后端
 
 - 默认 Maven profile 是 `dev`。
-- 如果只执行 `mvn spring-boot:run -pl infoq-admin`，实际加载的是 `application.yml + application-dev.yml`。
-- 如果想明确使用本地 profile，需要执行 `mvn spring-boot:run -pl infoq-admin -Plocal`，对应 `application.yml + application-local.yml`。
+- 若要稳定命中指定 profile，优先使用 `java -jar` 显式传入 `--spring.profiles.active=...`。
+- 本仓库当前推荐的确定性运行路径是先 `mvn clean install -DskipTests`，再运行 `infoq-admin/target/infoq-admin.jar`。
 
 ### 管理端
 
@@ -66,14 +66,21 @@ outline: [2, 3]
 
 ```bash
 cd infoq-scaffold-backend
-mvn spring-boot:run -pl infoq-admin
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
 ```
 
 ### 4.2 使用 `local` profile
 
 ```bash
 cd infoq-scaffold-backend
-mvn spring-boot:run -pl infoq-admin -Plocal
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+```
+
+如需继续执行浏览器自动化登录或受保护路由探测，临时追加：
+
+```bash
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
 ```
 
 启动后优先验证两个入口：

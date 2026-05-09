@@ -5,13 +5,13 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/docker-compose-deploy.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/docker-compose-deploy.md)
+> 内容真值源：[`doc/devops/docker-compose-deploy.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/devops/docker-compose-deploy.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # Docker Compose 部署说明
 
 本文档以当前仓库的 `script/docker/docker-compose.yml` 为准，只保留现有工程真正可执行的部署入口。
-当前文档对应项目基线版本为 `2.1.3`。
+当前文档对应项目基线版本为 `2.1.4`。
 
 如果你需要的是完整部署前检查或非 Docker 的手动部署流程，请先阅读：
 
@@ -21,7 +21,7 @@ outline: [2, 3]
 默认宿主机根目录是 `/infoq`。如果是在 macOS 本机配合 Docker Desktop 验证，建议先设置：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 ```
 
 然后再执行后续脚本或 `docker compose` 命令。
@@ -55,7 +55,7 @@ export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
 ## 2. 首次部署后端
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh prepare
 bash script/bin/infoq.sh deploy
 ```
@@ -84,7 +84,7 @@ bash script/bin/infoq.sh stop
 ## 3. 首次部署前端
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/deploy-frontend.sh prepare
 bash script/bin/deploy-frontend.sh deploy
 ```
@@ -116,7 +116,7 @@ bash script/bin/deploy-frontend.sh stop
 如果镜像已经构建过，且宿主机目录、数据库数据都还在，只需要执行启动命令，不必重新 `deploy`。
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 
 # 先启动后端依赖与 infoq-admin
 bash script/bin/infoq.sh start
@@ -141,7 +141,7 @@ bash script/bin/deploy-frontend.sh start
 建议先停前端和网关，再停后端与基础服务：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 
 # 先停止 Vue / React / nginx-web
 bash script/bin/deploy-frontend.sh stop
@@ -155,7 +155,7 @@ bash script/bin/infoq.sh stop
 查看状态：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh status
 bash script/bin/deploy-frontend.sh status
 ```
@@ -163,7 +163,7 @@ bash script/bin/deploy-frontend.sh status
 查看日志：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh logs infoq-admin
 bash script/bin/deploy-frontend.sh logs all
 ```
@@ -171,7 +171,7 @@ bash script/bin/deploy-frontend.sh logs all
 重启服务：
 
 ```bash
-export INFOQ_DEPLOY_ROOT=/tmp/infoq-deploy
+export INFOQ_DEPLOY_ROOT=doc/tmp/infoq-deploy
 bash script/bin/infoq.sh restart
 bash script/bin/deploy-frontend.sh restart
 ```

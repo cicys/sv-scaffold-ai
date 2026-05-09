@@ -5,157 +5,123 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/development-workflow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/development-workflow.md)
+> 内容真值源：[`doc/collaboration/development-workflow.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/collaboration/development-workflow.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # 研发协作与工作流
 
-这个仓库最大的特点不是“技术栈很多”，而是把 AI 协作、规格管理、验证闭环和交付文档都放进了同一条工程流水线。理解这套工作流，比记住几个命令更重要。
+本仓库的重点不是“命令很多”，而是把规则、脚本、验证和文档收敛到同一条可复现交付链路里。
 
-## 1. 先知道哪些文件是规则真值
+## 1. 先确认真值来源
 
 | 主题 | 真值文件 |
 | --- | --- |
-| 根级协作规则 | `AGENTS.md` |
-| 工作区规则 | 各工作区自己的 `AGENTS.md` |
-| 项目级技能 | `.agents/skills/*/SKILL.md` |
+| 协作规则 | `AGENTS.md` 与更近工作区 `AGENTS.md` |
+| 仓库级技能 | `.codex/skills/*/SKILL.md` |
 | 规格与变更 | `openspec/project.md`、`openspec/specs/`、`openspec/changes/` |
 | MCP 配置 | `.codex/config.toml` |
-| 用户手册 | `doc/*.md` |
+| 项目文档 | `README.md` 与 `doc/*.md` |
 
-## 2. `AGENTS.md` 分层怎么理解
+## 2. AGENTS 分层
 
-规则读取顺序是“就近优先”：
+规则读取顺序遵循“就近优先”：
 
-1. 先看根 `AGENTS.md`
-2. 再看当前工作区的 `AGENTS.md`
-3. 更近文件和根规则冲突时，以更近文件为准
+1. 先看根 `AGENTS.md`。
+2. 再看当前工作区的 `AGENTS.md`。
+3. 更近规则与根规则冲突时，以更近规则为准。
 
-所以：
+`AGENTS.md` 负责约束“如何工作”；`doc/` 负责说明“项目是什么、如何使用、如何验证”。
 
-- 用户手册不要写进 `AGENTS.md`
-- 机器协作规则也不要散落在 `README.md`
-
-`AGENTS.md` 负责约束“如何工作”，`doc/` 负责说明“项目是什么、如何用、如何部署”。
-
-## 3. OpenSpec 在本仓库里的角色
-
-根规则已经把 OpenSpec 分成三级：
+## 3. OpenSpec 分级
 
 | 级别 | 适用场景 | 要求 |
 | --- | --- | --- |
-| L3 强制 | 新功能、API 契约变更、跨工作区交付 | 建立 `openspec/changes/<change-id>/` 全套产物 |
-| L2 建议 Lite | 单工作区行为变更，不改 API 契约 | 至少 `proposal.md` + `tasks.md` |
-| L1 可豁免 | 小修复、不改契约、范围小 | 可不建 OpenSpec，但必须先写 acceptance contract |
+| L3 强制 | 新功能、API 契约变更、跨工作区交付 | 建立 `openspec/changes/<change-id>/`，维护全套工件，并通过 `openspec-check` |
+| L2 Lite | 单工作区行为变更，不改 API 契约 | 至少 `proposal.md` + `tasks.md`，交付前通过 `openspec-check` |
+| L1 可豁免 | 小修复、不改契约、范围很小 | 可不建 OpenSpec，但必须先写 acceptance contract |
 
-如果你不确定属于哪级，默认按高一级处理。
+不确定时按更高一级处理。
 
-## 4. 日常改动的推荐顺序
+repo-level 或高风险治理变更，除 active change 外，还应在 `doc/plan/YYYY-MM-DD-topic-plan.md` 中保留执行计划。
 
-### 4.1 改动前
+## 4. 默认执行顺序
 
-1. 读相关工作区和最近的 `AGENTS.md`
-2. 读相关代码和配置，而不是靠记忆假设
-3. 在任务上下文里先写 acceptance contract
+### 4.1 修改前
 
-### 4.2 改动中
+1. 读取相关工作区规则和仓库文件。
+2. 明确 acceptance contract。
+3. 若本次使用 active change，先补 `proposal.md` / `tasks.md` 并执行 `openspec-check`。
+4. repo-level 或高风险治理变更，补 `doc/plan/` 计划文档。
+5. 不靠记忆假设项目结构、脚本名或环境。
 
-1. 一次只改一类问题
-2. 优先最小闭环，不绑无关重构
-3. 如果改动影响配置、命令、部署入口、env 或文档行为，同步更新 `doc/` 和 `README.md`
+### 4.2 修改中
 
-### 4.3 改动后
+1. 一次只改一类问题。
+2. 优先最小闭环，不绑无关重构。
+3. `tasks.md` 默认显式评估 backend、React admin、Vue admin、React weapp、Vue weapp、docs、script/deploy。
+4. 任何命令、环境变量、skill 入口、文档站同步链路或 MCP 配置变更，都要同步更新 `README.md` 与 `doc/*.md`。
+
+### 4.3 修改后
 
 验证顺序固定为：
 
-1. 主流程验证
-2. 定向测试
-3. lint / build 或等价静态检查
-4. diff review
+1. `main-flow verification`
+2. `targeted tests`
+3. `lint/build or equivalent checks`
+4. `diff review`
 
-## 5. skills 和 MCP 是怎么配合的
+说明：`openspec-check` 是 active change 的结构前置校验，不替代上述运行态或构建验证。
 
-### skills
+## 5. Java 17 预检
 
-`skills` 负责把高频任务沉淀成仓库内 SOP，例如：
+backend 工作区基线是 JDK 17。
 
-- 浏览器自动化
-- 后端 smoke
-- React / Vue 运行态验证
-- React / Vue 单元测试模式
-- OpenSpec 交付
-- 版本升级
+- 在任何 backend `mvn` 编译、`spring-boot:run` 或 `java -jar` 之前，先确认 `java -version` 与 `mvn -version` 都指向 Java 17。
+- 如果当前 shell 解析到 JDK 8 或其他旧版本，先在当前终端覆盖 `JAVA_HOME` 与 `PATH`，再继续执行。
+- 不允许在错误 JDK 下继续碰运气编译，然后把失败误判为代码问题。
 
-入口文档：
+## 6. skills 与 MCP 的配合
 
-- [`skills-guide.md`](/collaboration/skills-guide)
+`skills` 负责把高频任务沉淀成仓库内 SOP；`MCP` 负责补充交互探索或深度诊断能力。
 
-### MCP
+当前默认组合：
 
-`.codex/config.toml` 当前重点启用：
+- 浏览器主流程：`infoq-browser-automation` + repo-owned `playwright-cli`
+- React admin / weapp 运行态：`infoq-react-runtime-verification`
+- Vue admin / weapp 运行态：`infoq-vue-runtime-verification`
+- OpenAI / Codex / AGENTS / MCP 问题：`openai-docs`
+- 前端深度调试：`chrome-devtools`
 
-- `playwright`
-- `openai-docs`
-- `chrome-devtools`
+说明：
 
-入口文档：
+- `playwright-cli` 与 `chrome-devtools-cli` 是仓库内跨平台 CLI，位于 `.codex/skills/infoq-browser-automation/scripts/`。
+- `playwright` MCP 用于临时交互探索。
+- `chrome-devtools` MCP 用于 Network / Console / Performance 深度诊断。
+- 不要回退到任何历史浏览器入口。
 
-- [`mcp-servers.md`](/collaboration/mcp-servers)
+## 7. 文档何时必须同步
 
-典型搭配：
-
-- 页面联调：skill + `playwright`
-- 前端深度排查：`chrome-devtools`
-- OpenAI / Codex / AGENTS / MCP 相关问题：`openai-docs`
-
-## 6. 各工作区最小验证命令
-
-| 工作区 | 最小验证 |
-| --- | --- |
-| Backend | 主流程验证 + 定向 Maven 测试 |
-| Vue Admin | `pnpm run test:unit` + `pnpm run build:prod` |
-| React Admin | `pnpm run test` + `pnpm run build:prod` |
-| Vue Weapp | `pnpm run typecheck` + `pnpm run test` + `pnpm run build:weapp:dev` |
-| React Weapp | `pnpm run test` + `pnpm run lint` + `pnpm run build:weapp:dev` |
-
-## 7. 什么时候必须更新文档
-
-出现以下变化时，不应该只改代码：
+出现以下变化时，不能只改代码：
 
 - 启动命令变了
-- 环境变量变了
-- 部署入口变了
-- MCP server / tool / 审批模式变了
-- 目录入口变了
-- skill 名称或行为变了
+- 浏览器自动化主入口变了
+- 环境变量或前置条件变了
+- MCP server / tool / 审批模式 / 超时变了
+- skill 名称或默认行为变了
+- docs 站点镜像需要同步的根文档变了
 
-根规则已经明确要求这些变化同步更新 `AGENTS.md`、`README.md` 和相关 `doc/*.md`，否则文档和真实行为会漂移。
-
-## 8. 什么时候要刷新索引或额外维护
-
-### 代码索引
-
-如果 `infoq-scaffold-backend`、`infoq-scaffold-frontend-react`、`infoq-scaffold-frontend-vue` 发生文件或类名层面的增删改移动，需要执行：
+根文档更新后执行：
 
 ```bash
-python3 .agents/skills/infoq-codebase-index/scripts/sync_indexes.py
+pnpm --dir infoq-scaffold-docs run docs:sync
+pnpm --dir infoq-scaffold-docs run docs:check-links
+pnpm --dir infoq-scaffold-docs run docs:build
 ```
 
-### 根 AGENTS 压缩
+## 8. 核心原则
 
-如果任务是创建、压缩或更新根 `AGENTS.md`，优先走 `infoq-agents-md-compress`。
-
-## 9. 这套工作流的核心原则
-
-- retrieval-first：先读仓库文件，再做判断
-- explicit failure：宁可显式失败，不要静默 fallback
+- retrieval-first：先读仓库，再下判断
+- explicit failure：宁可显式失败，不做静默 fallback
 - smallest useful change：优先最小闭环
-- evidence-based verification：验证结果优先于主观“应该没问题”
-- docs as delivery asset：文档不是附属品，而是交付物的一部分
-
-## 10. 继续往下读
-
-- 项目总览：[`project-overview.md`](/guide/project-overview)
-- 后端手册：[`backend-handbook.md`](/backend/handbook)
-- 管理端手册：[`admin-handbook.md`](/admin/handbook)
-- 小程序手册：[`weapp-handbook.md`](/weapp/handbook)
+- evidence-based verification：用命令输出、截图、日志和构建结果说话
+- docs as delivery asset：文档是交付物的一部分，不是附属品

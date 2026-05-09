@@ -1,93 +1,82 @@
-# InfoQ Weapp React Workspace
+# infoq-scaffold-frontend-weapp-react
 
-This workspace hosts the Taro + React mini-program frontend for the scaffold.
+这份 README 只描述 `infoq-scaffold-frontend-weapp-react` 当前仓库实现，不把它抽象成通用 Taro 模板。
 
-## Layout
+## 当前实现概览
 
-- `src/api`: API contracts and request wrappers
-- `src/utils`: runtime helpers (auth/env/errors/formatting/theme)
-- `src/pages`: page entries for H5 and WeChat mini-program targets
-- `src/styles`: shared mobile styles
-- `patches/jsencrypt@3.5.4.patch`: project-local runtime compatibility patch for `jsencrypt`
+`infoq-scaffold-frontend-weapp-react` 是当前仓库的 Taro + React 小程序工作区，同时覆盖 H5 和微信小程序目标。应用入口是 `src/app.ts`，页面注册入口是 `src/app.config.ts`；请求统一走 `src/api/request.ts`，会话状态集中在 `src/store/session.ts`，页面访问控制目前主要通过各页面主动调用 `loadSession()` 和权限判断完成。
 
-## Phase-One Scope
+当前代码能直接确认的几个关键事实：
 
-- login and logout
-- workbench home
-- notice list, detail, create, edit, delete
-- profile info update and avatar upload
-- shared H5 and WeChat mini-program build targets
+- `src/app.config.ts` 显式注册 `home/login/profile/notices/admin/system-*/monitor-*` 页面。
+- `src/api/request.ts` 统一处理 `clientid`、`Authorization`、运行时 `x-client-key` / `x-device-type` 头、可选加密、重复提交拦截和错误归一化。
+- `src/store/session.ts` 登录时会先拿 token，再调用 `getInfo()` 补齐用户与权限；登出时会显式清理本地 token。
+- 当前没有中心化路由守卫；`home/admin/system/monitor/notice/profile` 等页面会在页面层自行调用 `loadSession()`，并按权限结果决定是否继续。
+- `package.json` 内置 `build-open:weapp*`、`test:e2e:weapp:*` 和 `verify:local`，用于小程序 DevTools 与 e2e 验证闭环。
 
-## Deliberate Exclusions
+## 模块导航
 
-- notification center
-- SSE
-- WebSocket
-- timed polling for notifications
+| 模块 | 当前职责 | 主要证据 |
+| --- | --- | --- |
+| `src/api` | 请求封装、接口契约与环境桥接 | [`src/api/README.md`](./src/api/README.md) |
+| `src/store` | 登录态、用户信息与权限缓存 | [`src/store/README.md`](./src/store/README.md) |
+| `src/pages` | 公共页、管理台页、系统管理页、监控页 | [`src/pages/README.md`](./src/pages/README.md) |
+| `src/components`、`src/utils` | 底部导航、UI 组件、导航与权限辅助 | [`src/README.md`](./src/README.md) |
 
-## Local Test Workflow
+## 建议阅读顺序
 
-- Run `pnpm test` for deterministic unit tests (Vitest).
-- Run `pnpm run test:coverage` for coverage report (`coverage/` output).
-- Run `pnpm run test:watch` for watch mode during local development.
-- Run `pnpm run test:e2e:weapp` (alias of `test:e2e:weapp:smoke`) for fast route smoke checks.
-- Run `pnpm run test:e2e:weapp:core` for core auth/profile/notice/permission checks.
-- Run `pnpm run test:e2e:weapp:full` for full checks plus report output in `tests/e2e/weapp/reports/` (includes API contract smoke + all-route smoke + captured WeChat DevTools console logs).
-- Run `pnpm run verify:local` for one-command local regression (`test -> build:weapp:dev -> weapp core -> build:weapp`).
-- `full` suite is strict: any skipped case is treated as failure.
+1. [`doc/architecture.md`](./doc/architecture.md)
+   先看页面注册、请求层、会话层和 H5/weapp 运行时分界。
+2. [`doc/data-flow.md`](./doc/data-flow.md)
+   再看登录、页面级鉴权和典型请求链路。
+3. [`src/README.md`](./src/README.md)
+   最后按 `src/` 模块入口继续下钻。
 
-### WeChat E2E Env Vars
+## 常用命令
 
-- `WECHAT_DEVTOOLS_CLI`: full path to WeChat DevTools CLI. If omitted, the script tries common macOS locations first.
-- `WECHAT_DEVTOOLS_URL_CHECK` (optional): legal-domain validation toggle synced before e2e launch. Default `false` (equivalent to enabling `不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书`); set `true` to keep validation enabled.
-- `WEAPP_E2E_SUITE` (optional): default suite when running `tests/e2e/weapp/runner.mjs` directly (`smoke`, `core`, `full`).
-- `WEAPP_E2E_REPORT` (optional): enable report output (`1/true/yes/on`).
-- `WEAPP_E2E_REPORT_DIR` (optional): report output directory, default `tests/e2e/weapp/reports`.
-- `WEAPP_E2E_TOKEN` (optional): when provided, full/core checks validate authenticated route staying behavior.
-- `WEAPP_E2E_AUTO_LOGIN` (optional): enable backend API auto-login when `WEAPP_E2E_TOKEN` is empty. Default `true`.
-- `WEAPP_E2E_AUTO_LOGIN_USERNAME` / `WEAPP_E2E_AUTO_LOGIN_PASSWORD` (optional): preferred credentials for auto-login.
-- `WEAPP_E2E_AUTO_LOGIN_CANDIDATES` (optional): fallback account list, default `admin:admin123,dept:666666,owner:666666,admin:123456`.
-- `WEAPP_E2E_BASE_URL` (optional): explicit backend base URL for auto-login.
-- `WEAPP_E2E_API_ORIGIN` / `WEAPP_E2E_MINI_BASE_API` (optional): override auto-login backend origin/base path resolution.
-- `WEAPP_E2E_CLIENT_ID` / `WEAPP_E2E_RSA_PUBLIC_KEY` (optional): override login encryption parameters for auto-login.
-- `WEAPP_E2E_KEEP_EXISTING_SESSION` (optional): when enabled and `WEAPP_E2E_TOKEN` is empty, runner keeps the current mini-program storage token and skips token clear/set. Use this after you manually log in once, so smoke does not require captcha interaction.
-- When `WEAPP_E2E_AUTO_LOGIN=false` and both `WEAPP_E2E_TOKEN` / `WEAPP_E2E_KEEP_EXISTING_SESSION` are omitted, unauthenticated checks assert fallback to public entry routes (`/pages/login/index` or `/pages/home/index`).
-- `WEAPP_E2E_EXTRA_ROUTES` (optional): comma-separated route list, for example `/pages/notices/index,/pages/system-users/index`.
-- `WEAPP_E2E_STRICT_SELECTOR` (optional): when enabled, selector assertion failures become hard failures; default is non-blocking.
-- `WEAPP_E2E_FAIL_ON_CONSOLE_ERROR` (optional): when enabled, any captured console `error` / runtime exception fails the run; default `true`.
-- `WEAPP_E2E_PROJECT_PATH` (optional): mini-program build output directory, default `dist`.
-- `WEAPP_E2E_STEP_WAIT_MS` (optional): wait time after each route relaunch, default `900`.
-- `WEAPP_E2E_TIMEOUT_MS` (optional): automator launch timeout, default `120000`.
+```bash
+pnpm install
+pnpm run test
+pnpm run test:coverage
+pnpm run build:h5
+pnpm run build:weapp
+pnpm run build:weapp:dev
+pnpm run dev:weapp
+pnpm run build-open:weapp
+pnpm run build-open:weapp:dev
+pnpm run test:e2e:weapp
+pnpm run test:e2e:weapp:core
+pnpm run test:e2e:weapp:full
+pnpm run verify:local
+```
 
-### WeChat E2E Failure Rules
+## 运行与验证细节
 
-- If WeChat DevTools CLI is missing, smoke script fails explicitly.
-- If `dist/project.config.json` is missing, smoke script fails explicitly.
-- If suite id or CLI arguments are unsupported, runner fails explicitly.
-- If `WEAPP_E2E_TOKEN` is set but route still falls back to unauthenticated public entry, smoke script fails explicitly.
-- If auto-login sees `/auth/code` -> `captchaEnabled=true`, runner fails explicitly and requires temporary backend override `--captcha.enable=false`.
-- If DevTools runtime emits console `error` / exception, runner fails explicitly by default.
+### 本地测试闭环
 
-## Local WeChat DevTools Workflow
+- `pnpm run test:e2e:weapp` 是 smoke alias，对应 `tests/e2e/weapp/runner.mjs --suite smoke`。
+- `pnpm run test:e2e:weapp:core` 默认关闭后端自动登录（`WEAPP_E2E_AUTO_LOGIN=false`），用于稳定验证“未注入 token 时的公开路由回退”。
+- `pnpm run test:e2e:weapp:core:backend` 才会启用真实后端自动登录链路；如果 `/auth/code` 返回 `captchaEnabled=true`，runner 会显式失败并要求临时关闭验证码。
+- `pnpm run test:e2e:weapp:full` 会自动开启 report 输出到 `tests/e2e/weapp/reports/`，而且 `full` 套件只要出现 skipped case 就按失败处理。
+- `pnpm run verify:local` 是当前工作区最接近完整回归的命令，顺序固定为 `test -> build:weapp:dev -> test:e2e:weapp:core -> build:weapp`。
 
-- Ensure WeChat DevTools is installed locally and its service port is enabled.
-- Run `pnpm install` inside `infoq-scaffold-frontend-weapp-react/`; the install uses the project-local `patches/jsencrypt@3.5.4.patch`.
-- Pass a real mini-program AppID with `--appid` or `TARO_APP_ID`; `touristappid` is only the scaffold placeholder and cannot be used by the launcher.
-- Run `pnpm build-open:weapp -- --appid wx1234567890abcdef` to build the React mini-program bundle and open it in WeChat DevTools.
-- Run `pnpm build-open:weapp:dev` to build the React mini-program bundle with `.env.development` and open it in WeChat DevTools.
-- Run `pnpm dev:weapp` for watch-mode mini-program development builds; the command binds explicitly to `.env.development`.
-- The launcher script lives at `../script/build-open-wechat-devtools.mjs` and is called through the workspace package scripts.
-- The launcher script patches `dist/project.config.json` and `dist/project.private.config.json` with `setting.urlCheck=false` by default, then synchronizes matching WeChat DevTools local project settings to the same value. This is equivalent to enabling `不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书`.
-- If you need to keep domain checks enabled, set `WECHAT_DEVTOOLS_URL_CHECK=true` before running `build-open:weapp` / `build-open:weapp:dev`.
-- You can also export `TARO_APP_ID=wx1234567890abcdef` before running either launcher.
-- Or set `TARO_APP_ID=wx1234567890abcdef` in `.env.production` / `.env.development`; the launcher reads the file that matches the selected `--mode`.
-- The local scaffold defaults `TARO_APP_API_ORIGIN` to `http://localhost:8080` in `.env.production` so the simulator can talk to a local backend during `build:weapp`.
-- In `.env.development`, `TARO_APP_BASE_API=/dev-api` is kept for H5 proxy use, while `TARO_APP_MINI_BASE_API=` keeps the mini-program direct backend URL as `http://localhost:8080/<api>` instead of `http://localhost:8080/dev-api/<api>`.
-- For automated smoke login (no manual captcha), start backend with temporary captcha override:
-  - `mvn -pl infoq-admin spring-boot:run -Dspring-boot.run.arguments=--captcha.enable=false`
-  - or `java -jar infoq-admin/target/infoq-admin.jar --captcha.enable=false`
-- When `TARO_APP_API_ORIGIN` points to `localhost` or `127.0.0.1`, local debugging still requires legal-domain checks to be disabled; the launcher does this automatically unless `WECHAT_DEVTOOLS_URL_CHECK=true`.
-- Replace `TARO_APP_API_ORIGIN` with your real accessible backend origin before real-device debugging or deployment, and keep the WeChat legal request domain list in sync.
-- `localhost` and `127.0.0.1` are not valid mini-program request domains for real-device or released use.
-- The AppID must be a real mini-program AppID that is valid for the current WeChat DevTools login; otherwise the CLI will report `invalid appid`.
-- If WeChat DevTools is installed in a non-standard location, set `WECHAT_DEVTOOLS_CLI` to the full CLI path before running the script.
+### WeChat DevTools 与 e2e 前置
+
+- `build-open:weapp*` 和 `tests/e2e/weapp/*` 都依赖真实的 WeChat DevTools CLI；找不到 CLI 时会显式失败。非标准安装路径需要设置 `WECHAT_DEVTOOLS_CLI`。
+- `script/build-open-wechat-devtools.mjs` 支持 `--appid <wx...>`、shell 里的 `TARO_APP_ID`，或工作区 `.env.production` / `.env.development` 里的 `TARO_APP_ID`；`touristappid` 会被脚本直接拒绝。
+- `WECHAT_DEVTOOLS_URL_CHECK` 默认等价于关闭合法域名校验；脚本会同步补丁到 `dist/project.config.json`、`dist/project.private.config.json` 以及本机 DevTools 项目设置。
+- `.env.development` 当前保留 `TARO_APP_BASE_API=/dev-api` 给 H5 代理，同时把 `TARO_APP_MINI_BASE_API` 留空，让小程序直连 `TARO_APP_API_ORIGIN`。
+- e2e 关键环境变量集中在 [`tests/e2e/weapp/config.mjs`](./tests/e2e/weapp/config.mjs)：`WEAPP_E2E_TOKEN`、`WEAPP_E2E_AUTO_LOGIN*`、`WEAPP_E2E_KEEP_EXISTING_SESSION`、`WEAPP_E2E_BASE_URL`、`WEAPP_E2E_API_ORIGIN`、`WEAPP_E2E_MINI_BASE_API`、`WEAPP_E2E_CLIENT_ID`、`WEAPP_E2E_RSA_PUBLIC_KEY`、`WEAPP_E2E_REPORT*`、`WEAPP_E2E_EXTRA_ROUTES`、`WEAPP_E2E_FAIL_ON_CONSOLE_ERROR`。
+- 当前 `pnpm install` 还会应用本地补丁 `patches/jsencrypt@3.5.4.patch`，因此排查加密或构建差异时不能忽略 `patches/`。
+
+### 显式失败规则
+
+- 缺少 `dist/project.config.json`、不支持的 suite / CLI 参数、或 DevTools runtime 抛出 `console.error` / exception 时，runner 默认直接失败。
+- 当 `WEAPP_E2E_TOKEN` 已注入但受保护路由仍回退到公开入口时，e2e 会把它视为鉴权失败而不是容忍 fallback。
+- 小程序请求域名、本地 `TARO_APP_API_ORIGIN` / `TARO_APP_MINI_BASE_API` 与自动登录参数不完整时，相关脚本会给出显式配置错误，不会静默跳过。
+
+## 当前实现提醒
+
+- `build-open:weapp*` 依赖真实的 AppID；`touristappid` 只是占位值，不能作为正式启动参数。
+- 小程序请求域名校验、本地 `TARO_APP_API_ORIGIN` / `TARO_APP_MINI_BASE_API` 以及 e2e 自动登录细节，仍以 `.env.*`、`package.json` 和 `tests/e2e/weapp/*` 当前实现为准。
+- 小程序端错误文案禁止退化成 `[object Object]`；相关归一化逻辑在 `src/api/request.ts`。

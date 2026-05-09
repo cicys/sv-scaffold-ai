@@ -3,9 +3,14 @@
 |Scope:本文件适用于 `infoq-scaffold-backend` 及其子目录，用于把根规则收窄到 backend 语境。
 |Stack:Spring Boot 3.5.x|JDK 17|Maven multi-module|MyBatis-Plus|Sa-Token
 |Workspace Layout:infoq-admin|infoq-modules/infoq-system|infoq-plugin:*|infoq-core:{infoq-core-bom,infoq-core-common,infoq-core-data}
+|Backend Docs:infoq-scaffold-backend:{README.md,doc/README.md,doc/architecture.md,doc/data-flow.md}
+|Backend Module Docs:infoq-scaffold-backend:{infoq-admin/README.md,infoq-core/README.md,infoq-modules/README.md,infoq-plugin/README.md}
+|Doc Read Order:先读 `infoq-scaffold-backend/README.md` 获取模块导航、配置分层与核心入口。|再读 `infoq-scaffold-backend/doc/README.md` 获取 backend 文档导航与主题下钻路径。|再读 `infoq-scaffold-backend/doc/architecture.md` 获取模块依赖、自动配置、安全与监控切入点。|最后读 `infoq-scaffold-backend/doc/data-flow.md` 获取登录、菜单路由、用户 CRUD、日志与监控数据流。|涉及 backend 架构、配置、登录、权限、Redis、Quartz、监控判断前优先阅读这些文档。
+|Module Doc Drill-Down:涉及启动与 profile 先读 `infoq-scaffold-backend/infoq-admin/README.md`。|涉及公共类型、实体、Mapper 与 XML 先读 `infoq-scaffold-backend/infoq-core/README.md` 再下钻叶子模块。|涉及系统业务接口、runner、listener、monitor 先读 `infoq-scaffold-backend/infoq-modules/README.md`。|涉及基础设施、自动装配、Redis、Sa-Token、Web、安全、Quartz、SSE、WebSocket、OSS、Excel 等先读 `infoq-scaffold-backend/infoq-plugin/README.md`。
+|Module Doc Sync Gate:仅当改动影响模块职责、入口、对外接口、依赖方向、关键数据流、关键配置、自动装配、SQL/持久化语义、现有日志/监控切入点时，同步更新受影响叶子模块文档、直接父模块聚合文档，以及必要的 backend 顶层文档。|纯内部重构、注释、格式化、测试补充或不改变语义的命名微调，不要求层层同步。|交付前检查 backend 文档是否与源码漂移。
 |Package And Formatting:Java package 按 `cc.infoq.{module}.{layer}` 组织。|backend `.editorconfig` 使用 4 spaces。|Java、YAML、SQL fixtures、resource files 保持 UTF-8。
 |Redisson OSS Policy:backend 仅允许使用 Redisson 开源版兼容 API。|禁止调用 `getLocalCachedMapCache`、依赖 `keepAliveTime` 的 `RRateLimiter` 重载等 PRO-only 能力。|涉及缓存、限流、Sa-Token 或登录链路的修复必须补 OSS 兼容测试与运行态校验。
-|Commands:build=cd infoq-scaffold-backend && mvn clean package -P dev|run=cd infoq-scaffold-backend && mvn spring-boot:run -pl infoq-admin|test=cd infoq-scaffold-backend && mvn -pl infoq-modules/infoq-system -am -DskipTests=false test|test:all=cd infoq-scaffold-backend && mvn -DskipTests=false test
+|Commands:build=cd infoq-scaffold-backend && mvn clean package -P dev|run=cd infoq-scaffold-backend && mvn clean install -DskipTests && java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local|test=cd infoq-scaffold-backend && mvn -pl infoq-modules/infoq-system -am -DskipTests=false test|test:all=cd infoq-scaffold-backend && mvn -DskipTests=false test
 |Runtime Secrets:运行或部署保持现有仓库默认密码。
 |OpenSpec Routing:分级执行。|L3(强制):backend 新功能、API 契约变更、跨工作区交付，编码前先创建或定位 `openspec/changes/<change-id>/`。|L2(Lite):单 backend 行为变更且不改 API 契约，至少维护 `proposal.md`+`tasks.md`。|L1(可豁免):单 backend 小修复且不改契约、改动范围小可不建 OpenSpec，但必须先写 acceptance contract。|不确定分级时默认 L3。|OpenSpec 文档正文默认中文，路径名称/命令/文件名保持英文原样。|scope、verification、rollback notes 以 change artifacts 或 acceptance contract 为准。
 |Testing Boundary:优先在 `infoq-modules/infoq-system/src/test/java`、`infoq-plugin/**/src/test/java`、`infoq-core/**/src/test/java` 下写有针对性的 JUnit 5 测试。|默认使用 `@Tag("dev")` 匹配 Surefire groups。|Mapper default methods 可用 unit tests；纯 SQL 或 XML mapper methods 归入 mapper XML integration tests。

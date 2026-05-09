@@ -4,9 +4,9 @@
 
 # InfoQ-Scaffold-AI
 
-> 一个以 AI 为主力研发者的全栈工程脚手架。仓库通过 `AGENTS.md` 约束协作规则，通过 `.agents/skills` 固化自动化 SOP，并以 `OpenSpec` 管理长期规格与变更，将能力落到 Spring Boot 3 后端、Vue/React 管理端、Vue/React 小程序端、脚本、SQL、MCP 与文档工作区中。社区：[Linux DO](https://linux.do)
+> 一个以 AI 为主力研发者的全栈工程脚手架。仓库通过 `AGENTS.md` 约束协作规则，通过 `.codex/skills` 固化自动化 SOP，并以 `OpenSpec` 管理长期规格与变更，将能力落到 Spring Boot 3 后端、Vue/React 管理端、Vue/React 小程序端、脚本、SQL、MCP 与文档工作区中。社区：[Linux DO](https://linux.do)
 
-![Version](https://img.shields.io/badge/Version-2.1.3-f66a39)
+![Version](https://img.shields.io/badge/Version-2.1.4-f66a39)
 ![JDK](https://img.shields.io/badge/JDK-17-1677FF)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-6DB33F)
 ![Vue](https://img.shields.io/badge/Vue-3.5.30-42B883)
@@ -50,7 +50,7 @@
 ```text
 infoq-scaffold-ai
 ├── AGENTS.md
-├── .agents/skills
+├── .codex/skills
 ├── .codex/config.toml
 ├── openspec
 ├── infoq-scaffold-backend
@@ -72,7 +72,7 @@ infoq-scaffold-ai
 
 | 维度 | 技术栈 |
 | --- | --- |
-| AI 协作层 | Codex、`AGENTS.md`、`.agents/skills`、`OpenSpec`、`.codex/config.toml` |
+| AI 协作层 | Codex、`AGENTS.md`、`.codex/skills`、`OpenSpec`、`.codex/config.toml` |
 | 后端 | Spring Boot `3.5.10`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
 | Vue 管理端 | Vue `3.5.30`、TypeScript、Vite `6.4.1`、Element Plus `2.11.9`、Vitest |
 | React 管理端 | React `19.2.4`、TypeScript、Vite `7.3.1`、Ant Design `6.3.3`、React Router `7.13.1`、Vitest |
@@ -93,7 +93,7 @@ infoq-scaffold-ai
 - React 小程序规则：[`infoq-scaffold-frontend-weapp-react/AGENTS.md`](./infoq-scaffold-frontend-weapp-react/AGENTS.md)
 - 文档站规则：[`infoq-scaffold-docs/AGENTS.md`](./infoq-scaffold-docs/AGENTS.md)
 
-### 2. `.agents/skills`
+### 2. `.codex/skills`
 
 当前仓库的 skill 结构遵循两条规则：
 
@@ -109,16 +109,17 @@ infoq-scaffold-ai
 - Vue 家族单测：`infoq-vue-unit-test-patterns`
 - 后端单测与回归补测：`infoq-backend-unit-test-patterns`
 - 后端冒烟、双机集群 smoke 与登录校验：`infoq-backend-smoke-test`、`infoq-login-success-check`
-- 仓库定位与索引刷新：`infoq-codebase-index`
-- OpenSpec 与项目参考：`infoq-openspec-delivery`、`infoq-project-reference`
+- OpenSpec 与项目参考：`infoq-openspec-delivery`（`init_change_dir.mjs` + `openspec_check.mjs`）、`infoq-project-reference`
+
+其中浏览器自动化默认路径已经收敛为“仓库脚本 + skill 内本地 Playwright 依赖”。`playwright` MCP 只用于临时交互探索，`chrome-devtools` MCP 只用于 Network / Console / Performance 深度诊断。
 
 React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/weapp` 区分客户端，但不再保留共享底座型 skill 目录。
 
 详见：
 
-- [`doc/skills-guide.md`](./doc/skills-guide.md)
-- [`doc/agents-guide.md`](./doc/agents-guide.md)
-- [`doc/subagents-guide.md`](./doc/subagents-guide.md)
+- [`doc/collaboration/skills-guide.md`](./doc/collaboration/skills-guide.md)
+- [`doc/collaboration/agents-guide.md`](./doc/collaboration/agents-guide.md)
+- [`doc/collaboration/subagents-guide.md`](./doc/collaboration/subagents-guide.md)
 
 ### 3. `OpenSpec`
 
@@ -129,6 +130,26 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 - 活跃变更与归档：[`openspec/changes/README.md`](./openspec/changes/README.md)
 
 默认的 OpenSpec 交付入口是 `infoq-openspec-delivery`。新的功能、行为变更或跨工作区任务，先在 `openspec/changes/<change-id>/` 建立或定位 change，再开始实现。
+
+当前首批 stable specs 已覆盖：
+
+- `auth`
+- `user-management`
+- `menu-permission`
+- `notification`
+- `file-storage`
+- `plugin-governance`
+- `admin-routing`
+- `platform-governance`
+
+当前最小 OpenSpec 闭环命令：
+
+```bash
+node .codex/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs <change-id>
+node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>
+```
+
+如果本次变更属于 repo-level 或高风险治理重构，还应同时在 `doc/plan/YYYY-MM-DD-topic-plan.md` 中保留执行计划。
 
 当用户明确要求 subagents 或 multi-expert execution 时，repo 级 custom agents 的真值放在 `.codex/agents/`，当前只保留 4 个角色：
 
@@ -151,12 +172,12 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 
 可选但默认禁用：
 
-- `mysql`（只读；通过 `.codex/scripts/start_mysql_mcp.sh` 启动，并从 backend `application-local.yml` 派生连接配置）
-- `redis`（只读；通过 `.codex/scripts/start_redis_mcp.sh` 启动，并从 backend `application-local.yml` 派生连接配置）
+- `mysql`（只读；通过 `node .codex/scripts/start_mysql_mcp.mjs` 启动，默认按 `application-local.yml -> application-dev.yml` 顺序读取 backend 配置，并允许用环境变量覆盖；共享文档示例统一使用本地依赖 `127.0.0.1:3306/infoq`）
+- `redis`（只读；通过 `node .codex/scripts/start_redis_mcp.mjs` 启动，默认按 `application-local.yml -> application-dev.yml` 顺序读取 backend 配置，并允许用环境变量覆盖；共享文档示例统一使用本地依赖 `127.0.0.1:6379/0`）
 
 详见：
 
-- [`doc/mcp-servers.md`](./doc/mcp-servers.md)
+- [`doc/collaboration/mcp-servers.md`](./doc/collaboration/mcp-servers.md)
 
 ## 环境要求
 
@@ -175,10 +196,14 @@ React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/we
 
 ### 1. 后端
 
+运行前先确认 `java -version` 与 `mvn -version` 都指向 JDK 17；若当前终端落在旧版 JDK，先覆盖 `JAVA_HOME` / `PATH` 后再执行：
+
 ```bash
 cd infoq-scaffold-backend
-mvn spring-boot:run -pl infoq-admin
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
+如需继续执行 React / Vue admin 的受保护路由浏览器探测，临时追加 `--captcha.enable=false`。
 
 默认本地访问：
 
@@ -206,15 +231,15 @@ pnpm run dev
 如果要通过 skill 启动后端 + 管理端联调：
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.sh
-bash .agents/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.sh
+node .codex/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
+node .codex/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.mjs
 ```
 
 停止对应 skill 启动的联调进程：
 
 ```bash
-bash .agents/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.sh
-bash .agents/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.sh
+node .codex/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.mjs
+node .codex/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.mjs
 ```
 
 ### 3. 小程序端
@@ -312,9 +337,9 @@ bash script/bin/deploy-frontend.sh deploy
 详见：
 
 - [`sql/infoq_scaffold_2.0.0.sql`](./sql/infoq_scaffold_2.0.0.sql)
-- [`doc/deploy-prerequisites.md`](./doc/deploy-prerequisites.md)
-- [`doc/manual-deploy.md`](./doc/manual-deploy.md)
-- [`doc/docker-compose-deploy.md`](./doc/docker-compose-deploy.md)
+- [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md)
+- [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md)
+- [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md)
 
 ## 验证建议
 
@@ -329,9 +354,19 @@ bash script/bin/deploy-frontend.sh deploy
 
 如果改动影响浏览器运行态、登录、路由守卫、页面渲染或小程序 DevTools 打开流程，建议额外使用对应的 React 或 Vue 运行态 verification skill。
 
+若要直接执行最小浏览器探测，可使用：
+
+```bash
+pnpm --dir .codex/skills/infoq-browser-automation/scripts install
+pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli flow --url "https://example.com" --wait-for-text "Example Domain"
+```
+
+首次运行缺少浏览器二进制时，先执行 `pnpm --dir .codex/skills/infoq-browser-automation/scripts exec playwright install chromium`。
+浏览器 skill 不再维护 `.sh` / `.ps1` 包装器，统一直接调用仓库内 CLI；仓库内临时文件统一写入 `doc/tmp/`。
+
 ## 项目能力概览
 
-- AI 协作治理：根级 / 工作区级 `AGENTS.md` 与 `.agents/skills`
+- AI 协作治理：根级 / 工作区级 `AGENTS.md` 与 `.codex/skills`
 - 研发自动化：后端冒烟、登录校验、浏览器验证、小程序 DevTools 打开、版本升级（含文档站同步）
 - 后端业务基线：认证授权、组织权限、字典参数、通知客户端、OSS、日志监控、服务监控与 Hikari 连接池监控
 - 多前端交付：Vue/React 管理端 + Vue/React 小程序端
@@ -342,17 +377,17 @@ bash script/bin/deploy-frontend.sh deploy
 - 项目文档中心：[`doc/README.md`](./doc/README.md)
 - 文档站展示层：[`infoq-scaffold-docs/README.md`](./infoq-scaffold-docs/README.md)
 - 协作体系：
-  - [`doc/agents-guide.md`](./doc/agents-guide.md)
-  - [`doc/skills-guide.md`](./doc/skills-guide.md)
-  - [`doc/subagents-guide.md`](./doc/subagents-guide.md)
+  - [`doc/collaboration/agents-guide.md`](./doc/collaboration/agents-guide.md)
+  - [`doc/collaboration/skills-guide.md`](./doc/collaboration/skills-guide.md)
+  - [`doc/collaboration/subagents-guide.md`](./doc/collaboration/subagents-guide.md)
 - MCP：
-  - [`doc/mcp-servers.md`](./doc/mcp-servers.md)
+  - [`doc/collaboration/mcp-servers.md`](./doc/collaboration/mcp-servers.md)
 - 部署交付：
-  - [`doc/deploy-prerequisites.md`](./doc/deploy-prerequisites.md)
-  - [`doc/manual-deploy.md`](./doc/manual-deploy.md)
-  - [`doc/docker-compose-deploy.md`](./doc/docker-compose-deploy.md)
+  - [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md)
+  - [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md)
+  - [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md)
 - 扩展治理：
-  - [`doc/plugin-catalog.md`](./doc/plugin-catalog.md)
+  - [`doc/collaboration/plugin-catalog.md`](./doc/collaboration/plugin-catalog.md)
 
 ## Admin后台演示图例
 

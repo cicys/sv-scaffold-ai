@@ -32,5 +32,9 @@ description: AGENTS、OpenSpec、skills、MCP 和文档治理说明。
     <strong>插件目录与开关策略</strong>
     <p>插件分类、软开关矩阵和依赖治理方式。</p>
   </a>
+  <a class="iq-link-card" href="/collaboration/module-doc-governance">
+    <strong>模块文档治理</strong>
+    <p>根文档、工作区总览、近代码文档与 AGENTS 路由的分层同步规则。</p>
+  </a>
 </div>
 

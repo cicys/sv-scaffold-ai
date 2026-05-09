@@ -5,7 +5,7 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/backend-handbook.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/backend-handbook.md)
+> 内容真值源：[`doc/backend/handbook.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/backend/handbook.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # 后端手册
@@ -40,6 +40,13 @@ outline: [2, 3]
 - `dev`：默认启用。
 - `local`：显式执行 `-Plocal` 时启用。
 - `prod`：部署和打包时使用。
+
+`application-local.yml` 属于开发者本地配置，允许按个人调试环境指向本地或远端依赖；自动化脚本默认按 `application-local.yml -> application-dev.yml` 顺序解析配置。共享文档、示例命令和 skill 不得暴露个人测试环境的私有地址、账号或密码。
+
+共享示例的推荐基线保持为本地可复现环境：
+
+- MySQL：`127.0.0.1:3306/infoq`
+- Redis：`127.0.0.1:6379/0`
 
 ## 3. 认证与登录链路
 
@@ -206,8 +213,10 @@ outline: [2, 3]
 
 ```bash
 cd infoq-scaffold-backend
-mvn spring-boot:run -pl infoq-admin
-mvn spring-boot:run -pl infoq-admin -Plocal
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
 mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
 mvn clean package -P prod -pl infoq-admin -am
 ```

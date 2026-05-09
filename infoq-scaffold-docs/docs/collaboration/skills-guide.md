@@ -5,139 +5,118 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/skills-guide.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/skills-guide.md)
+> 内容真值源：[`doc/collaboration/skills-guide.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/collaboration/skills-guide.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # Skills 指南
 
-## 1. 什么是 `.agents/skills`
+`.codex/skills` 是本仓库的能力库。
+它不是提示词堆积目录，而是把稳定、可复用的研发动作沉淀成仓库内 SOP。
 
-`.agents/skills` 是本仓库的能力库。它不是“提示词仓库”，而是把稳定、可复用的研发动作沉淀成可执行 SOP，让 Codex 在真实仓库里可重复地完成同一类工作。
+## 1. 设计原则
 
-在这个项目里，skill 主要承担三件事：
+当前仓库级 skill 遵循这些硬约束：
 
-- 定义某类任务的默认工作流
-- 把脚本、reference、assets 和约束组织在一起
-- 让 `AGENTS.md` 可以用精确的 skill 名称做强制路由
+1. 每个 skill 只解决一类工作。
+2. 除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀。
+3. `.codex/skills` 下不保留共享底座型、README-only 或 helper-only skill 目录。
+4. React 家族和 Vue 家族技能允许通过 `references/admin` 与 `references/weapp` 区分客户端，但仍必须保持单一职责。
+5. skill 的主执行入口必须兼容 Windows / macOS / Linux；统一使用 repo-owned Node CLI 或 `.mjs`，不再保留 `.sh` / `.ps1` / `.cmd` 作为 skill 入口。若内部仍需 Python 等实现，必须由跨平台 Node 入口调度。
 
-## 2. 当前 skill 设计原则
+## 2. 一个 skill 通常包含什么
 
-当前仓库的 skill 结构有四条硬约束：
-
-1. 每个 skill 只解决一个工作
-2. 除 `skill-creator` 外，仓库级 skill 全部使用 `infoq-` 前缀
-3. `.agents/skills` 下不保留共享底座型、仅 README 型、或 helper-only skill 目录
-4. React 家族和 Vue 家族 skill 允许通过 `references/admin` 与 `references/weapp` 区分客户端，但仍然必须保持单一职责
-
-这意味着：
-
-- React 家族运行态验证统一进 `infoq-react-runtime-verification`
-- React 家族单测统一进 `infoq-react-unit-test-patterns`
-- Vue 家族运行态验证统一进 `infoq-vue-runtime-verification`
-- Vue 家族单测统一进 `infoq-vue-unit-test-patterns`
-
-而不是拆成 admin skill、weapp skill、run-dev-stack skill、shared-base skill 四五层。
-
-## 3. 一个 skill 通常包含什么
-
-典型目录结构如下：
-
-| 目录/文件 | 作用 |
+| 路径 | 作用 |
 | --- | --- |
-| `SKILL.md` | skill 入口说明、触发条件、默认步骤 |
-| `agents/openai.yaml` | UI 元数据，供 skill 列表与快捷调用使用 |
-| `scripts/` | 可直接运行的自动化脚本 |
+| `SKILL.md` | 入口说明、触发条件、默认步骤 |
+| `agents/openai.yaml` | UI 元数据 |
+| `scripts/` | 可直接运行的脚本或 CLI |
 | `references/` | 规则、清单、上下文材料 |
-| `assets/` | 模板、图标、样板文件等输出资源 |
-| `agents/` | skill 的额外 agent 配置目录 |
+| `assets/` | 模板、图标或辅助资源 |
 
-如果一个目录没有 `SKILL.md`，它就不应该出现在仓库级 skill 列表里。
-除 `SKILL.md`、`agents/`、`scripts/`、`references/`、`assets/` 外，不应再新增顶层辅助文件。
+没有 `SKILL.md` 的目录，不应被当作仓库级 skill。
 
-## 4. skill 是如何被触发的
-
-本仓库里，skill 触发主要有三种来源：
-
-1. 用户明确点名某个 skill
-2. `AGENTS.md` 里的 `Skill Trigger` 命中语义
-3. Codex 先读 `AGENTS.md`，再根据任务类型主动选择最匹配的 skill
-
-因此 skill 的关键不只是脚本，还有：
-
-- `SKILL.md` 的 `description` 是否写清触发场景
-- `AGENTS.md` 是否把它路由到了正确工作区
-- `README`、`doc/*.md` 是否与 skill 实际路径保持一致
-
-如果某个 skill 明确依赖仓库级 MCP，还要再检查一层：
-
-- skill 文档里引用的 MCP server 名称、工具能力、默认启用状态、审批要求，必须和 `.codex/config.toml`、`doc/mcp-servers.md` 保持一致
-- 如果只是 skill 需要某个 MCP，但 `.codex/config.toml` 并没有启用或暴露对应工具，应该先修真值配置和 MCP 文档，而不是只在 `SKILL.md` 里单独写一套
-
-## 5. 当前仓库的关键 skills
+## 3. 当前关键 skills
 
 | Skill | 职责 | 典型场景 |
 | --- | --- | --- |
-| `infoq-browser-automation` | 通用浏览器自动化 | 页面打开、点击、截图、抓取、控制台检查 |
-| `infoq-react-runtime-verification` | React 家族运行态验证 | React admin 登录、路由校验、截图、React weapp DevTools 打开与 smoke |
-| `infoq-vue-runtime-verification` | Vue 家族运行态验证 | Vue admin 登录、路由校验、截图、Vue weapp DevTools 打开与 smoke |
-| `infoq-react-unit-test-patterns` | React 家族单测 | React admin / weapp React 单测、coverage、回归补测 |
-| `infoq-vue-unit-test-patterns` | Vue 家族单测 | Vue admin / weapp Vue 单测、coverage、回归补测 |
-| `infoq-backend-unit-test-patterns` | 后端单测 | service/controller/mapper/plugin/aspect 单测、Mapper XML 集成测试、Redisson OSS 回归补测 |
-| `infoq-backend-smoke-test` | 后端冒烟测试 | 单节点 HTTP smoke、双节点 WebSocket 集群 smoke、登录、菜单、导出、受保护接口检查 |
+| `infoq-browser-automation` | 通用浏览器自动化 | `playwright-cli` 页面流转、token 注入、截图、console 证据 |
+| `infoq-react-runtime-verification` | React 家族运行态验证 | React admin 登录、路由校验、weapp DevTools / smoke |
+| `infoq-vue-runtime-verification` | Vue 家族运行态验证 | Vue admin 登录、路由校验、weapp DevTools / smoke |
+| `infoq-react-unit-test-patterns` | React 家族单测 | React admin / weapp 单测、coverage、回归补测 |
+| `infoq-vue-unit-test-patterns` | Vue 家族单测 | Vue admin / weapp 单测、coverage、回归补测 |
+| `infoq-backend-unit-test-patterns` | backend 单测 | service / controller / mapper / plugin / aspect |
+| `infoq-backend-smoke-test` | backend 冒烟测试 | HTTP smoke、登录、菜单、导出、受保护接口 |
 | `infoq-login-success-check` | 登录链路验证 | `/auth/login`、token、受保护接口 |
-| `infoq-codebase-index` | 仓库定位与索引刷新 | 查类、找文件、同步索引 |
-| `infoq-openspec-delivery` | OpenSpec 交付编排 | 默认主线程编排；用户显式要求 subagents 时转到 `.codex/agents/` 中的 4 角色闭环 |
-| `infoq-plugin-introducer` | 插件接入与治理 | 新增插件、插件开关化 |
-| `infoq-project-reference` | 项目静态参考 | 目录、入口、命令、命名规范 |
-| `infoq-version-bump` | 版本号统一变更 | 同步 backend/frontend/docs package、docker、README、根 doc 与 docs 站点镜像版本号 |
-| `infoq-ant-design-component-reference` | Ant Design 组件参考 | React 页面组件选择与 API 校验 |
-| `infoq-element-plus-component-reference` | Element Plus 组件参考 | Vue 页面组件选择与 API 校验 |
-| `infoq-agents-md-compress` | AGENTS 压缩与维护 | 创建、压缩、更新 `AGENTS.md` |
-| `infoq-ui-ux-three-phase-protocol` | 大型 UI 审批流 | ASCII 线框、静态 demo、正式实现与运行态比对 |
-| `skill-creator` | skill 创建与演进 | 新增 skill、改 skill、评估触发语义 |
+| `infoq-openspec-delivery` | OpenSpec 交付编排 | L3 / L2 变更、跨工作区交付、stable spec 回填、`openspec-check` |
+| `infoq-project-reference` | 仓库静态参考 | 目录、入口、命令、规范 |
 
-## 6. 为什么当前不再保留共享底座 skill
+## 4. 浏览器 skill 的当前真值
 
-旧结构里最容易出问题的是“公共底座 skill + 多个 wrapper skill”。问题有三个：
+`infoq-browser-automation` 的默认主路径已经切换为仓库内跨平台 CLI：
 
-- 用户和 `AGENTS.md` 很难分辨真正该触发哪个 skill
-- 文档和脚本容易断链，wrapper 改名后底座路径常被漏改
-- skill 的职责边界被稀释，最后变成“文档存在、脚本不可用”
+- `pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli ...`
+- `pnpm --dir .codex/skills/infoq-browser-automation/scripts run chrome-devtools-cli ...`
 
-因此当前仓库的策略是：
+说明：
 
-- 通用浏览器工作保留为独立 skill：`infoq-browser-automation`
-- React 家族和 Vue 家族在各自 skill 内部通过 `references/admin`、`references/weapp` 区分客户端
-- 不再额外拆一个 repo 内共享底座 skill
+- 这两个 CLI 是 repo-owned 入口，适用于 Windows / macOS / Linux。
+- 为兼容不同平台和 `pnpm` 参数透传差异，也接受 `run <cli-name> -- ...` 形式，但默认推荐无 `--` 写法。
+- 不再维护平台包装脚本，直接调用仓库内 CLI。
+- `playwright` MCP 只用于临时交互探索。
+- `chrome-devtools` MCP 只用于深度诊断。
 
-## 7. 如何新增一个 skill
+## 5. skill 如何被触发
 
-建议按下面顺序做：
+主要来源有三类：
 
-1. 先说清这个 skill 只负责什么工作
-2. 写 `SKILL.md`，把触发条件和默认流程写清楚
-3. 能脚本化的部分放到 `scripts/`
-4. 长说明、矩阵、清单放到 `references/`
-5. 把 skill 路由接到相关 `AGENTS.md`
-6. 如果 skill 使用仓库级 MCP，先核对 `.codex/config.toml` 和 `doc/mcp-servers.md` 是否已经准确覆盖
-7. 同步 `README.md` 和相关 `doc/*.md`
+1. 用户显式点名 skill。
+2. `AGENTS.md` 的 `Skill Trigger` 命中语义。
+3. Codex 读取规则后，按任务类型主动选择最合适的 skill。
 
-如果新增 skill 会导致“再多一个共享底座目录”，先停下来重做设计。
+因此 skill 的有效性不只取决于脚本，还取决于：
 
-## 8. 什么时候不应该新增 skill
+- `SKILL.md` 是否描述清楚触发场景。
+- `AGENTS.md` 是否正确路由。
+- `README.md` 与 `doc/*.md` 是否与 skill 实际入口一致。
 
-下面这些情况通常不值得单独沉淀 skill：
+## 6. 何时不该新建 skill
+
+以下情况通常不值得单独沉淀为 skill：
 
 - 只会执行一次的临时任务
-- 与当前项目几乎没有复用价值的个性化流程
-- 只是补一段提示，而没有明确输入、动作和产物
-- 本质上只是另一个 skill 的 `references/<variant>`，没有形成新的单一职责
+- 没有复用价值的个人化流程
+- 只有说明、没有输入输出和动作闭环的“文档片段”
+- 本质上只是现有 skill 的一个 `references/<variant>`
 
-## 9. 相关入口
+## 7. 新增或修改 skill 的同步要求
 
-- 顶层规则：`/AGENTS.md`
-- repo 级 custom agents：`/.codex/agents/`
-- AGENTS 指南：`./agents-guide.md`
-- subagents 使用指南：`./subagents-guide.md`
-- skill 创建器：`../.agents/skills/skill-creator/SKILL.md`
-- 项目静态参考：`../.agents/skills/infoq-project-reference/references/project-reference.md`
+当新增或更新 skill 时，通常还要同步检查：
+
+1. `AGENTS.md` 是否需要新增或调整路由。
+2. `README.md` 与 `doc/*.md` 是否仍然准确。
+3. 如果 skill 依赖仓库级 MCP，`.codex/config.toml` 与 `doc/collaboration/mcp-servers.md` 是否仍然一致。
+4. 若变更了命令、环境变量、入口路径或默认行为，是否已执行 docs 站点同步。
+
+`infoq-openspec-delivery` 当前最小命令集合是：
+
+```bash
+node .codex/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs <change-id>
+node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>
+```
+
+## 8. `.codex/lib` 共享运行时边界
+
+`.codex/lib` 不是 skill 目录，也不对外承诺独立 CLI。
+它是 repo-owned skills / scripts 的共享运行时层，当前只保留 3 个跨 skill 复用模块：
+
+| 路径 | 当前职责 | 当前主要消费者 |
+| --- | --- | --- |
+| `.codex/lib/skill_runtime.mjs` | repo root 解析、`doc/tmp/` 路径、命令执行、进程管理、HTTP/文件辅助等通用运行时能力 | 多数 repo-level skills 与脚本 |
+| `.codex/lib/admin_dev_stack.mjs` | 本地 admin backend + frontend 栈的启动、停止、状态文件与日志管理 | `infoq-react-runtime-verification`、`infoq-vue-runtime-verification` 的 `start_admin_dev_stack.mjs` / `stop_admin_dev_stack.mjs` |
+| `.codex/lib/weapp_smoke.mjs` | weapp 构建、backend 健康探测、WeChat DevTools smoke runner 编排 | `infoq-react-runtime-verification`、`infoq-vue-runtime-verification` 的 `run_weapp_smoke.mjs` |
+
+维护约束：
+
+- 修改 `.codex/lib/*` 的 CLI 参数、默认端口、日志落点或 env 语义时，必须同步检查对应 skill 的 `SKILL.md`、`references/*.md`、`README.md` 与相关 `doc/*.md`。
+- `.codex/lib` 只沉淀跨 skill 复用的运行时能力，不把单个 skill 的私有流程提前抽成共享层。
+- 共享 helper 产生的状态文件、日志和一次性产物仍统一落在 `doc/tmp/`。

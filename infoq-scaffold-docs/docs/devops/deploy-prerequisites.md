@@ -5,7 +5,7 @@ outline: [2, 3]
 ---
 
 > [!TIP]
-> 内容真值源：[`doc/deploy-prerequisites.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/deploy-prerequisites.md)
+> 内容真值源：[`doc/devops/deploy-prerequisites.md`](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/doc/devops/deploy-prerequisites.md)
 > 本页由 `infoq-scaffold-docs/scripts/sync-from-root-doc.mjs` 自动同步生成；请优先修改根 `doc/` 后再重新同步。
 
 # 项目部署前准备

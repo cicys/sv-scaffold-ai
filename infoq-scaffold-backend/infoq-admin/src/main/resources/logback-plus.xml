@@ -2,7 +2,8 @@
 <configuration>
     <!-- 生产环境根据自己的环境设置路径 -->
     <!-- <property name="log.path" value="/infoq/server/logs"/>-->
-    <property name="log.path" value="./logs"/>
+    <!-- 默认按仓库约定写到根 logs/，容器等场景可通过 INFOQ_LOG_PATH 显式覆盖 -->
+    <property name="log.path" value="${INFOQ_LOG_PATH:-../logs}"/>
     <property name="console.log.pattern"
               value="%cyan(%d{yyyy-MM-dd HH:mm:ss}) %green([%thread]) %highlight(%-5level) %boldMagenta(%logger{36}%n) - %msg%n"/>
     <property name="log.pattern" value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"/>
