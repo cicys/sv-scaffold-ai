@@ -39,7 +39,7 @@
 1. `java -jar infoq-admin.jar` 或 `mvn spring-boot:run` 进入 `SysAdminApplication`。
 2. Spring Boot 加载 `application*.yml` 与 classpath 中各插件的自动装配入口。
 3. `scanBasePackages = "cc.infoq"` 让 `infoq-system` 控制器、服务、Mapper、插件配置全部进入同一应用上下文。
-4. 对外 HTTP、SSE、WebSocket、Quartz、Actuator 能力最终都通过这个模块打包后的应用暴露。
+4. 对外 HTTP、SSE、WebSocket、Quartz 与健康检查能力最终都通过这个模块打包后的应用暴露。
 
 ## 8. 扩展点
 
@@ -49,7 +49,7 @@
 ## 9. 日志 / 监控切入点
 
 - `logback-plus.xml` 是日志输出真值入口，默认文件日志目录是仓库根 `logs/`。
-- `application.yml` 里的 Actuator / Spring Boot Admin 相关配置会影响健康检查暴露方式。
+- `application*.yml` 里的 Web、SSE、WebSocket 与监控相关配置会影响健康检查暴露方式。
 - 具体监控接口实现仍在 `infoq-system` 与 `infoq-plugin-web` / `infoq-plugin-security`。
 
 ## 10. 已知边界

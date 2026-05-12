@@ -37,7 +37,7 @@
 
 ### 2.0 请求进入登录控制器之前
 
-当前默认配置里，`api-decrypt.enabled=true`，而 [AuthController](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/controller/login/AuthController.java) 的 `/auth/login`、`/auth/register` 都带 `@ApiEncrypt`。
+当前通用 [application.yml](../infoq-admin/src/main/resources/application.yml) 中 `api-decrypt.enabled=true`（参见 `architecture.md` §3.2），而 [AuthController](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/controller/login/AuthController.java) 的 `/auth/login`、`/auth/register` 都带 `@ApiEncrypt`。
 
 这意味着登录链路不是“浏览器直接把明文 JSON 交给控制器”，而是先经过 [CryptoFilter](../infoq-plugin/infoq-plugin-encrypt/src/main/java/cc/infoq/common/encrypt/filter/CryptoFilter.java)：
 
@@ -327,11 +327,10 @@ LoginInfoEvent
 
 这几条链路说明当前系统已经把“用户态后台管理”和“运行态可观测入口”放在同一个应用里。
 
-### 7.3 `/actuator/**`
+### 7.3 `/monitor/health`
 
-`SecurityConfig` 为 `/actuator/**` 单独加了 Basic 鉴权过滤器，账号密码来自 `spring.boot.admin.client.username/password` 配置。
-
-因此 actuator 不走普通 Sa-Token 登录态，而是走另一条更偏运维入口的认证路径。
+`HealthController` 提供轻量级健康检查接口 `/monitor/health`，当前直接返回 `"ok"`。
+`SecurityConfig` 在 Sa-Token 拦截器里显式排除了这个路径，因此它不依赖登录态，单独作为公开健康检查入口使用。
 
 ## 8. 当前可确认的可选通知链路
 

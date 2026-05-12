@@ -14,9 +14,11 @@
 - 对外控制器集中在 `infoq-system`，按目录分成 `controller/login`、`controller/system`、`controller/monitor` 三组。
 - 持久化主干是 MyBatis-Plus + Mapper XML，实体、VO、Mapper 与 XML 主要在 `infoq-core-data`。
 - 认证主干是 Sa-Token JWT，登录时会把 `clientId` 放入 token extra，后续请求再由安全过滤器做一致性校验。
-- 默认启用了 `api-decrypt.enabled=true`；带 `@ApiEncrypt` 的 `POST/PUT` 接口会先经过 `CryptoFilter`，缺少 `encrypt-key` 头时不会直接进入控制器。
 - Redis 参与验证码、登录失败计数、在线用户、限流、防重提交和若干缓存组。
-- 配置按 `application.yml + application-{dev,prod,local}.yml` 叠加；基础配置里 `sse.enabled=true`、`websocket.enabled=false`、`springdoc.api-docs.enabled=true`、`infoq.quartz.enabled=true`，而 `dev/prod/local` profile 会继续覆写数据源、Redis、Quartz 和 mail。
+- 配置按 `application.yml + application-{dev,prod,local}.yml` 叠加：
+  - `application.yml` 承载通用运行时行为配置，包括 Undertow、captcha、Sa-Token、`api-decrypt`、SpringDoc、SSE、WebSocket、`infoq.quartz`、MyBatis-Plus、Jackson、XSS、lock4j、security excludes 等。
+  - `application-dev.yml` 是默认激活 profile，主要补充/覆写 datasource、Redis、Redisson、Quartz 开发环境差异、`infoq.quartz.bootstrap` 和 mail。
+  - `application-prod.yml` 补充/覆写 datasource、Redis、Redisson、Quartz 生产环境差异、`infoq.quartz.bootstrap` 和 mail；`application-local.yml` 补充/覆写 datasource、Redis、Redisson、mail，但不重写 Quartz。
 
 ## 模块导航
 
@@ -76,5 +78,5 @@
 ## 当前实现提醒
 
 - 这里的“插件”是当前仓库内的模块化基础设施，不等于一定在运行时全量启用。
-- 对可选链路，本文档只记录代码里已经能直接确认的状态，例如现有 `dev/prod/local` profile 都将 `mail.enabled` 设为 `false`，基础 `application.yml` 则启用了 SSE 并默认关闭 WebSocket。
+- 对可选链路，本文档只记录代码里已经能直接确认的状态：`application-dev.yml`、`application-prod.yml`、`application-local.yml` 均显式设置 `mail.enabled=false`；`application.yml` 中 `sse.enabled=true`、`websocket.enabled=false`。
 - 如果你要改动登录、权限、Redis、Quartz、日志或 Mapper XML，建议先把上面两份文档看完再动手。

@@ -16,11 +16,11 @@ import cn.dev33.satoken.listener.SaTokenListener;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 
 /**
@@ -58,10 +58,11 @@ public class UserActionListener implements SaTokenListener {
         dto.setClientKey(resolveHeaderOrDefault(request, CLIENT_KEY_HEADER, (String) loginParameter.getExtra(LoginHelper.CLIENT_KEY)));
         dto.setDeviceType(resolveHeaderOrDefault(request, DEVICE_TYPE_HEADER, loginParameter.getDeviceType()));
         dto.setDeptName((String) loginParameter.getExtra(LoginHelper.DEPT_NAME_KEY));
-        if(loginParameter.getTimeout() == -1) {
+        long timeout = loginParameter.getTimeout();
+        if (timeout == -1L) {
             RedisUtils.setCacheObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue, dto);
         } else {
-            RedisUtils.setCacheObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue, dto, Duration.ofSeconds(loginParameter.getTimeout()));
+            RedisUtils.setCacheObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue, dto, Duration.ofSeconds(timeout));
         }
         // 记录登录日志
         LoginInfoEvent loginInfoEvent = new LoginInfoEvent();

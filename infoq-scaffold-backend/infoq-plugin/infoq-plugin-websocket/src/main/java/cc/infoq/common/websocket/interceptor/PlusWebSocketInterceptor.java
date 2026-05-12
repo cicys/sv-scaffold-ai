@@ -43,7 +43,13 @@ public class PlusWebSocketInterceptor implements HandshakeInterceptor {
             // 检查 header 与 param 里的 clientid 与 token 里的是否一致
             String headerCid = ServletUtils.getRequest().getHeader(LoginHelper.CLIENT_KEY);
             String paramCid = ServletUtils.getParameter(LoginHelper.CLIENT_KEY);
-            String clientId = StpUtil.getExtra(LoginHelper.CLIENT_KEY).toString();
+            Object clientIdExtra = StpUtil.getExtra(LoginHelper.CLIENT_KEY);
+            if (clientIdExtra == null || StringUtils.isBlank(clientIdExtra.toString())) {
+                throw NotLoginException.newInstance(StpUtil.getLoginType(),
+                    "-100", "Token 缺少 clientId，请重新登录",
+                    StpUtil.getTokenValue());
+            }
+            String clientId = clientIdExtra.toString();
             if (!StringUtils.equalsAny(clientId, headerCid, paramCid)) {
                 // token 无效
                 throw NotLoginException.newInstance(StpUtil.getLoginType(),

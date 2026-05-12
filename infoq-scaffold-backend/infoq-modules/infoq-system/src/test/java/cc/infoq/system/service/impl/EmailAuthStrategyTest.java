@@ -1,5 +1,7 @@
 package cc.infoq.system.service.impl;
 
+import cc.infoq.common.constant.GlobalConstants;
+import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.enums.LoginType;
 import cc.infoq.common.exception.user.UserException;
@@ -12,15 +14,10 @@ import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.SysLoginService;
 import cn.dev33.satoken.stp.StpUtil;
-import cc.infoq.common.constant.SystemConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -32,16 +29,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -128,6 +118,46 @@ class EmailAuthStrategyTest {
             assertEquals("pc", result.getClientId());
             assertEquals("client-key", loginUser.getClientKey());
             assertEquals("web", loginUser.getDeviceType());
+            redisUtils.verify(() -> RedisUtils.deleteObject(GlobalConstants.CAPTCHA_CODE_KEY + "a@b.com"));
+        }
+    }
+
+    @Test
+    @DisplayName("login: should keep global token timeout when client timeout is null")
+    void loginShouldKeepGlobalTokenTimeoutWhenClientTimeoutNull() {
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        SysUserVo user = new SysUserVo();
+        user.setEmail("a@b.com");
+        user.setUserName("admin");
+        user.setStatus(SystemConstants.NORMAL);
+        when(userMapper.selectVoOne(any())).thenReturn(user);
+
+        LoginUser loginUser = new LoginUser();
+        when(loginService.buildLoginUser(user)).thenReturn(loginUser);
+        doAnswer(invocation -> {
+            Supplier<?> supplier = invocation.getArgument(2);
+            assertEquals(Boolean.FALSE, supplier.get());
+            return null;
+        }).when(loginService).checkLogin(eq(LoginType.EMAIL), eq("admin"), any());
+
+        SysClientVo client = buildClient();
+        client.setTimeout(null);
+        client.setActiveTimeout(null);
+
+        try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class);
+             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+             MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
+            redisUtils.when(() -> RedisUtils.getCacheObject(anyString())).thenReturn("1234");
+            stpUtil.when(StpUtil::getTokenValue).thenReturn("email-token");
+            stpUtil.when(StpUtil::getTokenTimeout).thenReturn(3600L);
+
+            LoginVo result = strategy.login(emailBody("a@b.com", "1234"), client);
+
+            assertEquals("email-token", result.getAccessToken());
+            loginHelper.verify(() -> LoginHelper.login(eq(loginUser), argThat(model ->
+                "web".equals(model.getDeviceType())
+                    && model.getActiveTimeout() == null
+                    && "pc".equals(model.getExtra(LoginHelper.CLIENT_KEY)))));
         }
     }
 

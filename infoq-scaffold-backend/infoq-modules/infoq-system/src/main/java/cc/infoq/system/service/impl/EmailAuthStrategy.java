@@ -58,8 +58,7 @@ public class EmailAuthStrategy implements AuthStrategy {
         model.setDeviceType(client.getDeviceType());
         // 自定义分配 不同用户体系 不同 token 授权时间 不设置默认走全局 yml 配置
         // 例如: 后台用户30分钟过期 app用户1天过期
-        model.setTimeout(client.getTimeout());
-        model.setActiveTimeout(client.getActiveTimeout());
+        AuthStrategy.applyClientTimeout(model, client);
         model.setExtra(LoginHelper.CLIENT_KEY, client.getClientId());
         // 生成token
         LoginHelper.login(loginUser, model);
@@ -75,7 +74,10 @@ public class EmailAuthStrategy implements AuthStrategy {
      * 校验邮箱验证码
      */
     private boolean validateEmailCode(String email, String emailCode) {
-        String code = RedisUtils.getCacheObject(GlobalConstants.CAPTCHA_CODE_KEY + email);
+        String verifyKey = GlobalConstants.CAPTCHA_CODE_KEY + email;
+        String code = RedisUtils.getCacheObject(verifyKey);
+        // 验证码使用一次后立即删除，避免在 TTL 内被重放（与 PasswordAuthStrategy 行为对齐）
+        RedisUtils.deleteObject(verifyKey);
         if (StringUtils.isBlank(code)) {
             loginService.recordLoginInfo(email, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire"));
             throw new CaptchaExpireException();

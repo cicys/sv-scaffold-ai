@@ -5,6 +5,7 @@ import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
+import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 
 /**
  * 授权策略
@@ -31,6 +32,15 @@ public interface AuthStrategy {
         }
         AuthStrategy instance = SpringUtils.getBean(beanName);
         return instance.login(body, client);
+    }
+
+    static void applyClientTimeout(SaLoginParameter model, SysClientVo client) {
+        if (client.getTimeout() != null) {
+            model.setTimeout(client.getTimeout());
+        }
+        if (client.getActiveTimeout() != null) {
+            model.setActiveTimeout(client.getActiveTimeout());
+        }
     }
 
     /**

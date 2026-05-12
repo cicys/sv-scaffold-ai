@@ -90,7 +90,7 @@ flowchart TB
 | `infoq-core-common` | 常量、通用 DTO、异常、工具、线程池/校验/应用配置 | `common/constant/*`、`common/config/*` |
 | `infoq-core-data` | 系统实体、BO/VO、Mapper 接口、Mapper XML | `system/domain/*`、`system/mapper/*`、`resources/mapper/system/*` |
 | `plugin-jackson` | Jackson 序列化、时间反序列化、JSON 工具与校验注解 | `JacksonConfig`、`JsonUtils`、`JsonPatternValidator` |
-| `plugin-security` | Sa-Token 拦截、统一 URL 收集、actuator Basic 鉴权 | `SecurityConfig`、`AllUrlHandler` |
+| `plugin-security` | Sa-Token 拦截、统一 URL 收集、免鉴权路径排除 | `SecurityConfig`、`AllUrlHandler` |
 | `plugin-satoken` | 登录态、JWT、`LoginHelper`、Sa-Token 异常处理 | `SaTokenConfig`、`SaTokenExceptionHandler` |
 | `plugin-web` | Web 基础自动配置与全局异常处理 | `FilterConfig`、`ResourcesConfig`、`CaptchaConfig`、`GlobalExceptionHandler` |
 | `plugin-mybatis` | Mapper 扫描、分页、数据权限、乐观锁、填充策略 | `MybatisPlusConfig` |
@@ -118,34 +118,48 @@ flowchart TB
 - 使用 `@SpringBootApplication(scanBasePackages = "cc.infoq")` 收拢所有模块。
 - 应用成功启动后会输出 `infoq-scaffold-backend started successfully`。
 
-### 3.2 主配置文件
+### 3.2 配置分层
 
-[application.yml](../infoq-admin/src/main/resources/application.yml) 是基础配置层，当前明确表达了几个关键运行事实：
+当前后端的配置由"通用 `application.yml` + 当前激活 profile"两层叠加构成。凡是提到"默认配置"时都必须按这两层一起读。
+
+#### 3.2.1 通用 `application.yml`
+
+[application.yml](../infoq-admin/src/main/resources/application.yml) 承载通用运行时行为配置，当前明确表达了这些关键事实：
 
 - Web 容器使用 Undertow。
-- 默认开启验证码校验。
-- `sa-token.token-name=Authorization`，并启用 JWT。
-- `api-decrypt.enabled=true`，请求解密头标识是 `encrypt-key`。
+- 默认开启验证码校验（`captcha.enable=true`）。
+- `spring.profiles.active=@profiles.active@`，实际激活值由 Maven profile 注入。
 - `spring.jackson.deserialization.fail_on_unknown_properties=true`，请求字段不匹配时显式失败。
+- Sa-Token：`token-name=Authorization`，启用 JWT（`jwt-secret-key`）。
+- `api-decrypt.enabled=true`，请求解密头标识是 `encrypt-key`。
 - `springdoc.api-docs.enabled=true`。
 - `sse.enabled=true`，`websocket.enabled=false`。
-- `infoq.quartz.enabled=true`，Quartz 使用 JDBC 持久化，表前缀是 `QRTZ_`。
+- `infoq.quartz.enabled=true`；Quartz 使用 JDBC 持久化，表前缀是 `QRTZ_`（位于 `spring.quartz.properties.org.quartz.jobStore.tablePrefix`）。
+- 同时还包含 MyBatis-Plus、`mybatis-encryptor`、`xss`、`lock4j`、`security.excludes` 排除路径、`infoq.quartz.bootstrap` 默认值等行为配置。
 
-### 3.3 Profile 配置分层
+它不承载 datasource、Redis、Redisson 或 mail 的实际环境连接参数；这些由 profile 文件补充。
 
-当前仓库还存在三份环境覆写文件：
+#### 3.2.2 Profile 文件 `application-{dev,prod,local}.yml`
 
-- `application-dev.yml`
-- `application-prod.yml`
-- `application-local.yml`
+仓库当前存在三份 profile 文件，且 `pom.xml` 把 `<id>dev</id>` 设为 `<activeByDefault>true</activeByDefault>`，因此"不指定 profile"时运行的是 dev profile。
 
-从源码可直接确认，这三份 profile 会继续覆写数据源、Redis、Quartz 和 mail 相关配置。因此本文档里凡是提到“默认配置”时，都以“基础 `application.yml` + 当前激活 profile”的组合为准，而不是只看单个文件。
+- [application-dev.yml](../infoq-admin/src/main/resources/application-dev.yml) 补充/覆写开发环境基础设施：
+  - `spring.datasource`（HikariCP + dynamic-datasource，默认 `master` 指向本地 MySQL）。
+  - `spring.data.redis`（单机配置，默认 `localhost:6379`）。
+  - `redisson`（连接池、`keepAlive`、订阅连接等）。
+  - `spring.quartz.overwrite-existing-jobs=true`，`jobStore.isClustered=false`。
+  - `infoq.quartz.bootstrap` 开发环境差异（`reconcile-enabled=true`、`production-guard-enabled=false`、`marker-enabled=false`）。
+  - `mail.enabled=false` 与 SMTP 示例值。
+- [application-prod.yml](../infoq-admin/src/main/resources/application-prod.yml) 补充/覆写生产环境 datasource、Redis、Redisson、`spring.quartz`、`infoq.quartz.bootstrap`、mail。
+- [application-local.yml](../infoq-admin/src/main/resources/application-local.yml) 补充/覆写本地联调 datasource、Redis、Redisson、mail，但不重写 Quartz 相关配置。
 
-### 3.4 自动配置拼装
+因此本文档其余章节里出现的"`api-decrypt.enabled=true`"、"`sse.enabled=true`"、"Quartz 表前缀 `QRTZ_`"等具体值，来自通用 `application.yml`；datasource、Redis、Redisson、mail 等连接信息来自当前激活 profile。
+
+### 3.3 自动配置拼装
 
 当前后端不是在 `infoq-system` 里手写所有配置，而是由插件模块把基础设施装进容器：
 
-- `plugin-security` 注入 Sa-Token 拦截与 `/actuator/**` Basic 鉴权。
+- `plugin-security` 注入 Sa-Token 拦截，并排除 `/monitor/health` 与 SSE 路径。
 - `plugin-satoken` 提供 `LoginHelper`、JWT 集成与 Sa-Token 异常处理。
 - `plugin-encrypt` 在 `api-decrypt.enabled=true` 时注册 `CryptoFilter`，并在 `mybatis-encryptor.enable=true` 时装配 MyBatis 字段加解密拦截器。
 - `plugin-mybatis` 负责 `@MapperScan("${mybatis-plus.mapperPackage}")`、分页、数据权限、乐观锁。
@@ -299,7 +313,7 @@ MyBatis 层由 `MybatisPlusConfig` 注入 `PlusDataPermissionInterceptor` 和 `D
 - `/monitor/job`
 - `/monitor/jobLog`
 
-此外 `/actuator/**` 还被 `SecurityConfig` 单独套了一层 Basic 鉴权。
+此外 `HealthController` 暴露了轻量级 `/monitor/health` 健康检查接口，并由 `SecurityConfig` 显式放行。
 
 ## 9. 当前可确认的可选链路
 
