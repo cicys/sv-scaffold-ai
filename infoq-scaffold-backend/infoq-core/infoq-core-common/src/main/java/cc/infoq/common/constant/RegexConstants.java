@@ -52,6 +52,11 @@ public interface RegexConstants extends RegexPool {
     String PASSWORD = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
 
     /**
+     * 邮件验证码场景
+     */
+    String EMAIL_CODE_SCENE = "^(register|forgot_password|email_login)$";
+
+    /**
      * 通用状态（0表示正常，1表示停用）
      */
     String STATUS = "^[01]$";

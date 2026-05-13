@@ -1,16 +1,10 @@
 package cc.infoq.system.domain;
 
-import cc.infoq.common.validate.DataScopeGroup;
-import cc.infoq.common.validate.GrantGroup;
-import cc.infoq.common.validate.ResetPwdGroup;
-import cc.infoq.common.validate.StatusGroup;
-import cc.infoq.common.validate.UpdateByKeyGroup;
-import cc.infoq.system.domain.bo.SysClientBo;
-import cc.infoq.system.domain.bo.SysConfigBo;
-import cc.infoq.system.domain.bo.SysOssConfigBo;
-import cc.infoq.system.domain.bo.SysRoleBo;
-import cc.infoq.system.domain.bo.SysUserBo;
-import cc.infoq.system.domain.bo.SysUserPasswordBo;
+import cc.infoq.common.domain.model.ForgotPasswordBody;
+import cc.infoq.common.domain.model.RegisterBody;
+import cc.infoq.common.domain.model.SendEmailCodeBody;
+import cc.infoq.common.validate.*;
+import cc.infoq.system.domain.bo.*;
 import cc.infoq.system.domain.entity.SysUserRole;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -86,5 +80,37 @@ class ValidationGroupsTest {
         SysUserRole userRole = new SysUserRole();
 
         assertEquals(2, validator.validate(userRole, GrantGroup.class).size());
+    }
+
+    @Test
+    @DisplayName("register body: should require email and strong password")
+    void registerBodyShouldRequireEmailAndStrongPassword() {
+        RegisterBody body = new RegisterBody();
+        body.setClientId("pc");
+        body.setGrantType("password");
+        body.setUsername("admin");
+        body.setPassword("123456");
+
+        assertEquals(4, validator.validate(body).size());
+    }
+
+    @Test
+    @DisplayName("forgot password body: should require email code and strong password")
+    void forgotPasswordBodyShouldRequireEmailCodeAndStrongPassword() {
+        ForgotPasswordBody body = new ForgotPasswordBody();
+        body.setEmail("not-an-email");
+        body.setNewPassword("123456");
+
+        assertEquals(4, validator.validate(body).size());
+    }
+
+    @Test
+    @DisplayName("send email code body: should reject unsupported scene")
+    void sendEmailCodeBodyShouldRejectUnsupportedScene() {
+        SendEmailCodeBody body = new SendEmailCodeBody();
+        body.setEmail("dev@infoq.cc");
+        body.setScene("signup");
+
+        assertEquals(1, validator.validate(body).size());
     }
 }

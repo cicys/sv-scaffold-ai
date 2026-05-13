@@ -2,26 +2,21 @@ package cc.infoq.system.controller.login;
 
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.ApiResult;
+import cc.infoq.common.domain.model.ForgotPasswordBody;
 import cc.infoq.common.domain.model.RegisterBody;
-import cc.infoq.system.domain.vo.LoginVo;
-import cc.infoq.system.domain.vo.SysClientVo;
-import cc.infoq.system.service.AuthStrategy;
-import cc.infoq.system.service.SysClientService;
-import cc.infoq.system.service.SysConfigService;
-import cc.infoq.system.service.SysLoginService;
-import cc.infoq.system.service.SysRegisterService;
-import cc.infoq.system.support.plugin.OptionalSseHelper;
 import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.utils.SpringUtils;
+import cc.infoq.system.domain.vo.LoginVo;
+import cc.infoq.system.domain.vo.SysClientVo;
+import cc.infoq.system.service.*;
+import cc.infoq.system.support.plugin.OptionalMailHelper;
+import cc.infoq.system.support.plugin.OptionalSseHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -34,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
-import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -50,6 +44,8 @@ class AuthControllerTest {
     private SysConfigService sysConfigService;
     @Mock
     private SysClientService sysClientService;
+    @Mock
+    private SysForgotPasswordService sysForgotPasswordService;
     @Mock
     private ScheduledExecutorService scheduledExecutorService;
 
@@ -83,6 +79,36 @@ class AuthControllerTest {
         assertEquals(ApiResult.FAIL, result.getCode());
         assertTrue(result.getMsg().contains("没有开启注册功能"));
         verifyNoInteractions(sysRegisterService);
+    }
+
+    @Test
+    @DisplayName("forgotPassword: should fail when switch is disabled")
+    void forgotPasswordShouldFailWhenDisabled() {
+        ForgotPasswordBody body = new ForgotPasswordBody();
+        when(sysConfigService.selectForgotPasswordEnabled()).thenReturn(false);
+
+        ApiResult<Void> result = controller.forgotPassword(body);
+
+        assertEquals(ApiResult.FAIL, result.getCode());
+        assertTrue(result.getMsg().contains("没有开启忘记密码功能"));
+        verifyNoInteractions(sysForgotPasswordService);
+    }
+
+    @Test
+    @DisplayName("forgotPassword: should fail when mail feature is disabled")
+    void forgotPasswordShouldFailWhenMailDisabled() {
+        ForgotPasswordBody body = new ForgotPasswordBody();
+        when(sysConfigService.selectForgotPasswordEnabled()).thenReturn(true);
+
+        try (MockedStatic<OptionalMailHelper> mailHelper = mockStatic(OptionalMailHelper.class)) {
+            mailHelper.when(OptionalMailHelper::isEnabled).thenReturn(false);
+
+            ApiResult<Void> result = controller.forgotPassword(body);
+
+            assertEquals(ApiResult.FAIL, result.getCode());
+            assertTrue(result.getMsg().contains("没有开启邮箱功能"));
+            verifyNoInteractions(sysForgotPasswordService);
+        }
     }
 
     @Test

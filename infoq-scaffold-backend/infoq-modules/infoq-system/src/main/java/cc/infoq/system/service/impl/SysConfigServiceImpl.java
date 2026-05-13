@@ -92,6 +92,17 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     }
 
     /**
+     * 获取忘记密码开关
+     *
+     * @return true 开启，false 关闭
+     */
+    @Override
+    public boolean selectForgotPasswordEnabled() {
+        String configValue = this.selectConfigByKey("sys.account.forgotPassword");
+        return Convert.toBool(configValue);
+    }
+
+    /**
      * 查询参数配置列表
      *
      * @param config 参数配置信息

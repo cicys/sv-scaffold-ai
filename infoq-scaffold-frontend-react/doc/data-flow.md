@@ -3,6 +3,7 @@
 本文档只记录当前 React admin 代码能直接追到的几条主链路：
 
 - 登录与用户信息初始化
+- 登录前公开认证能力与自助认证页
 - 后端菜单到动态页面装配
 - 典型页面请求与统一错误处理
 
@@ -44,6 +45,33 @@ AuthGuard
 ```
 
 因此当前 React admin 的登录闭环是“两段式”的：先拿 token，再由守卫补齐用户信息与动态路由。
+
+## 1.1 登录前公开认证能力与自助认证页
+
+登录页、注册页和忘记密码页共享同一个公开能力探针：
+
+```text
+login / register / forgot-password page
+-> api/login.ts getCodeImg()
+-> GET /auth/code
+-> captchaEnabled + registerEnabled + forgotPasswordEnabled + mailEnabled
+```
+
+这条链路决定三件事：
+
+- 登录页是否展示“立即注册”“忘记密码”入口
+- 注册页是否允许继续停留
+- 忘记密码页是否允许继续停留
+
+邮件验证码相关的公开自助链路继续收敛在 `src/api/login.ts`：
+
+```text
+RegisterPage / ForgotPasswordPage
+-> sendEmailCode()
+-> POST /auth/email/code
+-> register() or forgotPassword()
+-> POST /auth/register or POST /auth/forgot-password
+```
 
 ## 2. 后端菜单到动态页面装配
 

@@ -1,16 +1,16 @@
 import { App, Button, Form, Input } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCodeImg, register as registerApi, sendEmailCode } from '@/api/login';
-import type { RegisterForm } from '@/api/types';
+import { forgotPassword, getCodeImg, sendEmailCode } from '@/api/login';
+import type { ForgotPasswordForm } from '@/api/types';
 import AuthPageShell from '@/components/AuthPageShell';
 import SvgIcon from '@/components/SvgIcon';
 import { useTranslation } from 'react-i18next';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-export default function RegisterPage() {
-  const [form] = Form.useForm<RegisterForm>();
+export default function ForgotPasswordPage() {
+  const [form] = Form.useForm<ForgotPasswordForm>();
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -26,7 +26,7 @@ export default function RegisterPage() {
     try {
       const res = await getCodeImg();
       const data = res?.data;
-      if (!data?.registerEnabled || !data.mailEnabled) {
+      if (!data?.forgotPasswordEnabled || !data.mailEnabled) {
         navigate('/login', { replace: true });
         return;
       }
@@ -65,8 +65,7 @@ export default function RegisterPage() {
     form.setFieldsValue({
       email: '',
       emailCode: '',
-      username: '',
-      password: '',
+      newPassword: '',
       confirmPassword: '',
       code: '',
       uuid: ''
@@ -75,7 +74,11 @@ export default function RegisterPage() {
   }, [form, getCode, title]);
 
   const countdownText =
-    countdown > 0 ? t('register.countdown', { seconds: countdown }) : sendingCode ? t('register.sendingCode') : t('register.sendCode');
+    countdown > 0
+      ? t('forgotPassword.countdown', { seconds: countdown })
+      : sendingCode
+        ? t('forgotPassword.sendingCode')
+        : t('forgotPassword.sendCode');
 
   const handleSendCode = async () => {
     try {
@@ -89,11 +92,11 @@ export default function RegisterPage() {
     try {
       await sendEmailCode({
         email: values.email,
-        scene: 'register',
+        scene: 'forgot_password',
         code: values.code,
         uuid: values.uuid
       });
-      message.success(t('register.codeSent'));
+      message.success(t('forgotPassword.codeSent'));
       form.setFieldValue('code', '');
       setCountdown(60);
     } finally {
@@ -104,11 +107,11 @@ export default function RegisterPage() {
     }
   };
 
-  const onFinish = async (values: RegisterForm) => {
+  const onFinish = async (values: ForgotPasswordForm) => {
     setLoading(true);
     try {
-      await registerApi(values);
-      message.success(t('register.registerSuccess', { username: values.username }));
+      await forgotPassword(values);
+      message.success(t('forgotPassword.success'));
       navigate('/login');
     } catch {
       if (captchaEnabled) {
@@ -130,24 +133,24 @@ export default function RegisterPage() {
           name="email"
           style={{ marginBottom: 22 }}
           rules={[
-            { required: true, message: t('register.rule.email.required') },
-            { type: 'email', message: t('register.rule.email.invalid') }
+            { required: true, message: t('forgotPassword.rule.email.required') },
+            { type: 'email', message: t('forgotPassword.rule.email.invalid') }
           ]}
         >
           <Input
             size="large"
             autoComplete="email"
-            placeholder={t('register.email')}
+            placeholder={t('forgotPassword.email')}
             prefix={<SvgIcon iconClass="email" size={14} style={authIconStyle} />}
           />
         </Form.Item>
 
         <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 132px', gap: 12, marginBottom: 22 }}>
-          <Form.Item name="emailCode" style={{ marginBottom: 0 }} rules={[{ required: true, message: t('register.rule.emailCode.required') }]}>
+          <Form.Item name="emailCode" style={{ marginBottom: 0 }} rules={[{ required: true, message: t('forgotPassword.rule.emailCode.required') }]}>
             <Input
               size="large"
               autoComplete="one-time-code"
-              placeholder={t('register.emailCode')}
+              placeholder={t('forgotPassword.emailCode')}
               prefix={<SvgIcon iconClass="validCode" size={14} style={authIconStyle} />}
               onPressEnter={() => form.submit()}
             />
@@ -159,11 +162,15 @@ export default function RegisterPage() {
 
         {captchaEnabled && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 25 }}>
-            <Form.Item name="code" rules={[{ required: true, message: t('register.rule.code.required') }]} style={{ width: '63%', marginBottom: 0 }}>
+            <Form.Item
+              name="code"
+              rules={[{ required: true, message: t('forgotPassword.rule.code.required') }]}
+              style={{ width: '63%', marginBottom: 0 }}
+            >
               <Input
                 size="large"
                 autoComplete="off"
-                placeholder={t('register.code')}
+                placeholder={t('login.code')}
                 prefix={<SvgIcon iconClass="validCode" size={14} style={authIconStyle} />}
                 onPressEnter={() => form.submit()}
               />
@@ -172,7 +179,7 @@ export default function RegisterPage() {
               {codeUrl ? (
                 <img
                   src={codeUrl}
-                  alt={t('register.code')}
+                  alt={t('login.code')}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -189,34 +196,18 @@ export default function RegisterPage() {
         )}
 
         <Form.Item
-          name="username"
+          name="newPassword"
           style={{ marginBottom: 22 }}
           rules={[
-            { required: true, message: t('register.rule.username.required') },
-            { min: 2, max: 20, message: t('register.rule.username.length', { min: 2, max: 20 }) }
-          ]}
-        >
-          <Input
-            size="large"
-            autoComplete="username"
-            placeholder={t('register.username')}
-            prefix={<SvgIcon iconClass="user" size={14} style={authIconStyle} />}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          style={{ marginBottom: 22 }}
-          rules={[
-            { required: true, message: t('register.rule.password.required') },
-            { min: 8, max: 30, message: t('register.rule.password.length', { min: 8, max: 30 }) },
-            { pattern: PASSWORD_REGEX, message: t('register.rule.password.pattern') }
+            { required: true, message: t('forgotPassword.rule.newPassword.required') },
+            { min: 8, max: 30, message: t('forgotPassword.rule.newPassword.length', { min: 8, max: 30 }) },
+            { pattern: PASSWORD_REGEX, message: t('forgotPassword.rule.newPassword.pattern') }
           ]}
         >
           <Input.Password
             size="large"
             autoComplete="new-password"
-            placeholder={t('register.password')}
+            placeholder={t('forgotPassword.newPassword')}
             prefix={<SvgIcon iconClass="password" size={14} style={authIconStyle} />}
             visibilityToggle={false}
             onPressEnter={() => form.submit()}
@@ -225,16 +216,16 @@ export default function RegisterPage() {
 
         <Form.Item
           name="confirmPassword"
-          dependencies={['password']}
+          dependencies={['newPassword']}
           style={{ marginBottom: 22 }}
           rules={[
-            { required: true, message: t('register.rule.confirmPassword.required') },
+            { required: true, message: t('forgotPassword.rule.confirmPassword.required') },
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (!value || getFieldValue('password') === value) {
+                if (!value || getFieldValue('newPassword') === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error(t('register.rule.confirmPassword.equalToPassword')));
+                return Promise.reject(new Error(t('forgotPassword.rule.confirmPassword.equalToPassword')));
               }
             })
           ]}
@@ -242,7 +233,7 @@ export default function RegisterPage() {
           <Input.Password
             size="large"
             autoComplete="new-password"
-            placeholder={t('register.confirmPassword')}
+            placeholder={t('forgotPassword.confirmPassword')}
             prefix={<SvgIcon iconClass="password" size={14} style={authIconStyle} />}
             visibilityToggle={false}
             onPressEnter={() => form.submit()}
@@ -251,10 +242,10 @@ export default function RegisterPage() {
 
         <Form.Item style={{ marginBottom: 0 }}>
           <Button type="primary" htmlType="submit" loading={loading} block size="large" style={{ height: 40 }}>
-            {loading ? t('register.registering') : t('register.register')}
+            {loading ? t('forgotPassword.submitting') : t('forgotPassword.submit')}
           </Button>
           <div style={{ marginTop: 12, textAlign: 'right' }}>
-            <Link to="/login">{t('register.switchLoginPage')}</Link>
+            <Link to="/login">{t('forgotPassword.switchLoginPage')}</Link>
           </div>
         </Form.Item>
       </Form>

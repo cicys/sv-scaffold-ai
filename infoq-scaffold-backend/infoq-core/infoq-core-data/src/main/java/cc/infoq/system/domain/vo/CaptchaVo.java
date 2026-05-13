@@ -25,4 +25,19 @@ public class CaptchaVo {
      */
     private String img;
 
+    /**
+     * 是否开启注册
+     */
+    private Boolean registerEnabled = false;
+
+    /**
+     * 是否开启忘记密码
+     */
+    private Boolean forgotPasswordEnabled = false;
+
+    /**
+     * 是否开启邮件能力
+     */
+    private Boolean mailEnabled = false;
+
 }

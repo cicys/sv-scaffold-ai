@@ -1,4 +1,4 @@
-import { createWebHistory, createRouter, RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 /* Layout */
 import Layout from '@/layout/index.vue';
 
@@ -45,6 +45,11 @@ export const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/register',
     component: () => import('@/views/register.vue'),
+    hidden: true
+  },
+  {
+    path: '/forgot-password',
+    component: () => import('@/views/forgot-password.vue'),
     hidden: true
   },
   {

@@ -1,24 +1,20 @@
 package cc.infoq.system.service.impl;
 
-import cc.infoq.common.constant.Constants;
-import cc.infoq.common.constant.GlobalConstants;
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.model.EmailLoginBody;
 import cc.infoq.common.domain.model.LoginUser;
+import cc.infoq.common.enums.EmailCodeScene;
 import cc.infoq.common.enums.LoginType;
-import cc.infoq.common.exception.user.CaptchaExpireException;
 import cc.infoq.common.exception.user.UserException;
 import cc.infoq.common.json.utils.JsonUtils;
-import cc.infoq.common.redis.utils.RedisUtils;
 import cc.infoq.common.satoken.utils.LoginHelper;
-import cc.infoq.common.utils.MessageUtils;
-import cc.infoq.common.utils.StringUtils;
 import cc.infoq.common.utils.ValidatorUtils;
 import cc.infoq.system.domain.entity.SysUser;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.mapper.SysUserMapper;
+import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.AuthStrategy;
 import cc.infoq.system.service.SysLoginService;
 import cn.dev33.satoken.stp.StpUtil;
@@ -41,6 +37,7 @@ public class EmailAuthStrategy implements AuthStrategy {
 
     private final SysLoginService loginService;
     private final SysUserMapper userMapper;
+    private final AuthEmailCodeService authEmailCodeService;
 
     @Override
     public LoginVo login(String body, SysClientVo client) {
@@ -49,7 +46,7 @@ public class EmailAuthStrategy implements AuthStrategy {
         String email = loginBody.getEmail();
         String emailCode = loginBody.getEmailCode();
         SysUserVo user = loadUserByEmail(email);
-        loginService.checkLogin(LoginType.EMAIL, user.getUserName(), () -> !validateEmailCode(email, emailCode));
+        loginService.checkLogin(LoginType.EMAIL, user.getUserName(), () -> !authEmailCodeService.validateCode(EmailCodeScene.EMAIL_LOGIN, email, emailCode));
         // 此处可根据登录用户的数据不同 自行创建 loginUser 属性不够用继承扩展就行了
         LoginUser loginUser = loginService.buildLoginUser(user);
         loginUser.setClientKey(client.getClientKey());
@@ -68,21 +65,6 @@ public class EmailAuthStrategy implements AuthStrategy {
         loginVo.setExpireIn(StpUtil.getTokenTimeout());
         loginVo.setClientId(client.getClientId());
         return loginVo;
-    }
-
-    /**
-     * 校验邮箱验证码
-     */
-    private boolean validateEmailCode(String email, String emailCode) {
-        String verifyKey = GlobalConstants.CAPTCHA_CODE_KEY + email;
-        String code = RedisUtils.getCacheObject(verifyKey);
-        // 验证码使用一次后立即删除，避免在 TTL 内被重放（与 PasswordAuthStrategy 行为对齐）
-        RedisUtils.deleteObject(verifyKey);
-        if (StringUtils.isBlank(code)) {
-            loginService.recordLoginInfo(email, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire"));
-            throw new CaptchaExpireException();
-        }
-        return code.equals(emailCode);
     }
 
     private SysUserVo loadUserByEmail(String email) {

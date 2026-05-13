@@ -16,12 +16,29 @@ export interface TableResponse<T> extends ApiResult {
  * 注册
  */
 export type RegisterForm = {
+  email: string;
+  emailCode?: string;
   username: string;
   password: string;
   confirmPassword?: string;
   code?: string;
   uuid?: string;
-  userType?: string;
+};
+
+export type ForgotPasswordForm = {
+  email: string;
+  emailCode?: string;
+  newPassword: string;
+  confirmPassword?: string;
+  code?: string;
+  uuid?: string;
+};
+
+export type SendEmailCodeForm = {
+  email: string;
+  scene: 'register' | 'forgot_password' | 'email_login';
+  code?: string;
+  uuid?: string;
 };
 
 /**
@@ -52,4 +69,7 @@ export interface VerifyCodeResult {
   captchaEnabled: boolean;
   uuid?: string;
   img?: string;
+  registerEnabled?: boolean;
+  forgotPasswordEnabled?: boolean;
+  mailEnabled?: boolean;
 }

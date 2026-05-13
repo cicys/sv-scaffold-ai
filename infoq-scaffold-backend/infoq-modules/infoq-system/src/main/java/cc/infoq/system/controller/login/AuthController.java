@@ -2,15 +2,21 @@ package cc.infoq.system.controller.login;
 
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.ApiResult;
-import cc.infoq.common.exception.ServiceException;
+import cc.infoq.common.domain.model.ForgotPasswordBody;
 import cc.infoq.common.domain.model.LoginBody;
 import cc.infoq.common.domain.model.RegisterBody;
 import cc.infoq.common.encrypt.annotation.ApiEncrypt;
+import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.json.utils.JsonUtils;
 import cc.infoq.common.satoken.utils.LoginHelper;
-import cc.infoq.common.utils.*;
-import cc.infoq.system.domain.vo.*;
+import cc.infoq.common.utils.DateUtils;
+import cc.infoq.common.utils.MessageUtils;
+import cc.infoq.common.utils.StringUtils;
+import cc.infoq.common.utils.ValidatorUtils;
+import cc.infoq.system.domain.vo.LoginVo;
+import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.service.*;
+import cc.infoq.system.support.plugin.OptionalMailHelper;
 import cc.infoq.system.support.plugin.OptionalSseHelper;
 import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.core.lang.Dict;
@@ -18,7 +24,10 @@ import cn.hutool.core.util.ObjectUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
 import java.util.List;
@@ -41,6 +50,7 @@ public class AuthController {
     private final SysRegisterService sysRegisterService;
     private final SysConfigService sysConfigService;
     private final SysClientService sysClientService;
+    private final SysForgotPasswordService sysForgotPasswordService;
     private final ScheduledExecutorService scheduledExecutorService;
 
 
@@ -103,6 +113,22 @@ public class AuthController {
             return ApiResult.fail("当前系统没有开启注册功能！");
         }
         sysRegisterService.register(user);
+        return ApiResult.ok();
+    }
+
+    /**
+     * 忘记密码
+     */
+    @ApiEncrypt
+    @PostMapping("/forgot-password")
+    public ApiResult<Void> forgotPassword(@Validated @RequestBody ForgotPasswordBody body) {
+        if (!sysConfigService.selectForgotPasswordEnabled()) {
+            return ApiResult.fail("当前系统没有开启忘记密码功能！");
+        }
+        if (!OptionalMailHelper.isEnabled()) {
+            return ApiResult.fail("当前系统没有开启邮箱功能！");
+        }
+        sysForgotPasswordService.resetPassword(body);
         return ApiResult.ok();
     }
 

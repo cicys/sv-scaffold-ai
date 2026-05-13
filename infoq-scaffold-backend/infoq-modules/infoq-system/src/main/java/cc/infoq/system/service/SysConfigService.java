@@ -46,6 +46,13 @@ public interface SysConfigService {
     boolean selectRegisterEnabled();
 
     /**
+     * 获取忘记密码开关
+     *
+     * @return true 开启，false 关闭
+     */
+    boolean selectForgotPasswordEnabled();
+
+    /**
      * 查询参数配置列表
      *
      * @param config 参数配置信息

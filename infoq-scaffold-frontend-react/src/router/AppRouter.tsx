@@ -10,6 +10,7 @@ const MainLayout = lazy(() => import('@/layouts/MainLayout'));
 const BackendRouteView = lazy(() => import('@/router/BackendRouteView'));
 const LoginPage = lazy(() => import('@/pages/login'));
 const RegisterPage = lazy(() => import('@/pages/register'));
+const ForgotPasswordPage = lazy(() => import('@/pages/forgot-password'));
 const RedirectPage = lazy(() => import('@/pages/redirect/index'));
 const Error401Page = lazy(() => import('@/pages/error/401'));
 const HomePage = lazy(() => import('@/pages/index'));
@@ -47,6 +48,7 @@ export default function AppRouter() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/401" element={<Error401Page />} />
           <Route path="/redirect/*" element={<RedirectPage />} />
           <Route

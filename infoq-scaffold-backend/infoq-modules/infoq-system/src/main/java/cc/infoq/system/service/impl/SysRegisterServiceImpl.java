@@ -1,26 +1,19 @@
 package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.Constants;
-import cc.infoq.common.constant.GlobalConstants;
 import cc.infoq.common.domain.model.RegisterBody;
+import cc.infoq.common.enums.EmailCodeScene;
 import cc.infoq.common.enums.UserType;
-import cc.infoq.common.exception.user.CaptchaException;
-import cc.infoq.common.exception.user.CaptchaExpireException;
 import cc.infoq.common.exception.user.UserException;
 import cc.infoq.common.log.event.LoginInfoEvent;
-import cc.infoq.common.redis.utils.RedisUtils;
 import cc.infoq.common.utils.MessageUtils;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.SpringUtils;
-import cc.infoq.common.utils.StringUtils;
-import cc.infoq.common.web.config.properties.CaptchaProperties;
 import cc.infoq.system.domain.bo.SysUserBo;
-import cc.infoq.system.domain.entity.SysUser;
-import cc.infoq.system.mapper.SysUserMapper;
+import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.SysRegisterService;
 import cc.infoq.system.service.SysUserService;
 import cn.hutool.crypto.digest.BCrypt;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,8 +27,7 @@ import org.springframework.stereotype.Service;
 public class SysRegisterServiceImpl implements SysRegisterService {
 
     private final SysUserService userService;
-    private final SysUserMapper userMapper;
-    private final CaptchaProperties captchaProperties;
+    private final AuthEmailCodeService authEmailCodeService;
 
     /**
      * 注册
@@ -43,51 +35,29 @@ public class SysRegisterServiceImpl implements SysRegisterService {
     public void register(RegisterBody registerBody) {
         String username = registerBody.getUsername();
         String password = registerBody.getPassword();
-        // 校验用户类型是否存在
-        String userType = UserType.getUserType(registerBody.getUserType()).getUserType();
-
-        boolean captchaEnabled = captchaProperties.getEnable();
-        // 验证码开关
-        if (captchaEnabled) {
-            validateCaptcha(username, registerBody.getCode(), registerBody.getUuid());
-        }
+        String email = registerBody.getEmail();
+        String userType = UserType.SYS_USER.getUserType();
         SysUserBo sysUser = new SysUserBo();
         sysUser.setUserName(username);
         sysUser.setNickName(username);
         sysUser.setPassword(BCrypt.hashpw(password));
+        sysUser.setEmail(email);
         sysUser.setUserType(userType);
 
-        boolean exist = userMapper.exists(new LambdaQueryWrapper<SysUser>()
-            .eq(SysUser::getUserName, sysUser.getUserName()));
-        if (exist) {
+        if (!authEmailCodeService.validateCode(EmailCodeScene.REGISTER, email, registerBody.getEmailCode())) {
+            throw new UserException("user.jcaptcha.error");
+        }
+        if (!userService.checkUserNameUnique(sysUser)) {
             throw new UserException("user.register.save.error", username);
+        }
+        if (!userService.checkEmailUnique(sysUser)) {
+            throw new UserException("user.email.already.exists", email);
         }
         boolean regFlag = userService.registerUser(sysUser);
         if (!regFlag) {
             throw new UserException("user.register.error");
         }
         recordLoginInfo(username, Constants.REGISTER, MessageUtils.message("user.register.success"));
-    }
-
-    /**
-     * 校验验证码
-     *
-     * @param username 用户名
-     * @param code     验证码
-     * @param uuid     唯一标识
-     */
-    public void validateCaptcha(String username, String code, String uuid) {
-        String verifyKey = GlobalConstants.CAPTCHA_CODE_KEY + StringUtils.blankToDefault(uuid, "");
-        String captcha = RedisUtils.getCacheObject(verifyKey);
-        RedisUtils.deleteObject(verifyKey);
-        if (captcha == null) {
-            recordLoginInfo(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire"));
-            throw new CaptchaExpireException();
-        }
-        if (!StringUtils.equalsIgnoreCase(code, captcha)) {
-            recordLoginInfo(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.error"));
-            throw new CaptchaException();
-        }
     }
 
     /**

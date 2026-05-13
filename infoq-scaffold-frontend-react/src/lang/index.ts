@@ -12,19 +12,44 @@ const resources = {
         code: '验证码',
         rememberPassword: '记住我',
         switchRegisterPage: '立即注册',
+        switchForgotPasswordPage: '忘记密码',
         login: '登 录',
-        logging: '登 录 中...'
+        logging: '登 录 中...',
+        rule: {
+          username: {
+            required: '请输入您的账号'
+          },
+          password: {
+            required: '请输入您的密码'
+          },
+          code: {
+            required: '请输入验证码'
+          }
+        }
       },
       register: {
+        email: '邮箱',
+        emailCode: '邮箱验证码',
         username: '用户名',
         password: '密码',
         confirmPassword: '确认密码',
+        sendCode: '发送验证码',
+        sendingCode: '发送中...',
+        codeSent: '验证码已发送，请检查邮箱',
+        countdown: '{{seconds}}s 后重试',
         code: '验证码',
         register: '注 册',
         registering: '注 册 中...',
         registerSuccess: '恭喜你，您的账号 {{username}} 注册成功！',
         switchLoginPage: '使用已有账户登录',
         rule: {
+          email: {
+            required: '请输入邮箱',
+            invalid: '请输入正确的邮箱地址'
+          },
+          emailCode: {
+            required: '请输入邮箱验证码'
+          },
           username: {
             required: '请输入您的账号',
             length: '用户账号长度必须介于 {{min}} 和 {{max}} 之间'
@@ -32,7 +57,7 @@ const resources = {
           password: {
             required: '请输入您的密码',
             length: '用户密码长度必须介于 {{min}} 和 {{max}} 之间',
-            pattern: '不能包含非法字符：{{strings}}'
+            pattern: '密码必须包含大写字母、小写字母、数字和特殊字符'
           },
           code: {
             required: '请输入验证码'
@@ -40,6 +65,41 @@ const resources = {
           confirmPassword: {
             required: '请再次输入您的密码',
             equalToPassword: '两次输入的密码不一致'
+          }
+        }
+      },
+      forgotPassword: {
+        email: '邮箱',
+        emailCode: '邮箱验证码',
+        newPassword: '新密码',
+        confirmPassword: '确认新密码',
+        sendCode: '发送验证码',
+        sendingCode: '发送中...',
+        codeSent: '验证码已发送，请检查邮箱',
+        countdown: '{{seconds}}s 后重试',
+        submit: '重置密码',
+        submitting: '重置中...',
+        success: '密码重置成功，请使用新密码登录',
+        switchLoginPage: '返回登录',
+        rule: {
+          email: {
+            required: '请输入邮箱',
+            invalid: '请输入正确的邮箱地址'
+          },
+          emailCode: {
+            required: '请输入邮箱验证码'
+          },
+          newPassword: {
+            required: '请输入新密码',
+            length: '用户密码长度必须介于 {{min}} 和 {{max}} 之间',
+            pattern: '密码必须包含大写字母、小写字母、数字和特殊字符'
+          },
+          confirmPassword: {
+            required: '请再次输入新密码',
+            equalToPassword: '两次输入的密码不一致'
+          },
+          code: {
+            required: '请输入验证码'
           }
         }
       },
@@ -89,24 +149,49 @@ const resources = {
     translation: {
       login: {
         title: 'InfoQ Scaffold Admin',
-        username: 'Please enter your username',
-        password: 'Please enter your password',
-        code: 'Please enter the verification code',
+        username: 'Username',
+        password: 'Password',
+        code: 'Verification Code',
         rememberPassword: 'Remember me',
         switchRegisterPage: 'Sign up now',
+        switchForgotPasswordPage: 'Forgot password',
         login: 'Login',
-        logging: 'Signing in...'
+        logging: 'Signing in...',
+        rule: {
+          username: {
+            required: 'Please enter your account'
+          },
+          password: {
+            required: 'Please enter your password'
+          },
+          code: {
+            required: 'Please enter a verification code'
+          }
+        }
       },
       register: {
-        username: 'Please enter your username',
-        password: 'Please enter your password',
-        confirmPassword: 'Please enter your password again',
-        code: 'Please enter the verification code',
+        email: 'Email',
+        emailCode: 'Email Code',
+        username: 'Username',
+        password: 'Password',
+        confirmPassword: 'Confirm Password',
+        sendCode: 'Send Code',
+        sendingCode: 'Sending...',
+        codeSent: 'Verification code sent. Please check your email',
+        countdown: 'Retry in {{seconds}}s',
+        code: 'Verification Code',
         register: 'Register',
         registering: 'Registering...',
         registerSuccess: 'Congratulations, your {{username}} account has been registered!',
         switchLoginPage: 'Log in with an existing account',
         rule: {
+          email: {
+            required: 'Please enter your email',
+            invalid: 'Please enter a valid email address'
+          },
+          emailCode: {
+            required: 'Please enter the email verification code'
+          },
           username: {
             required: 'Please enter your account',
             length: 'The length of the user account must be between {{min}} and {{max}}'
@@ -114,7 +199,7 @@ const resources = {
           password: {
             required: 'Please enter your password',
             length: 'The user password must be between {{min}} and {{max}} in length',
-            pattern: "Can't contain illegal characters: {{strings}}"
+            pattern: 'Password must contain uppercase, lowercase, number, and special character'
           },
           code: {
             required: 'Please enter a verification code'
@@ -122,6 +207,41 @@ const resources = {
           confirmPassword: {
             required: 'Please enter your password again',
             equalToPassword: 'The password entered twice is inconsistent'
+          }
+        }
+      },
+      forgotPassword: {
+        email: 'Email',
+        emailCode: 'Email Code',
+        newPassword: 'New Password',
+        confirmPassword: 'Confirm New Password',
+        sendCode: 'Send Code',
+        sendingCode: 'Sending...',
+        codeSent: 'Verification code sent. Please check your email',
+        countdown: 'Retry in {{seconds}}s',
+        submit: 'Reset Password',
+        submitting: 'Resetting...',
+        success: 'Password reset successful. Please sign in with your new password',
+        switchLoginPage: 'Back to login',
+        rule: {
+          email: {
+            required: 'Please enter your email',
+            invalid: 'Please enter a valid email address'
+          },
+          emailCode: {
+            required: 'Please enter the email verification code'
+          },
+          newPassword: {
+            required: 'Please enter your new password',
+            length: 'The user password must be between {{min}} and {{max}} in length',
+            pattern: 'Password must contain uppercase, lowercase, number, and special character'
+          },
+          confirmPassword: {
+            required: 'Please enter your password again',
+            equalToPassword: 'The password entered twice is inconsistent'
+          },
+          code: {
+            required: 'Please enter a verification code'
           }
         }
       },

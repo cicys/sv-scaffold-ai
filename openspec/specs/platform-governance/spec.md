@@ -65,6 +65,20 @@ active change 在实现前和交付前都必须通过统一结构校验。
 - 则该变更必须在 active change 中补充 spec delta
 - 并且在接受后回写到 `openspec/specs/`
 
+#### 场景：开发者本地临时改后台端口
+
+- 当开发者为避开本机 `8080` 冲突，临时把 admin backend 改到 `8081` 或其他端口时
+- 则共享脚本、共享文档和真值配置仍必须保持 `8080` 作为默认值
+- 并且 runtime helper 必须支持通过 `--backend-port <port>` 显式覆盖本地端口
+- 并且前端 dev 代理必须自动跟随该显式端口，除非调用者显式设置 `VITE_APP_PROXY_TARGET`
+- 并且该临时端口不得被沉淀为共享默认值
+
+#### 场景：使用 `application-local.yml`
+
+- 当维护者需要验证 `application-local.yml` 时
+- 则必须显式传 `--spring.profiles.active=local` 或 runtime skill `--profile local`
+- 并且排障时必须先区分 profile 未切换、端口错配、外部依赖不可达 三类问题
+
 ### 要求：归档前验证
 受影响工作区的验证证据完整前，变更不得归档。
 

@@ -2,14 +2,13 @@ import { type ReactElement, useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
 import { getToken } from '@/utils/auth';
+import { isWhiteListRoute } from '@/router/public-routes';
 import { useUserStore } from '@/store/modules/user';
 import { usePermissionStore } from '@/store/modules/permission';
 
 type AuthGuardProps = {
   children: ReactElement;
 };
-
-const whiteList = ['/login', '/register'];
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const location = useLocation();
@@ -47,7 +46,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }, [token, roles]);
 
   if (!token) {
-    if (whiteList.includes(location.pathname)) {
+    if (isWhiteListRoute(location.pathname)) {
       return children;
     }
     return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`} replace />;

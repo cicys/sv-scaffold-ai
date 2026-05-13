@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import type { ApiResult, ApiResponse, LoginData, LoginResult, RegisterForm, VerifyCodeResult } from './types';
+import type { ApiResponse, ApiResult, ForgotPasswordForm, LoginData, LoginResult, RegisterForm, SendEmailCodeForm, VerifyCodeResult } from './types';
 import type { UserInfo } from '@/api/system/user/types';
 
 // pc端固定客户端授权id
@@ -43,6 +43,32 @@ export function register(data: RegisterForm) {
     },
     method: 'post',
     data: params
+  });
+}
+
+export function sendEmailCode(data: SendEmailCodeForm) {
+  return request<ApiResult>({
+    url: '/auth/email/code',
+    headers: {
+      isToken: false,
+      isEncrypt: true,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data
+  });
+}
+
+export function forgotPassword(data: ForgotPasswordForm) {
+  return request<ApiResult>({
+    url: '/auth/forgot-password',
+    headers: {
+      isToken: false,
+      isEncrypt: true,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data
   });
 }
 

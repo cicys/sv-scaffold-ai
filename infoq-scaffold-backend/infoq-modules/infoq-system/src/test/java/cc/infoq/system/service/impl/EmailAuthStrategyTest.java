@@ -1,17 +1,17 @@
 package cc.infoq.system.service.impl;
 
-import cc.infoq.common.constant.GlobalConstants;
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.model.LoginUser;
+import cc.infoq.common.enums.EmailCodeScene;
 import cc.infoq.common.enums.LoginType;
 import cc.infoq.common.exception.user.UserException;
-import cc.infoq.common.redis.utils.RedisUtils;
 import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.mapper.SysUserMapper;
+import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.SysLoginService;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +43,8 @@ class EmailAuthStrategyTest {
     private SysLoginService loginService;
     @Mock
     private SysUserMapper userMapper;
+    @Mock
+    private AuthEmailCodeService authEmailCodeService;
 
     @BeforeEach
     void initSpringContext() {
@@ -64,7 +66,7 @@ class EmailAuthStrategyTest {
     @Test
     @DisplayName("loadUserByEmail: should throw when user does not exist")
     void loadUserByEmailShouldThrowWhenUserNotExists() throws Exception {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         when(userMapper.selectVoOne(any())).thenReturn(null);
 
         Method method = EmailAuthStrategy.class.getDeclaredMethod("loadUserByEmail", String.class);
@@ -77,7 +79,7 @@ class EmailAuthStrategyTest {
     @Test
     @DisplayName("login: should throw when user is disabled")
     void loginShouldThrowWhenUserDisabled() {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         SysUserVo user = new SysUserVo();
         user.setEmail("a@b.com");
         user.setStatus(SystemConstants.DISABLE);
@@ -89,7 +91,7 @@ class EmailAuthStrategyTest {
     @Test
     @DisplayName("login: should return token when email code is valid")
     void loginShouldReturnTokenWhenEmailCodeValid() {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         SysUserVo user = new SysUserVo();
         user.setEmail("a@b.com");
         user.setUserName("admin");
@@ -98,16 +100,15 @@ class EmailAuthStrategyTest {
 
         LoginUser loginUser = new LoginUser();
         when(loginService.buildLoginUser(user)).thenReturn(loginUser);
+        when(authEmailCodeService.validateCode(EmailCodeScene.EMAIL_LOGIN, "a@b.com", "1234")).thenReturn(true);
         doAnswer(invocation -> {
             Supplier<?> supplier = invocation.getArgument(2);
             assertEquals(Boolean.FALSE, supplier.get());
             return null;
         }).when(loginService).checkLogin(eq(LoginType.EMAIL), eq("admin"), any());
 
-        try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
              MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
-            redisUtils.when(() -> RedisUtils.getCacheObject(anyString())).thenReturn("1234");
             stpUtil.when(StpUtil::getTokenValue).thenReturn("email-token");
             stpUtil.when(StpUtil::getTokenTimeout).thenReturn(3600L);
 
@@ -118,14 +119,14 @@ class EmailAuthStrategyTest {
             assertEquals("pc", result.getClientId());
             assertEquals("client-key", loginUser.getClientKey());
             assertEquals("web", loginUser.getDeviceType());
-            redisUtils.verify(() -> RedisUtils.deleteObject(GlobalConstants.CAPTCHA_CODE_KEY + "a@b.com"));
+            verify(authEmailCodeService).validateCode(EmailCodeScene.EMAIL_LOGIN, "a@b.com", "1234");
         }
     }
 
     @Test
     @DisplayName("login: should keep global token timeout when client timeout is null")
     void loginShouldKeepGlobalTokenTimeoutWhenClientTimeoutNull() {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         SysUserVo user = new SysUserVo();
         user.setEmail("a@b.com");
         user.setUserName("admin");
@@ -134,6 +135,7 @@ class EmailAuthStrategyTest {
 
         LoginUser loginUser = new LoginUser();
         when(loginService.buildLoginUser(user)).thenReturn(loginUser);
+        when(authEmailCodeService.validateCode(EmailCodeScene.EMAIL_LOGIN, "a@b.com", "1234")).thenReturn(true);
         doAnswer(invocation -> {
             Supplier<?> supplier = invocation.getArgument(2);
             assertEquals(Boolean.FALSE, supplier.get());
@@ -144,10 +146,8 @@ class EmailAuthStrategyTest {
         client.setTimeout(null);
         client.setActiveTimeout(null);
 
-        try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
              MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
-            redisUtils.when(() -> RedisUtils.getCacheObject(anyString())).thenReturn("1234");
             stpUtil.when(StpUtil::getTokenValue).thenReturn("email-token");
             stpUtil.when(StpUtil::getTokenTimeout).thenReturn(3600L);
 

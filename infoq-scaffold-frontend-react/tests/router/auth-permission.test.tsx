@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AuthGuard from '@/router/AuthGuard';
+import { isWhiteListRoute } from '@/router/public-routes';
 import { useUserStore } from '@/store/modules/user';
-import { usePermissionStore } from '@/store/modules/permission';
-import { filterDynamicRoutes } from '@/store/modules/permission';
+import { filterDynamicRoutes, usePermissionStore } from '@/store/modules/permission';
 import type { AppRoute } from '@/types/router';
 
 describe('router/auth-permission', () => {
@@ -93,5 +93,11 @@ describe('router/auth-permission', () => {
 
     const result = filterDynamicRoutes(routes);
     expect(result.map((item) => item.path)).toEqual(['/a', '/b']);
+  });
+
+  it('treats forgot-password paths as public whitelist routes', () => {
+    expect(isWhiteListRoute('/forgot-password')).toBe(true);
+    expect(isWhiteListRoute('/forgot-password/reset')).toBe(true);
+    expect(isWhiteListRoute('/system/user')).toBe(false);
   });
 });

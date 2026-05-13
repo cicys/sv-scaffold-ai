@@ -78,7 +78,7 @@ Options:
   --force-restart        Stop recorded processes before startup.
   --backend-only         Start backend only.
   --frontend-only        Start frontend only.
-  --backend-port <port>  Backend HTTP port. Default: ${config.defaultBackendPort}.
+  --backend-port <port>  Backend HTTP port. Default: ${config.defaultBackendPort}. Also drives frontend proxy target unless VITE_APP_PROXY_TARGET is already set.
   ${config.frontendPortFlag} <port>   ${config.frontendDisplayName} dev port. Default: ${config.defaultFrontendPort}.
   --frontend-host <host> Frontend host. Default: 127.0.0.1.
   --profile <name>       Spring profile. Default: dev.
@@ -221,6 +221,7 @@ export async function runAdminDevStack(config, argv) {
 
   if (!options.backendOnly) {
     const frontendUrl = `http://${options.frontendHost}:${options.frontendPort}/`;
+    const frontendProxyTarget = process.env.VITE_APP_PROXY_TARGET || `http://127.0.0.1:${options.backendPort}`;
     if (await canFetch(frontendUrl)) {
       if (options.forceRestart) {
         throw new Error(`[${config.label}] ${config.frontendDisplayName} is still running on :${options.frontendPort} after stopping recorded processes.`);
@@ -229,12 +230,17 @@ export async function runAdminDevStack(config, argv) {
     } else {
       const pkg = resolvePackageManager();
       console.log(`[${config.label}] starting ${config.frontendDisplayName} on ${options.frontendHost}:${options.frontendPort}`);
+      console.log(`[${config.label}] ${config.frontendDisplayName} proxy target: ${frontendProxyTarget}`);
       const child = spawnDetachedProcess(
         pkg.command,
         ['run', 'dev', '--', '--host', options.frontendHost, '--port', String(options.frontendPort), '--open', 'false', '--strictPort'],
         {
           cwd: frontendDir,
-          env: process.env,
+          env: {
+            ...process.env,
+            VITE_APP_PORT: String(options.frontendPort),
+            VITE_APP_PROXY_TARGET: frontendProxyTarget
+          },
           logFile: frontendLog
         }
       );
@@ -253,8 +259,10 @@ export async function runAdminDevStack(config, argv) {
     startedBackendPid,
     startedFrontendPid,
     backendPort: options.backendPort,
+    profile: options.profile,
     frontendHost: options.frontendHost,
     frontendPort: options.frontendPort,
+    frontendProxyTarget: process.env.VITE_APP_PROXY_TARGET || `http://127.0.0.1:${options.backendPort}`,
     backendLog,
     frontendLog
   });

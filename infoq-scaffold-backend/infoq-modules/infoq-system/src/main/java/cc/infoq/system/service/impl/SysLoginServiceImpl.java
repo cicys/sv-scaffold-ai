@@ -13,20 +13,24 @@ import cc.infoq.common.redis.utils.RedisUtils;
 import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.utils.*;
 import cc.infoq.system.domain.entity.SysUser;
-import cc.infoq.system.domain.vo.*;
+import cc.infoq.system.domain.vo.SysDeptVo;
+import cc.infoq.system.domain.vo.SysPostVo;
+import cc.infoq.system.domain.vo.SysRoleVo;
+import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.*;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Opt;
 import cn.hutool.core.util.ObjectUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
@@ -159,6 +163,21 @@ public class SysLoginServiceImpl implements SysLoginService {
 
         // 登录成功 清空错误次数
         RedisUtils.deleteObject(errorKey);
+    }
+
+    @Override
+    public void invalidateUserSessions(Long userId, String userType) {
+        String loginId = userType + ":" + userId;
+        List<String> tokenIds = StpUtil.getTokenValueListByLoginId(loginId);
+        if (CollUtil.isEmpty(tokenIds)) {
+            return;
+        }
+        tokenIds.forEach(tokenId -> {
+            try {
+                StpUtil.logoutByTokenValue(tokenId);
+            } catch (NotLoginException ignored) {
+            }
+        });
     }
 
     private HttpServletRequest resolveCurrentRequest() {

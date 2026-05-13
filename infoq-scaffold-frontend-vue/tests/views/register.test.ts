@@ -8,6 +8,7 @@ const registerMocks = vi.hoisted(() => {
     getCodeImg: vi.fn(),
     register: vi.fn(),
     routerPush: vi.fn(),
+    routerReplace: vi.fn(),
     t: vi.fn((key: string) => key)
   };
 });
@@ -19,7 +20,8 @@ vi.mock('@/api/login', () => ({
 
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(() => ({
-    push: registerMocks.routerPush
+    push: registerMocks.routerPush,
+    replace: registerMocks.routerReplace
   }))
 }));
 
@@ -42,12 +44,12 @@ const ElFormStub = defineComponent({
 const ElButtonStub = defineComponent({
   name: 'ElButton',
   emits: ['click'],
-  setup(_, { emit, slots }) {
+  setup(_, { attrs, emit, slots }) {
     return () =>
       h(
         'button',
         {
-          class: 'register-submit-btn',
+          class: attrs.class,
           onClick: (e: MouseEvent) => emit('click', e)
         },
         slots.default?.()
@@ -74,7 +76,9 @@ describe('views/register', () => {
       data: {
         captchaEnabled: true,
         img: 'img-data',
-        uuid: 'uuid-2'
+        uuid: 'uuid-2',
+        registerEnabled: true,
+        mailEnabled: true
       }
     });
     registerMocks.register.mockResolvedValue(undefined);
@@ -100,10 +104,13 @@ describe('views/register', () => {
       }
     });
 
+  const findSubmitButton = (wrapper: ReturnType<typeof mountView>) =>
+    wrapper.findAll('button').find((button) => button.text().includes('register.register'))!;
+
   it('registers successfully and redirects to login', async () => {
     const wrapper = mountView();
     await flushPromises();
-    await wrapper.find('button.register-submit-btn').trigger('click');
+    await findSubmitButton(wrapper).trigger('click');
     await flushPromises();
 
     expect(registerMocks.register).toHaveBeenCalledTimes(1);
@@ -116,7 +123,7 @@ describe('views/register', () => {
 
     const wrapper = mountView();
     await flushPromises();
-    await wrapper.find('button.register-submit-btn').trigger('click');
+    await findSubmitButton(wrapper).trigger('click');
     await flushPromises();
 
     expect(registerMocks.getCodeImg).toHaveBeenCalledTimes(2);
