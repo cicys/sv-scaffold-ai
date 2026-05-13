@@ -7,6 +7,7 @@ import cc.infoq.common.json.utils.JsonUtils;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.redis.utils.CacheUtils;
+import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.service.ConfigService;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.ObjectUtils;
@@ -87,7 +88,18 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
      */
     @Override
     public boolean selectRegisterEnabled() {
-        String configValue = this.selectConfigByKey("sys.account.registerUser");
+        String configValue = this.selectConfigByKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
+        return Convert.toBool(configValue);
+    }
+
+    /**
+     * 鑾峰彇閭€璇风爜娉ㄥ唽寮€鍏?
+     *
+     * @return true寮€鍚紝false鍏抽棴
+     */
+    @Override
+    public boolean selectInviteRegisterEnabled() {
+        String configValue = this.selectConfigByKey(SystemConstants.ACCOUNT_INVITE_REGISTER_CONFIG_KEY);
         return Convert.toBool(configValue);
     }
 
@@ -98,7 +110,7 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
      */
     @Override
     public boolean selectForgotPasswordEnabled() {
-        String configValue = this.selectConfigByKey("sys.account.forgotPassword");
+        String configValue = this.selectConfigByKey(SystemConstants.ACCOUNT_FORGOT_PASSWORD_CONFIG_KEY);
         return Convert.toBool(configValue);
     }
 
@@ -136,8 +148,11 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     @Override
     public String insertConfig(SysConfigBo bo) {
         SysConfig config = MapstructUtils.convert(bo, SysConfig.class);
+        validateSensitiveConfigAccess(config);
+        normalizeSensitiveConfigValue(config);
         int row = sysConfigMapper.insert(config);
         if (row > 0) {
+            syncInviteRegisterConfigIfNeeded(config);
             return config.getConfigValue();
         }
         throw new ServiceException("操作失败");
@@ -154,6 +169,8 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     public String updateConfig(SysConfigBo bo) {
         int row = 0;
         SysConfig config = MapstructUtils.convert(bo, SysConfig.class);
+        validateSensitiveConfigAccess(config);
+        normalizeSensitiveConfigValue(config);
         if (config.getConfigId() != null) {
             SysConfig temp = sysConfigMapper.selectById(config.getConfigId());
             if (!StringUtils.equals(temp.getConfigKey(), config.getConfigKey())) {
@@ -166,6 +183,7 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
                 .eq(SysConfig::getConfigKey, config.getConfigKey()));
         }
         if (row > 0) {
+            syncInviteRegisterConfigIfNeeded(config);
             return config.getConfigValue();
         }
         throw new ServiceException("操作失败");
@@ -269,5 +287,41 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     public <T> List<T> getConfigArray(String configKey, Class<T> clazz) {
         String configValue = getConfigValue(configKey);
         return JsonUtils.parseArray(configValue, clazz);
+    }
+
+    private void validateSensitiveConfigAccess(SysConfig config) {
+        if (!isRegisterConfig(config.getConfigKey())) {
+            return;
+        }
+        if (LoginHelper.isLogin() && !LoginHelper.isSuperAdmin()) {
+            throw new ServiceException("仅超级管理员可修改该参数");
+        }
+    }
+
+    private void normalizeSensitiveConfigValue(SysConfig config) {
+        if (StringUtils.equals(config.getConfigKey(), SystemConstants.ACCOUNT_INVITE_REGISTER_CONFIG_KEY)
+            && !this.selectRegisterEnabled()) {
+            config.setConfigValue(Boolean.FALSE.toString());
+        }
+    }
+
+    private void syncInviteRegisterConfigIfNeeded(SysConfig config) {
+        if (!StringUtils.equals(config.getConfigKey(), SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY)) {
+            return;
+        }
+        if (Convert.toBool(config.getConfigValue())) {
+            return;
+        }
+        CacheUtils.evict(CacheNames.SYS_CONFIG, SystemConstants.ACCOUNT_INVITE_REGISTER_CONFIG_KEY);
+        SysConfig inviteConfig = new SysConfig();
+        inviteConfig.setConfigValue(Boolean.FALSE.toString());
+        sysConfigMapper.update(inviteConfig, new LambdaQueryWrapper<SysConfig>()
+            .eq(SysConfig::getConfigKey, SystemConstants.ACCOUNT_INVITE_REGISTER_CONFIG_KEY));
+    }
+
+    private boolean isRegisterConfig(String configKey) {
+        return StringUtils.equalsAny(configKey,
+            SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY,
+            SystemConstants.ACCOUNT_INVITE_REGISTER_CONFIG_KEY);
     }
 }

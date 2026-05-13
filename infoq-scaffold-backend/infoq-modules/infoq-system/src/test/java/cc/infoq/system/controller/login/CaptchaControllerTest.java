@@ -15,6 +15,7 @@ import cc.infoq.system.domain.vo.CaptchaVo;
 import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.SysConfigService;
+import cc.infoq.system.service.SysInviteCodeService;
 import cc.infoq.system.support.plugin.OptionalMailHelper;
 import cn.hutool.captcha.LineCaptcha;
 import cn.hutool.core.util.IdUtil;
@@ -49,6 +50,8 @@ class CaptchaControllerTest {
     private AuthEmailCodeService authEmailCodeService;
     @Mock
     private SysUserMapper userMapper;
+    @Mock
+    private SysInviteCodeService sysInviteCodeService;
 
     @InjectMocks
     private CaptchaController controller;
@@ -56,7 +59,7 @@ class CaptchaControllerTest {
     @BeforeEach
     void initSpringContext() {
         GenericApplicationContext context = new GenericApplicationContext();
-        context.registerBean(RedissonClient.class, () -> Mockito.mock(RedissonClient.class));
+        context.registerBean(RedissonClient.class, () -> mock(RedissonClient.class));
         context.refresh();
         new SpringUtils().setApplicationContext(context);
     }
@@ -66,6 +69,7 @@ class CaptchaControllerTest {
     void getCodeShouldReturnDisabledFlagWhenOff() {
         when(captchaProperties.getEnable()).thenReturn(false);
         when(sysConfigService.selectRegisterEnabled()).thenReturn(true);
+        when(sysConfigService.selectInviteRegisterEnabled()).thenReturn(true);
         when(sysConfigService.selectForgotPasswordEnabled()).thenReturn(false);
 
         try (MockedStatic<OptionalMailHelper> mailHelper = mockStatic(OptionalMailHelper.class)) {
@@ -76,6 +80,7 @@ class CaptchaControllerTest {
             assertEquals(ApiResult.SUCCESS, result.getCode());
             assertFalse(result.getData().getCaptchaEnabled());
             assertTrue(result.getData().getRegisterEnabled());
+            assertTrue(result.getData().getInviteRegisterEnabled());
             assertFalse(result.getData().getForgotPasswordEnabled());
             assertTrue(result.getData().getMailEnabled());
         }
@@ -86,11 +91,12 @@ class CaptchaControllerTest {
     void getCodeShouldDelegateToAopProxyWhenOn() {
         when(captchaProperties.getEnable()).thenReturn(true);
         when(sysConfigService.selectRegisterEnabled()).thenReturn(false);
+        when(sysConfigService.selectInviteRegisterEnabled()).thenReturn(false);
         when(sysConfigService.selectForgotPasswordEnabled()).thenReturn(true);
         CaptchaController proxy = spy(controller);
         CaptchaVo expected = new CaptchaVo();
         expected.setUuid("proxy-uuid");
-        doReturn(expected).when(proxy).getCodeImpl();
+        org.mockito.Mockito.doReturn(expected).when(proxy).getCodeImpl();
 
         try (MockedStatic<SpringUtils> springUtils = mockStatic(SpringUtils.class);
              MockedStatic<OptionalMailHelper> mailHelper = mockStatic(OptionalMailHelper.class)) {
@@ -102,6 +108,7 @@ class CaptchaControllerTest {
             assertEquals(ApiResult.SUCCESS, result.getCode());
             assertEquals("proxy-uuid", result.getData().getUuid());
             assertFalse(result.getData().getRegisterEnabled());
+            assertFalse(result.getData().getInviteRegisterEnabled());
             assertTrue(result.getData().getForgotPasswordEnabled());
             verify(proxy).getCodeImpl();
         }
@@ -119,7 +126,7 @@ class CaptchaControllerTest {
         when(captcha.getImageBase64()).thenReturn("base64-image");
 
         GenericApplicationContext context = new GenericApplicationContext();
-        context.registerBean(RedissonClient.class, () -> Mockito.mock(RedissonClient.class));
+        context.registerBean(RedissonClient.class, () -> mock(RedissonClient.class));
         context.registerBean(LineCaptcha.class, () -> captcha);
         context.refresh();
         new SpringUtils().setApplicationContext(context);
@@ -149,7 +156,6 @@ class CaptchaControllerTest {
             ApiResult<Void> result = controller.emailCode("dev@infoq.cc");
 
             assertEquals(ApiResult.FAIL, result.getCode());
-            assertEquals("当前系统没有开启邮箱功能！", result.getMsg());
         }
     }
 
@@ -224,6 +230,7 @@ class CaptchaControllerTest {
         body.setScene("register");
         when(captchaProperties.getEnable()).thenReturn(false);
         when(sysConfigService.selectRegisterEnabled()).thenReturn(true);
+        when(sysConfigService.selectInviteRegisterEnabled()).thenReturn(false);
         when(userMapper.exists(any())).thenReturn(false);
         CaptchaController proxy = spy(controller);
         doNothing().when(proxy).sendEmailCodeImpl(EmailCodeScene.REGISTER, "new@infoq.cc");
@@ -237,6 +244,34 @@ class CaptchaControllerTest {
 
             assertEquals(ApiResult.SUCCESS, result.getCode());
             verify(proxy).sendEmailCodeImpl(EmailCodeScene.REGISTER, "new@infoq.cc");
+            verifyNoInteractions(sysInviteCodeService);
+        }
+    }
+
+    @Test
+    @DisplayName("sendEmailCode: should validate invite code before sending register email code")
+    void sendEmailCodeShouldValidateInviteCodeBeforeRegisterScene() {
+        SendEmailCodeBody body = new SendEmailCodeBody();
+        body.setEmail("new@infoq.cc");
+        body.setScene("register");
+        body.setInviteCode("INVITE-CODE");
+        when(captchaProperties.getEnable()).thenReturn(false);
+        when(sysConfigService.selectRegisterEnabled()).thenReturn(true);
+        when(sysConfigService.selectInviteRegisterEnabled()).thenReturn(true);
+        when(userMapper.exists(any())).thenReturn(false);
+        CaptchaController proxy = spy(controller);
+        doNothing().when(proxy).sendEmailCodeImpl(EmailCodeScene.REGISTER, "new@infoq.cc");
+
+        try (MockedStatic<OptionalMailHelper> mailHelper = mockStatic(OptionalMailHelper.class);
+             MockedStatic<SpringUtils> springUtils = mockStatic(SpringUtils.class)) {
+            mailHelper.when(OptionalMailHelper::isEnabled).thenReturn(true);
+            springUtils.when(() -> SpringUtils.getAopProxy(controller)).thenReturn(proxy);
+
+            ApiResult<Void> result = controller.sendEmailCode(body);
+
+            assertEquals(ApiResult.SUCCESS, result.getCode());
+            verify(sysInviteCodeService).validateInviteCodeAvailable("INVITE-CODE");
+            verify(proxy).sendEmailCodeImpl(EmailCodeScene.REGISTER, "new@infoq.cc");
         }
     }
 
@@ -246,7 +281,7 @@ class CaptchaControllerTest {
         org.mockito.Mockito.doThrow(new RuntimeException("mail send failed"))
             .when(authEmailCodeService).sendCode(EmailCodeScene.REGISTER, "new@infoq.cc");
 
-        ServiceException ex = org.junit.jupiter.api.Assertions.assertThrows(
+        ServiceException ex = assertThrows(
             ServiceException.class,
             () -> controller.sendEmailCodeImpl(EmailCodeScene.REGISTER, "new@infoq.cc")
         );

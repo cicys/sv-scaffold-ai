@@ -18,6 +18,7 @@ export interface TableResponse<T> extends ApiResult {
 export type RegisterForm = {
   email: string;
   emailCode?: string;
+  inviteCode?: string;
   username: string;
   password: string;
   confirmPassword?: string;
@@ -37,6 +38,7 @@ export type ForgotPasswordForm = {
 export type SendEmailCodeForm = {
   email: string;
   scene: 'register' | 'forgot_password' | 'email_login';
+  inviteCode?: string;
   code?: string;
   uuid?: string;
 };
@@ -70,6 +72,7 @@ export interface VerifyCodeResult {
   uuid?: string;
   img?: string;
   registerEnabled?: boolean;
+  inviteRegisterEnabled?: boolean;
   forgotPasswordEnabled?: boolean;
   mailEnabled?: boolean;
 }

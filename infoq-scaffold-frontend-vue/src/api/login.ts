@@ -59,6 +59,19 @@ export function sendEmailCode(data: SendEmailCodeForm): Promise<ApiResult> {
   });
 }
 
+export function checkInviteCode(inviteCode: string): Promise<ApiResult> {
+  return request({
+    url: '/auth/invite/code/check',
+    headers: {
+      isToken: false
+    },
+    method: 'get',
+    params: {
+      inviteCode
+    }
+  });
+}
+
 export function forgotPassword(data: ForgotPasswordForm): Promise<ApiResult> {
   return request({
     url: '/auth/forgot-password',

@@ -7,6 +7,8 @@ const registerMocks = vi.hoisted(() => {
   return {
     getCodeImg: vi.fn(),
     register: vi.fn(),
+    sendEmailCode: vi.fn(),
+    checkInviteCode: vi.fn(),
     routerPush: vi.fn(),
     routerReplace: vi.fn(),
     t: vi.fn((key: string) => key)
@@ -15,7 +17,9 @@ const registerMocks = vi.hoisted(() => {
 
 vi.mock('@/api/login', () => ({
   getCodeImg: registerMocks.getCodeImg,
-  register: registerMocks.register
+  register: registerMocks.register,
+  sendEmailCode: registerMocks.sendEmailCode,
+  checkInviteCode: registerMocks.checkInviteCode
 }));
 
 vi.mock('vue-router', () => ({
@@ -78,10 +82,13 @@ describe('views/register', () => {
         img: 'img-data',
         uuid: 'uuid-2',
         registerEnabled: true,
+        inviteRegisterEnabled: false,
         mailEnabled: true
       }
     });
     registerMocks.register.mockResolvedValue(undefined);
+    registerMocks.sendEmailCode.mockResolvedValue(undefined);
+    registerMocks.checkInviteCode.mockResolvedValue(undefined);
   });
 
   const mountView = () =>

@@ -6,7 +6,7 @@ vi.mock('@/utils/request', () => ({
   default: loginApiMocks.request
 }));
 
-import { forgotPassword, getCodeImg, getInfo, login, logout, register, sendEmailCode } from '@/api/login';
+import { checkInviteCode, forgotPassword, getCodeImg, getInfo, login, logout, register, sendEmailCode } from '@/api/login';
 import type { LoginData } from '@/api/types';
 
 describe('api/login', () => {
@@ -17,7 +17,7 @@ describe('api/login', () => {
 
   it('sends login request with default clientId and grantType', () => {
     login({
-      userName: 'alice',
+      username: 'alice',
       password: '123456',
       code: 'abcd',
       uuid: 'uuid-1'
@@ -32,7 +32,7 @@ describe('api/login', () => {
       },
       method: 'post',
       data: {
-        userName: 'alice',
+        username: 'alice',
         password: '123456',
         code: 'abcd',
         uuid: 'uuid-1',
@@ -44,7 +44,7 @@ describe('api/login', () => {
 
   it('keeps explicit login clientId and grantType when provided', () => {
     login({
-      userName: 'alice',
+      username: 'alice',
       password: '123456',
       code: 'abcd',
       uuid: 'uuid-1',
@@ -64,10 +64,11 @@ describe('api/login', () => {
 
   it('sends register request with fixed clientId and password grant type', () => {
     register({
-      userName: 'new-user',
+      email: 'user@example.com',
+      emailCode: '999000',
+      username: 'new-user',
       password: '123456',
-      clientId: 'override-client',
-      grantType: 'sms'
+      inviteCode: 'INVITE-CODE'
     });
 
     expect(loginApiMocks.request).toHaveBeenCalledWith({
@@ -79,7 +80,10 @@ describe('api/login', () => {
       },
       method: 'post',
       data: {
-        userName: 'new-user',
+        email: 'user@example.com',
+        emailCode: '999000',
+        inviteCode: 'INVITE-CODE',
+        username: 'new-user',
         password: '123456',
         clientId: 'test-client-id',
         grantType: 'password'
@@ -137,6 +141,7 @@ describe('api/login', () => {
     sendEmailCode({
       email: 'user@example.com',
       scene: 'forgot_password',
+      inviteCode: 'INVITE-CODE',
       code: 'ABCD',
       uuid: 'uuid-2'
     });
@@ -152,8 +157,24 @@ describe('api/login', () => {
       data: {
         email: 'user@example.com',
         scene: 'forgot_password',
+        inviteCode: 'INVITE-CODE',
         code: 'ABCD',
         uuid: 'uuid-2'
+      }
+    });
+  });
+
+  it('checks invite code through public endpoint', () => {
+    checkInviteCode('INVITE-CODE');
+
+    expect(loginApiMocks.request).toHaveBeenCalledWith({
+      url: '/auth/invite/code/check',
+      headers: {
+        isToken: false
+      },
+      method: 'get',
+      params: {
+        inviteCode: 'INVITE-CODE'
       }
     });
   });

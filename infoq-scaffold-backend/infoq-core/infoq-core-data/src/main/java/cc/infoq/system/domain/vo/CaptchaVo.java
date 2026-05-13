@@ -40,4 +40,9 @@ public class CaptchaVo {
      */
     private Boolean mailEnabled = false;
 
+    /**
+     * 鏄惁寮€鍚個璇风爜娉ㄥ唽
+     */
+    private Boolean inviteRegisterEnabled = false;
+
 }

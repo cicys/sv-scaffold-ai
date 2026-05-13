@@ -43,4 +43,9 @@ public class SendEmailCodeBody implements Serializable {
      * 图形验证码 uuid
      */
     private String uuid;
+
+    /**
+     * 邀请码
+     */
+    private String inviteCode;
 }

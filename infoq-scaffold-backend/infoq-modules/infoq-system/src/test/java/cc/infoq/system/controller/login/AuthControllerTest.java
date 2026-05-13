@@ -14,7 +14,10 @@ import cc.infoq.system.support.plugin.OptionalSseHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -23,6 +26,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -47,12 +51,14 @@ class AuthControllerTest {
     @Mock
     private SysForgotPasswordService sysForgotPasswordService;
     @Mock
+    private SysInviteCodeService sysInviteCodeService;
+    @Mock
     private ScheduledExecutorService scheduledExecutorService;
 
     @InjectMocks
     private AuthController controller;
 
-    @BeforeEach
+    @org.junit.jupiter.api.BeforeEach
     void initSpringContext() {
         context = new GenericApplicationContext();
         context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
@@ -77,8 +83,39 @@ class AuthControllerTest {
         ApiResult<Void> result = controller.register(body);
 
         assertEquals(ApiResult.FAIL, result.getCode());
-        assertTrue(result.getMsg().contains("没有开启注册功能"));
-        verifyNoInteractions(sysRegisterService);
+        assertTrue(result.getMsg().contains("当前系统没有开启注册功能"));
+        verifyNoInteractions(sysRegisterService, sysInviteCodeService);
+    }
+
+    @Test
+    @DisplayName("register: should validate invite code when invite register is enabled")
+    void registerShouldValidateInviteCodeWhenInviteRegisterEnabled() {
+        RegisterBody body = new RegisterBody();
+        body.setInviteCode("INVITE-CODE");
+        when(sysConfigService.selectRegisterEnabled()).thenReturn(true);
+        when(sysConfigService.selectInviteRegisterEnabled()).thenReturn(true);
+
+        try (MockedStatic<OptionalMailHelper> mailHelper = mockStatic(OptionalMailHelper.class)) {
+            mailHelper.when(OptionalMailHelper::isEnabled).thenReturn(true);
+
+            ApiResult<Void> result = controller.register(body);
+
+            assertEquals(ApiResult.SUCCESS, result.getCode());
+            verify(sysInviteCodeService).validateInviteCodeAvailable("INVITE-CODE");
+            verify(sysRegisterService).register(body);
+        }
+    }
+
+    @Test
+    @DisplayName("checkInviteCode: should fail when invite register switch is disabled")
+    void checkInviteCodeShouldFailWhenInviteRegisterDisabled() {
+        when(sysConfigService.selectInviteRegisterEnabled()).thenReturn(false);
+
+        ApiResult<Void> result = controller.checkInviteCode("INVITE-CODE");
+
+        assertEquals(ApiResult.FAIL, result.getCode());
+        assertTrue(result.getMsg().contains("邀请码不可用"));
+        verifyNoInteractions(sysInviteCodeService);
     }
 
     @Test
@@ -90,7 +127,7 @@ class AuthControllerTest {
         ApiResult<Void> result = controller.forgotPassword(body);
 
         assertEquals(ApiResult.FAIL, result.getCode());
-        assertTrue(result.getMsg().contains("没有开启忘记密码功能"));
+        assertTrue(result.getMsg().contains("当前系统没有开启忘记密码功能"));
         verifyNoInteractions(sysForgotPasswordService);
     }
 
@@ -106,7 +143,7 @@ class AuthControllerTest {
             ApiResult<Void> result = controller.forgotPassword(body);
 
             assertEquals(ApiResult.FAIL, result.getCode());
-            assertTrue(result.getMsg().contains("没有开启邮箱功能"));
+            assertTrue(result.getMsg().contains("当前系统没有开启邮箱功能"));
             verifyNoInteractions(sysForgotPasswordService);
         }
     }
@@ -154,7 +191,7 @@ class AuthControllerTest {
         client.setGrantType("password,email");
         client.setStatus(SystemConstants.NORMAL);
         when(sysClientService.queryByClientId("pc")).thenReturn(client);
-        doReturn(null).when(scheduledExecutorService).schedule(any(Runnable.class), eq(5L), eq(TimeUnit.SECONDS));
+        doReturn(null).when(scheduledExecutorService).schedule(any(Runnable.class), org.mockito.ArgumentMatchers.eq(5L), org.mockito.ArgumentMatchers.eq(TimeUnit.SECONDS));
 
         LoginVo loginVo = new LoginVo();
         loginVo.setAccessToken("token-1");
@@ -162,7 +199,7 @@ class AuthControllerTest {
         loginVo.setClientId("pc");
         try (MockedStatic<AuthStrategy> authStrategy = mockStatic(AuthStrategy.class);
              MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            authStrategy.when(() -> AuthStrategy.login(anyString(), eq(client), eq("password"))).thenReturn(loginVo);
+            authStrategy.when(() -> AuthStrategy.login(any(String.class), org.mockito.ArgumentMatchers.eq(client), org.mockito.ArgumentMatchers.eq("password"))).thenReturn(loginVo);
             loginHelper.when(LoginHelper::getUserId).thenReturn(100L);
 
             ApiResult<LoginVo> result = controller.login("{\"clientId\":\"pc\",\"grantType\":\"password\",\"rememberMe\":true}");
@@ -170,13 +207,12 @@ class AuthControllerTest {
             assertEquals(ApiResult.SUCCESS, result.getCode());
             assertEquals("token-1", result.getData().getAccessToken());
             ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
-            verify(scheduledExecutorService).schedule(runnableCaptor.capture(), eq(5L), eq(TimeUnit.SECONDS));
+            verify(scheduledExecutorService).schedule(runnableCaptor.capture(), org.mockito.ArgumentMatchers.eq(5L), org.mockito.ArgumentMatchers.eq(TimeUnit.SECONDS));
 
             try (MockedStatic<OptionalSseHelper> optionalSseHelper = mockStatic(OptionalSseHelper.class)) {
                 runnableCaptor.getValue().run();
-                optionalSseHelper.verify(() -> OptionalSseHelper.publishToUsers(eq(java.util.List.of(100L)), anyString()));
+                optionalSseHelper.verify(() -> OptionalSseHelper.publishToUsers(org.mockito.ArgumentMatchers.eq(List.of(100L)), any(String.class)));
             }
         }
     }
-
 }

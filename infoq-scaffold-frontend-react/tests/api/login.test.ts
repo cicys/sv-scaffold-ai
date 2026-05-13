@@ -72,6 +72,7 @@ describe('api/login', () => {
     register({
       email: 'user@example.com',
       emailCode: '999000',
+      inviteCode: 'INVITE-CODE',
       username: 'new-user',
       password: 'Pass@123'
     });
@@ -87,6 +88,7 @@ describe('api/login', () => {
       data: {
         email: 'user@example.com',
         emailCode: '999000',
+        inviteCode: 'INVITE-CODE',
         username: 'new-user',
         password: 'Pass@123',
         clientId: 'test-client-id',
@@ -100,6 +102,7 @@ describe('api/login', () => {
     sendEmailCode({
       email: 'user@example.com',
       scene: 'forgot_password',
+      inviteCode: 'INVITE-CODE',
       code: 'ABCD',
       uuid: 'uuid-2'
     });
@@ -115,8 +118,25 @@ describe('api/login', () => {
       data: {
         email: 'user@example.com',
         scene: 'forgot_password',
+        inviteCode: 'INVITE-CODE',
         code: 'ABCD',
         uuid: 'uuid-2'
+      }
+    });
+  });
+
+  it('checks invite code through public endpoint', async () => {
+    const { checkInviteCode } = await import('@/api/login');
+    checkInviteCode('INVITE-CODE');
+
+    expect(loginApiMocks.request).toHaveBeenCalledWith({
+      url: '/auth/invite/code/check',
+      headers: {
+        isToken: false
+      },
+      method: 'get',
+      params: {
+        inviteCode: 'INVITE-CODE'
       }
     });
   });

@@ -22,6 +22,7 @@ import cc.infoq.system.domain.vo.CaptchaVo;
 import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.SysConfigService;
+import cc.infoq.system.service.SysInviteCodeService;
 import cc.infoq.system.support.plugin.OptionalMailHelper;
 import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.captcha.AbstractCaptcha;
@@ -57,6 +58,7 @@ public class CaptchaController {
     private final SysConfigService sysConfigService;
     private final AuthEmailCodeService authEmailCodeService;
     private final SysUserMapper userMapper;
+    private final SysInviteCodeService sysInviteCodeService;
 
     /**
      * 兼容旧客户端的邮箱验证码发送接口，默认用于邮件登录场景
@@ -87,6 +89,9 @@ public class CaptchaController {
         }
         if (scene == EmailCodeScene.FORGOT_PASSWORD && !sysConfigService.selectForgotPasswordEnabled()) {
             return ApiResult.fail("当前系统没有开启忘记密码功能！");
+        }
+        if (scene == EmailCodeScene.REGISTER && sysConfigService.selectInviteRegisterEnabled()) {
+            sysInviteCodeService.validateInviteCodeAvailable(body.getInviteCode());
         }
         if (captchaProperties.getEnable()) {
             validateCaptcha(body.getCode(), body.getUuid());
@@ -178,6 +183,7 @@ public class CaptchaController {
 
     private void enrichPublicAuthCapabilities(CaptchaVo captchaVo) {
         captchaVo.setRegisterEnabled(sysConfigService.selectRegisterEnabled());
+        captchaVo.setInviteRegisterEnabled(sysConfigService.selectInviteRegisterEnabled());
         captchaVo.setForgotPasswordEnabled(sysConfigService.selectForgotPasswordEnabled());
         captchaVo.setMailEnabled(OptionalMailHelper.isEnabled());
     }

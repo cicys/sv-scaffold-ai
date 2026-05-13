@@ -28,6 +28,7 @@ const resources = {
         }
       },
       register: {
+        inviteCode: '邀请码',
         email: '邮箱',
         emailCode: '邮箱验证码',
         username: '用户名',
@@ -49,6 +50,10 @@ const resources = {
           },
           emailCode: {
             required: '请输入邮箱验证码'
+          },
+          inviteCode: {
+            required: '请输入邀请码',
+            invalid: '邀请码不可用'
           },
           username: {
             required: '请输入您的账号',
@@ -170,6 +175,7 @@ const resources = {
         }
       },
       register: {
+        inviteCode: 'Invite Code',
         email: 'Email',
         emailCode: 'Email Code',
         username: 'Username',
@@ -191,6 +197,10 @@ const resources = {
           },
           emailCode: {
             required: 'Please enter the email verification code'
+          },
+          inviteCode: {
+            required: 'Please enter the invite code',
+            invalid: 'Invite code is unavailable'
           },
           username: {
             required: 'Please enter your account',

@@ -1,7 +1,7 @@
 import { App, Button, Form, Input } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCodeImg, register as registerApi, sendEmailCode } from '@/api/login';
+import { checkInviteCode, getCodeImg, register as registerApi, sendEmailCode } from '@/api/login';
 import type { RegisterForm } from '@/api/types';
 import AuthPageShell from '@/components/AuthPageShell';
 import SvgIcon from '@/components/SvgIcon';
@@ -16,6 +16,10 @@ export default function RegisterPage() {
   const [countdown, setCountdown] = useState(0);
   const [captchaEnabled, setCaptchaEnabled] = useState(true);
   const [codeUrl, setCodeUrl] = useState('');
+  const [inviteRegisterEnabled, setInviteRegisterEnabled] = useState(false);
+  const [inviteCodeValid, setInviteCodeValid] = useState(false);
+  const [inviteChecking, setInviteChecking] = useState(false);
+  const [lastValidatedInviteCode, setLastValidatedInviteCode] = useState('');
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { message } = App.useApp();
@@ -29,6 +33,13 @@ export default function RegisterPage() {
       if (!data?.registerEnabled || !data.mailEnabled) {
         navigate('/login', { replace: true });
         return;
+      }
+      const inviteEnabled = data.inviteRegisterEnabled === true;
+      setInviteRegisterEnabled(inviteEnabled);
+      if (!inviteEnabled) {
+        setInviteCodeValid(false);
+        setLastValidatedInviteCode('');
+        form.setFieldValue('inviteCode', undefined);
       }
       const enabled = data.captchaEnabled === undefined ? true : data.captchaEnabled;
       setCaptchaEnabled(enabled);
@@ -65,6 +76,7 @@ export default function RegisterPage() {
     form.setFieldsValue({
       email: '',
       emailCode: '',
+      inviteCode: '',
       username: '',
       password: '',
       confirmPassword: '',
@@ -77,17 +89,62 @@ export default function RegisterPage() {
   const countdownText =
     countdown > 0 ? t('register.countdown', { seconds: countdown }) : sendingCode ? t('register.sendingCode') : t('register.sendCode');
 
+  const handleInviteBlur = async () => {
+    if (!inviteRegisterEnabled) {
+      return;
+    }
+    const inviteCode = form.getFieldValue('inviteCode')?.trim();
+    form.setFieldValue('inviteCode', inviteCode);
+    if (!inviteCode) {
+      setInviteCodeValid(false);
+      setLastValidatedInviteCode('');
+      return;
+    }
+    if (inviteCodeValid && lastValidatedInviteCode === inviteCode) {
+      return;
+    }
+    setInviteChecking(true);
+    try {
+      await checkInviteCode(inviteCode);
+      setInviteCodeValid(true);
+      setLastValidatedInviteCode(inviteCode);
+    } catch {
+      setInviteCodeValid(false);
+      setLastValidatedInviteCode('');
+      await form.validateFields(['inviteCode']).catch(() => undefined);
+    } finally {
+      setInviteChecking(false);
+    }
+  };
+
+  const handleInviteChange = () => {
+    if (!inviteRegisterEnabled) {
+      return;
+    }
+    setInviteCodeValid(false);
+    setLastValidatedInviteCode('');
+  };
+
   const handleSendCode = async () => {
     try {
-      await form.validateFields(captchaEnabled ? ['email', 'code'] : ['email']);
+      const fields = inviteRegisterEnabled ? ['inviteCode', 'email'] : ['email'];
+      if (captchaEnabled) {
+        fields.push('code');
+      }
+      await form.validateFields(fields);
     } catch {
       return;
     }
 
-    const values = form.getFieldsValue(['email', 'code', 'uuid']);
+    if (inviteRegisterEnabled && !inviteCodeValid) {
+      return;
+    }
+
+    const values = form.getFieldsValue(['inviteCode', 'email', 'code', 'uuid']);
     setSendingCode(true);
     try {
       await sendEmailCode({
+        inviteCode: values.inviteCode,
         email: values.email,
         scene: 'register',
         code: values.code,
@@ -105,6 +162,10 @@ export default function RegisterPage() {
   };
 
   const onFinish = async (values: RegisterForm) => {
+    if (inviteRegisterEnabled && !inviteCodeValid) {
+      await form.validateFields(['inviteCode']).catch(() => undefined);
+      return;
+    }
     setLoading(true);
     try {
       await registerApi(values);
@@ -125,6 +186,38 @@ export default function RegisterPage() {
         <Form.Item name="uuid" hidden>
           <Input />
         </Form.Item>
+
+        {inviteRegisterEnabled && (
+          <Form.Item
+            name="inviteCode"
+            style={{ marginBottom: 22 }}
+            rules={[
+              { required: true, message: t('register.rule.inviteCode.required') },
+              {
+                validator: async (_, value) => {
+                  if (!inviteRegisterEnabled) {
+                    return;
+                  }
+                  if (!value) {
+                    throw new Error(t('register.rule.inviteCode.required'));
+                  }
+                  if (!inviteCodeValid) {
+                    throw new Error(t('register.rule.inviteCode.invalid'));
+                  }
+                }
+              }
+            ]}
+          >
+            <Input
+              size="large"
+              autoComplete="off"
+              placeholder={t('register.inviteCode')}
+              prefix={<SvgIcon iconClass="password" size={14} style={authIconStyle} />}
+              onBlur={handleInviteBlur}
+              onChange={handleInviteChange}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item
           name="email"
@@ -152,7 +245,7 @@ export default function RegisterPage() {
               onPressEnter={() => form.submit()}
             />
           </Form.Item>
-          <Button size="large" loading={sendingCode} disabled={countdown > 0} onClick={handleSendCode}>
+          <Button size="large" loading={sendingCode} disabled={countdown > 0 || (inviteRegisterEnabled && (inviteChecking || !inviteCodeValid))} onClick={handleSendCode}>
             {countdownText}
           </Button>
         </div>

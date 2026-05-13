@@ -5,6 +5,19 @@
         <h3 class="title">{{ title }}</h3>
         <lang-select />
       </div>
+      <el-form-item v-if="inviteRegisterEnabled" prop="inviteCode">
+        <el-input
+          v-model="registerForm.inviteCode"
+          type="text"
+          size="large"
+          auto-complete="off"
+          :placeholder="proxy.$t('register.inviteCode')"
+          @blur="handleInviteBlur"
+          @input="handleInviteInput"
+        >
+          <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
       <el-form-item prop="email">
         <el-input v-model="registerForm.email" type="text" size="large" auto-complete="off" :placeholder="proxy.$t('register.email')">
           <template #prefix><svg-icon icon-class="email" class="el-input__icon input-icon" /></template>
@@ -21,7 +34,7 @@
           >
             <template #prefix><svg-icon icon-class="validCode" class="el-input__icon input-icon" /></template>
           </el-input>
-          <el-button :loading="sendingCode" :disabled="countdown > 0" size="large" class="secondary-btn" @click.prevent="handleSendCode">
+          <el-button :loading="sendingCode" :disabled="sendCodeDisabled" size="large" class="secondary-btn" @click.prevent="handleSendCode">
             {{ countdownText }}
           </el-button>
         </div>
@@ -88,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCodeImg, register, sendEmailCode } from '@/api/login';
+import { checkInviteCode, getCodeImg, register, sendEmailCode } from '@/api/login';
 import { RegisterForm } from '@/api/types';
 import { to } from 'await-to-js';
 import { useI18n } from 'vue-i18n';
@@ -102,6 +115,7 @@ const router = useRouter();
 const { t } = useI18n();
 
 const registerForm = ref<RegisterForm>({
+  inviteCode: '',
   email: '',
   emailCode: '',
   username: '',
@@ -122,7 +136,24 @@ const equalToPassword = (_rule: unknown, value: string, callback: ValidatorCallb
   }
 };
 
+const validateInviteCode = (_rule: unknown, value: string | undefined, callback: ValidatorCallback) => {
+  if (!inviteRegisterEnabled.value) {
+    callback();
+    return;
+  }
+  if (!value) {
+    callback(new Error(t('register.rule.inviteCode.required')));
+    return;
+  }
+  if (!inviteCodeValid.value) {
+    callback(new Error(t('register.rule.inviteCode.invalid')));
+    return;
+  }
+  callback();
+};
+
 const registerRules: ElFormRules = {
+  inviteCode: [{ required: true, validator: validateInviteCode, trigger: 'blur' }],
   email: [
     { required: true, trigger: 'blur', message: t('register.rule.email.required') },
     { type: 'email', trigger: 'blur', message: t('register.rule.email.invalid') }
@@ -148,6 +179,10 @@ const loading = ref(false);
 const sendingCode = ref(false);
 const countdown = ref(0);
 const captchaEnabled = ref(true);
+const inviteRegisterEnabled = ref(false);
+const inviteCodeValid = ref(false);
+const inviteChecking = ref(false);
+const lastValidatedInviteCode = ref('');
 const registerRef = ref<ElFormInstance>();
 let countdownTimer: number | undefined;
 
@@ -158,9 +193,59 @@ const countdownText = computed(() => {
   return sendingCode.value ? t('register.sendingCode') : t('register.sendCode');
 });
 
+const sendCodeDisabled = computed(() => {
+  if (countdown.value > 0) {
+    return true;
+  }
+  if (!inviteRegisterEnabled.value) {
+    return false;
+  }
+  return inviteChecking.value || !inviteCodeValid.value;
+});
+
+const resetInviteValidation = () => {
+  inviteCodeValid.value = false;
+  lastValidatedInviteCode.value = '';
+};
+
+const handleInviteInput = () => {
+  if (!inviteRegisterEnabled.value) {
+    return;
+  }
+  resetInviteValidation();
+};
+
+const handleInviteBlur = async () => {
+  if (!inviteRegisterEnabled.value) {
+    return;
+  }
+  const inviteCode = registerForm.value.inviteCode?.trim();
+  registerForm.value.inviteCode = inviteCode;
+  if (!inviteCode) {
+    resetInviteValidation();
+    return;
+  }
+  if (inviteCodeValid.value && lastValidatedInviteCode.value === inviteCode) {
+    return;
+  }
+  inviteChecking.value = true;
+  const [err] = await to(checkInviteCode(inviteCode));
+  inviteChecking.value = false;
+  if (err) {
+    resetInviteValidation();
+    registerRef.value?.validateField?.('inviteCode');
+    return;
+  }
+  inviteCodeValid.value = true;
+  lastValidatedInviteCode.value = inviteCode;
+};
+
 const handleRegister = () => {
   registerRef.value?.validate(async (valid: boolean) => {
     if (valid) {
+      if (inviteRegisterEnabled.value && !inviteCodeValid.value) {
+        return;
+      }
       loading.value = true;
       const [err] = await to(register(registerForm.value));
       if (!err) {
@@ -200,6 +285,14 @@ const startCountdown = () => {
 };
 
 const handleSendCode = async () => {
+  if (inviteRegisterEnabled.value && !registerForm.value.inviteCode) {
+    ElMessage.error(t('register.rule.inviteCode.required'));
+    return;
+  }
+  if (inviteRegisterEnabled.value && !inviteCodeValid.value) {
+    ElMessage.error(t('register.rule.inviteCode.invalid'));
+    return;
+  }
   if (!registerForm.value.email) {
     ElMessage.error(t('register.rule.email.required'));
     return;
@@ -215,6 +308,7 @@ const handleSendCode = async () => {
   sendingCode.value = true;
   const [err] = await to(
     sendEmailCode({
+      inviteCode: registerForm.value.inviteCode,
       email: registerForm.value.email,
       scene: 'register',
       code: registerForm.value.code,
@@ -238,6 +332,11 @@ const getCode = async () => {
   if (!data.registerEnabled || !data.mailEnabled) {
     await router.replace('/login');
     return;
+  }
+  inviteRegisterEnabled.value = data.inviteRegisterEnabled === true;
+  if (!inviteRegisterEnabled.value) {
+    registerForm.value.inviteCode = '';
+    resetInviteValidation();
   }
   captchaEnabled.value = data.captchaEnabled === undefined ? true : data.captchaEnabled;
   if (captchaEnabled.value) {

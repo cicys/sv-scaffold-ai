@@ -4,6 +4,7 @@ import cc.infoq.common.constant.CacheNames;
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.dto.UserDTO;
 import cc.infoq.common.exception.ServiceException;
+import cc.infoq.common.mybatis.helper.DataPermissionHelper;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.satoken.utils.LoginHelper;
@@ -335,11 +336,24 @@ public class SysUserServiceImpl implements SysUserService, UserService {
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean registerUser(SysUserBo user) {
         user.setCreateBy(0L);
         user.setUpdateBy(0L);
+        if (ObjectUtil.isNull(user.getCreateDept())) {
+            user.setCreateDept(user.getDeptId());
+        }
         SysUser sysUser = MapstructUtils.convert(user, SysUser.class);
-        return sysUserMapper.insert(sysUser) > 0;
+        boolean saved = sysUserMapper.insert(sysUser) > 0;
+        if (!saved) {
+            return false;
+        }
+        user.setUserId(sysUser.getUserId());
+        DataPermissionHelper.ignore(() -> {
+            insertUserPost(user, false);
+            insertUserRole(user, false);
+        });
+        return true;
     }
 
     /**

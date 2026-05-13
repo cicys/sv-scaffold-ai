@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Card, Col, DatePicker, Form, Input, Modal, Radio, Row, Select, Space, Table, Tooltip } from 'antd';
+import { Button, Card, Col, DatePicker, Form, Input, Modal, Radio, Row, Select, Space, Switch, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import useDictOptions from '@/hooks/useDictOptions';
-import { addConfig, delConfig, getConfig, listConfig, refreshCache, updateConfig } from '@/api/system/config';
+import { addConfig, delConfig, getConfig, getConfigKey, listConfig, refreshCache, updateConfig, updateConfigByKey } from '@/api/system/config';
 import type { ConfigForm, ConfigQuery, ConfigVO } from '@/api/system/config/types';
 import Pagination from '@/components/Pagination';
 import RightToolbar from '@/components/RightToolbar';
@@ -12,6 +12,7 @@ import DictTag from '@/components/DictTag';
 import modal from '@/utils/modal';
 import { addDateRange } from '@/utils/scaffold';
 import { download } from '@/utils/request';
+import { useUserStore } from '@/store/modules/user';
 
 const initialQuery: ConfigQuery = {
   pageNum: 1,
@@ -30,6 +31,11 @@ const initialForm: ConfigForm = {
   remark: ''
 };
 
+const accountConfigKeys = {
+  register: 'sys.account.registerUser',
+  invite: 'sys.account.inviteRegister'
+};
+
 const formatRange = (range: [Dayjs, Dayjs] | null) =>
   range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
 
@@ -44,8 +50,17 @@ export default function ConfigPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm<ConfigForm>();
+  const [accountSettingLoading, setAccountSettingLoading] = useState(false);
+  const [registerSwitchLoading, setRegisterSwitchLoading] = useState(false);
+  const [inviteSwitchLoading, setInviteSwitchLoading] = useState(false);
+  const [accountSettings, setAccountSettings] = useState({
+    registerEnabled: false,
+    inviteRegisterEnabled: false
+  });
   const configId = Form.useWatch('configId', form);
   const dict = useDictOptions('sys_yes_no');
+  const roles = useUserStore((state) => state.roles);
+  const isSuperAdmin = roles.includes('superadmin');
 
   const loadList = useCallback(async (nextQuery: ConfigQuery, nextRange: [Dayjs, Dayjs] | null) => {
     setLoading(true);
@@ -58,9 +73,29 @@ export default function ConfigPage() {
     }
   }, []);
 
+  const loadAccountSettings = useCallback(async () => {
+    if (!isSuperAdmin) {
+      return;
+    }
+    setAccountSettingLoading(true);
+    try {
+      const [registerRes, inviteRes] = await Promise.all([getConfigKey(accountConfigKeys.register), getConfigKey(accountConfigKeys.invite)]);
+      setAccountSettings({
+        registerEnabled: registerRes.data === 'true',
+        inviteRegisterEnabled: inviteRes.data === 'true'
+      });
+    } finally {
+      setAccountSettingLoading(false);
+    }
+  }, [isSuperAdmin]);
+
   useEffect(() => {
     loadList(initialQuery, null);
   }, [loadList]);
+
+  useEffect(() => {
+    loadAccountSettings();
+  }, [loadAccountSettings]);
 
   const columns: ColumnsType<ConfigVO> = [
     {
@@ -135,19 +170,19 @@ export default function ConfigPage() {
     setDialogOpen(true);
   };
 
-  const handleEdit = async (configId: string | number) => {
-    const response = await getConfig(configId);
+  const handleEdit = async (targetConfigId: string | number) => {
+    const response = await getConfig(targetConfigId);
     form.setFieldsValue({ ...initialForm, ...response.data });
     setDialogOpen(true);
   };
 
-  const handleDelete = async (configId?: string | number | Array<string | number>) => {
-    const target = configId || selectedIds;
+  const handleDelete = async (targetConfigId?: string | number | Array<string | number>) => {
+    const target = targetConfigId || selectedIds;
     if (!target || (Array.isArray(target) && target.length === 0)) {
       modal.msgWarning('请选择要删除的参数');
       return;
     }
-    const confirmed = await modal.confirm(`是否确认删除参数编号为 "${Array.isArray(target) ? target.join(',') : target}" 的数据项？`);
+    const confirmed = await modal.confirm(`是否确认删除参数编号为"${Array.isArray(target) ? target.join(',') : target}"的数据项？`);
     if (!confirmed) {
       return;
     }
@@ -172,6 +207,38 @@ export default function ConfigPage() {
       loadList(query, dateRange);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRegisterSettingChange = async (checked: boolean) => {
+    const previous = accountSettings.registerEnabled;
+    setAccountSettings((prev) => ({ ...prev, registerEnabled: checked }));
+    setRegisterSwitchLoading(true);
+    try {
+      await updateConfigByKey(accountConfigKeys.register, checked);
+      await loadAccountSettings();
+      modal.msgSuccess('操作成功');
+    } catch (error) {
+      setAccountSettings((prev) => ({ ...prev, registerEnabled: previous }));
+      throw error;
+    } finally {
+      setRegisterSwitchLoading(false);
+    }
+  };
+
+  const handleInviteSettingChange = async (checked: boolean) => {
+    const previous = accountSettings.inviteRegisterEnabled;
+    setAccountSettings((prev) => ({ ...prev, inviteRegisterEnabled: checked }));
+    setInviteSwitchLoading(true);
+    try {
+      await updateConfigByKey(accountConfigKeys.invite, checked);
+      await loadAccountSettings();
+      modal.msgSuccess('操作成功');
+    } catch (error) {
+      setAccountSettings((prev) => ({ ...prev, inviteRegisterEnabled: previous }));
+      throw error;
+    } finally {
+      setInviteSwitchLoading(false);
     }
   };
 
@@ -234,6 +301,32 @@ export default function ConfigPage() {
               </Col>
             </Row>
           </Form>
+        </Card>
+      )}
+
+      {isSuperAdmin && (
+        <Card loading={accountSettingLoading} title="账号自助设置">
+          <div style={{ display: 'grid', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>是否开启注册</div>
+                <div style={{ marginTop: 4, color: 'var(--ant-color-text-secondary)', fontSize: 12 }}>关闭后会自动关闭邀请码注册，公开注册页不可访问。</div>
+              </div>
+              <Switch loading={registerSwitchLoading} checked={accountSettings.registerEnabled} onChange={handleRegisterSettingChange} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>是否开启邀请码注册</div>
+                <div style={{ marginTop: 4, color: 'var(--ant-color-text-secondary)', fontSize: 12 }}>开启后公开注册页显示邀请码输入框，发送验证码前必须先校验邀请码。</div>
+              </div>
+              <Switch
+                loading={inviteSwitchLoading}
+                checked={accountSettings.inviteRegisterEnabled}
+                disabled={!accountSettings.registerEnabled || accountSettingLoading}
+                onChange={handleInviteSettingChange}
+              />
+            </div>
+          </div>
         </Card>
       )}
 

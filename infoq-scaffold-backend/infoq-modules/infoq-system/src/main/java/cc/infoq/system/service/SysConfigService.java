@@ -46,6 +46,13 @@ public interface SysConfigService {
     boolean selectRegisterEnabled();
 
     /**
+     * 鑾峰彇閭€璇风爜娉ㄥ唽寮€鍏?
+     *
+     * @return true寮€鍚紝false鍏抽棴
+     */
+    boolean selectInviteRegisterEnabled();
+
+    /**
      * 获取忘记密码开关
      *
      * @return true 开启，false 关闭

@@ -45,4 +45,9 @@ public class RegisterBody extends LoginBody {
     @NotBlank(message = "{email.code.not.blank}")
     private String emailCode;
 
+    /**
+     * 邀请码
+     */
+    private String inviteCode;
+
 }

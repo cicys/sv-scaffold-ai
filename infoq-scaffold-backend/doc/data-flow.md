@@ -3,6 +3,7 @@
 本文档只记录当前代码能直接追到的几条主链路：
 
 - 验证码与登录
+- 公开注册、邀请码与默认归属
 - 登录后的用户信息与路由装配
 - 用户管理的典型写链路
 - 登录日志、操作日志与监控链路
@@ -23,6 +24,7 @@
 | --- | --- | --- |
 | `sys_client` | 登录前校验 `clientId`、`grantType`、token 时效、设备类型 | `AuthController`、`SysClientServiceImpl` |
 | `sys_user` | 登录用户、用户管理主表 | `PasswordAuthStrategy`、`SysUserServiceImpl` |
+| `sys_invite_code` | 邀请码生成、校验、作废、过期与消费 | `SysInviteCodeServiceImpl`、`SysInviteCodeMapper.xml` |
 | `sys_role` / `sys_menu` / 关联表 | 角色权限、菜单权限、前端路由 | `SysPermissionServiceImpl`、`SysMenuServiceImpl` |
 | `sys_login_info` | 登录审计日志 | `SysLoginInfoServiceImpl` |
 | `sys_oper_log` | 操作审计日志 | `LogAspect`、`SysOperLogServiceImpl` |
@@ -133,7 +135,7 @@ sequenceDiagram
 4. [`../infoq-plugin/infoq-plugin-satoken/README.md`](../infoq-plugin/infoq-plugin-satoken/README.md)
 5. [`../infoq-plugin/infoq-plugin-redis/README.md`](../infoq-plugin/infoq-plugin-redis/README.md)
 
-## 3. 邮箱验证码 + 邮箱登录
+## 3. 邮箱验证码、邮箱登录与公开注册
 
 当前代码明确支持第二种认证策略，但它是可选能力。
 
@@ -147,6 +149,7 @@ sequenceDiagram
   - 生成 4 位数字验证码；
   - 写入 `global:captcha_codes:{email}`；
   - 通过 `OptionalMailHelper.sendText(...)` 反射调用邮件插件发送。
+- 若 `scene=register` 且 `sys.account.inviteRegister=true`，控制器会先校验邀请码可用，再允许发送注册验证码。
 
 ### 3.2 邮箱登录
 
@@ -158,6 +161,27 @@ sequenceDiagram
 - 后续 token 建立、在线用户记录、登录日志落库流程与密码登录一致。
 
 因此当前系统的多认证方式并不是两套完全独立管线，而是“不同凭证校验 + 共享登录后处理”。
+
+### 3.3 公开注册 + 邀请码消费
+
+当前公开注册入口由三个接口协同完成：
+
+- `GET /auth/code`：除图形验证码内容外，还会补充 `registerEnabled`、`inviteRegisterEnabled`、`forgotPasswordEnabled`、`mailEnabled`，供公开页决定是否显示注册入口、邀请码输入框和验证码发送能力。
+- `GET /auth/invite/code/check`：公开页在邀请码输入框失焦时调用；当邀请码功能关闭或邀请码不可用时，统一返回失败，前端统一提示“邀请码不可用”。
+- `POST /auth/register`：仍然是注册总入口，但在 `sys.account.inviteRegister=true` 时会额外要求邀请码可用，并在进入注册事务前拒绝“邀请码功能开启但邮箱能力关闭”的场景。
+
+注册写链路的当前实现要点如下：
+
+1. `AuthController.register()` 先检查 `sys.account.registerUser` 总开关。
+2. 若邀请码注册开启，则控制器先校验邮件能力可用，再校验邀请码可用。
+3. `SysRegisterServiceImpl.register()` 在事务内校验邮箱验证码、用户名/邮箱唯一性，并构造默认归属：
+   - `sys_role.role_key=owner`
+   - `sys_post.post_code=user`
+   - `sys_dept.dept_id=112`
+4. `SysUserServiceImpl.registerUser()` 成功写入用户、用户-角色、用户-岗位关系后，注册事务会继续消费邀请码。
+5. 邀请码消费走 `SysInviteCodeMapper.consumeInviteCode(...)`，SQL 条件要求 `status='0'` 且 `expire_time > now`，因此并发提交时只会有一个请求成功把同一个邀请码置为已使用。
+
+这条链路说明当前公开注册并不是“前端自己拼规则”，而是由 backend 统一下发能力位、统一校验邀请码、统一分配默认归属，并在事务里完成邀请码一次性消费。
 
 ## 4. 登录后的用户信息与路由装配
 

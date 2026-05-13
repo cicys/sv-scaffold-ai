@@ -6,13 +6,15 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 const registerPageMocks = vi.hoisted(() => ({
   getCodeImg: vi.fn(),
   register: vi.fn(),
-  sendEmailCode: vi.fn()
+  sendEmailCode: vi.fn(),
+  checkInviteCode: vi.fn()
 }));
 
 vi.mock('@/api/login', () => ({
   getCodeImg: registerPageMocks.getCodeImg,
   register: registerPageMocks.register,
-  sendEmailCode: registerPageMocks.sendEmailCode
+  sendEmailCode: registerPageMocks.sendEmailCode,
+  checkInviteCode: registerPageMocks.checkInviteCode
 }));
 
 const { default: RegisterPage } = await import('@/pages/register');
@@ -26,11 +28,13 @@ describe('pages/register', () => {
         img: 'img-data',
         uuid: 'uuid-2',
         registerEnabled: true,
+        inviteRegisterEnabled: false,
         mailEnabled: true
       }
     });
     registerPageMocks.register.mockResolvedValue(undefined);
     registerPageMocks.sendEmailCode.mockResolvedValue(undefined);
+    registerPageMocks.checkInviteCode.mockResolvedValue(undefined);
   });
 
   const renderPage = () =>

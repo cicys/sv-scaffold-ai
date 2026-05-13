@@ -78,6 +78,21 @@ public interface SystemConstants {
     String SUPER_ADMIN_ROLE_KEY = "superadmin";
 
     /**
+     * 甯愬彿鑷姪-鏄惁寮€鍚敞鍐?
+     */
+    String ACCOUNT_REGISTER_CONFIG_KEY = "sys.account.registerUser";
+
+    /**
+     * 甯愬彿鑷姪-鏄惁寮€鍚個璇风爜娉ㄥ唽
+     */
+    String ACCOUNT_INVITE_REGISTER_CONFIG_KEY = "sys.account.inviteRegister";
+
+    /**
+     * 甯愬彿鑷姪-鏄惁寮€鍚繕璁板瘑鐮?
+     */
+    String ACCOUNT_FORGOT_PASSWORD_CONFIG_KEY = "sys.account.forgotPassword";
+
+    /**
      * 系统管理员角色标识
      */
     String ADMIN_ROLE_KEY = "admin";
@@ -91,6 +106,21 @@ public interface SystemConstants {
      * 默认部门 ID
      */
     Long DEFAULT_DEPT_ID = 100L;
+
+    /**
+     * 鍏紑娉ㄥ唽榛樿閮ㄩ棬 ID
+     */
+    Long REGISTER_DEFAULT_DEPT_ID = 112L;
+
+    /**
+     * 鍏紑娉ㄥ唽榛樿瑙掕壊 role_key
+     */
+    String REGISTER_DEFAULT_ROLE_KEY = "owner";
+
+    /**
+     * 鍏紑娉ㄥ唽榛樿宀椾綅 post_code
+     */
+    String REGISTER_DEFAULT_POST_CODE = "user";
 
     /**
      * 排除敏感属性字段

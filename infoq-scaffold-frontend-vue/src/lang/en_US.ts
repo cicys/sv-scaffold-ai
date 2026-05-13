@@ -29,6 +29,7 @@ export default {
   // 注册页面国际化
   register: {
     selectPlaceholder: 'Please select/enter a company name',
+    inviteCode: 'Invite Code',
     email: 'Email',
     emailCode: 'Email Code',
     username: 'Username',
@@ -50,6 +51,10 @@ export default {
       },
       emailCode: {
         required: 'Please enter the email verification code'
+      },
+      inviteCode: {
+        required: 'Please enter the invite code',
+        invalid: 'Invite code is unavailable'
       },
       username: {
         required: 'Please enter your account',
