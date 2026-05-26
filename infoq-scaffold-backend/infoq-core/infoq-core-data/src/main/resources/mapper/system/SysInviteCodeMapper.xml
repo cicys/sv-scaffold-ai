@@ -76,7 +76,7 @@
             update_time = #{usedTime}
         where invite_code = #{inviteCode}
           and status = '0'
-          and expire_time &gt; #{now}
+          and (expire_time is null or expire_time &gt; #{now})
     </update>
 
 </mapper>

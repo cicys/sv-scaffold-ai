@@ -41,7 +41,7 @@ public class CaptchaVo {
     private Boolean mailEnabled = false;
 
     /**
-     * 鏄惁寮€鍚個璇风爜娉ㄥ唽
+     * 是否开启邀请码注册
      */
     private Boolean inviteRegisterEnabled = false;
 

@@ -93,9 +93,9 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     }
 
     /**
-     * 鑾峰彇閭€璇风爜娉ㄥ唽寮€鍏?
+     * 获取邀请码注册开关
      *
-     * @return true寮€鍚紝false鍏抽棴
+     * @return true开启，false关闭
      */
     @Override
     public boolean selectInviteRegisterEnabled() {
