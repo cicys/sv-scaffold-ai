@@ -40,6 +40,18 @@
 - 在可行场景优先不可变：使用 `const`、`readonly`、不可变结构与拷贝返回，避免修改入参或共享全局状态。
 - 除非修改入参是显式 API 契约，否则禁止修改函数参数。
 
+## 编码与文件 IO
+
+- 仓库文本文件必须使用 UTF-8，写入时使用 UTF-8 without BOM。
+- Windows PowerShell 5.1 是默认 shell 基线；不要假设开发者本机存在 PowerShell 7。
+- PowerShell 阅读源码、配置、文档等文本文件时，必须显式指定 UTF-8，例如 `Get-Content -LiteralPath <path> -Encoding UTF8` 或 `Select-String -Path <path> -Pattern <pattern> -Encoding UTF8`。
+- Windows PowerShell 5.1 中禁止用 `>`、`>>`、`Out-File`、`Set-Content`、`Add-Content` 写入仓库文本文件；这些路径可能产生 UTF-16LE、UTF-8 BOM 或受系统 code page 影响的输出。
+- Windows PowerShell 5.1 必须写入文本文件时，使用 `.NET UTF8Encoding(false)`，或改用 `apply_patch`、Node.js `writeFileSync(path, text, 'utf8')` 等明确 UTF-8 without BOM 的方式。
+- PowerShell 7 可以使用 `Set-Content -Encoding utf8NoBOM`、`Add-Content -Encoding utf8NoBOM`，但这只是可选优化，不是团队默认基线。
+- `chcp 65001`、`[Console]::InputEncoding`、`[Console]::OutputEncoding` 和 `$OutputEncoding` 只解决终端显示与 native command 管道问题，不能作为文件写入编码正确的证明。
+- 其他读取工具在支持显式编码参数时，应按 UTF-8 解码；Node.js 文件读写优先使用 `utf8`。
+- 提交或构建前执行仓库真实存在的 UTF-8 校验命令；Windows 后端可使用 `cd infoq-scaffold-backend && mvn validate`。若专用校验脚本尚不存在，不得在规约或交付说明中引用虚假路径。
+
 ## 安全基线
 
 - 严禁在源码中硬编码密钥、API Key 或凭证。
