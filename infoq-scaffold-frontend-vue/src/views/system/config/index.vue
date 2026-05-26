@@ -24,7 +24,7 @@
                 start-placeholder="开始日期"
                 end-placeholder="结束日期"
                 :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]"
-              ></el-date-picker>
+              />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -34,6 +34,37 @@
         </el-card>
       </div>
     </transition>
+
+    <el-card v-if="isSuperAdmin" shadow="hover" class="mb-[10px]" v-loading="accountSettingLoading">
+      <template #header>
+        <div class="account-setting-header">
+          <span>账号自助设置</span>
+          <span class="account-setting-tip">仅 superadmin 可修改，邀请码注册依赖注册总开关与验证码能力。</span>
+        </div>
+      </template>
+      <div class="account-setting-list">
+        <div class="account-setting-item">
+          <div>
+            <div class="account-setting-label">是否开启注册</div>
+            <div class="account-setting-desc">关闭后会自动关闭邀请码注册，公开注册页不可访问。</div>
+          </div>
+          <el-switch v-model="accountSettings.registerEnabled" :loading="registerSwitchLoading" @change="handleRegisterSettingChange" />
+        </div>
+        <div class="account-setting-item">
+          <div>
+            <div class="account-setting-label">是否开启邀请码注册</div>
+            <div class="account-setting-desc">开启后公开注册页显示邀请码输入框，发送验证码前必须先校验邀请码。</div>
+          </div>
+          <el-switch
+            v-model="accountSettings.inviteRegisterEnabled"
+            :disabled="!accountSettings.registerEnabled || accountSettingLoading"
+            :loading="inviteSwitchLoading"
+            @change="handleInviteSettingChange"
+          />
+        </div>
+      </div>
+    </el-card>
+
     <el-card shadow="hover">
       <template #header>
         <el-row :gutter="10" class="mb8">
@@ -41,14 +72,10 @@
             <el-button v-hasPermi="['system:config:add']" type="primary" plain icon="Plus" @click="handleAdd">新增</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button v-hasPermi="['system:config:edit']" type="success" plain icon="Edit" :disabled="single" @click="handleUpdate()">
-              修改
-            </el-button>
+            <el-button v-hasPermi="['system:config:edit']" type="success" plain icon="Edit" :disabled="single" @click="handleUpdate()">修改</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button v-hasPermi="['system:config:remove']" type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete()">
-              删除
-            </el-button>
+            <el-button v-hasPermi="['system:config:remove']" type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete()">删除</el-button>
           </el-col>
           <el-col :span="1.5">
             <el-button v-hasPermi="['system:config:export']" type="warning" plain icon="Download" @click="handleExport">导出</el-button>
@@ -56,7 +83,7 @@
           <el-col :span="1.5">
             <el-button v-hasPermi="['system:config:remove']" type="danger" plain icon="Refresh" @click="handleRefreshCache">刷新缓存</el-button>
           </el-col>
-          <right-toolbar v-model:show-search="showSearch" @query-table="getList"></right-toolbar>
+          <right-toolbar v-model:show-search="showSearch" @query-table="getList" />
         </el-row>
       </template>
 
@@ -79,10 +106,10 @@
         <el-table-column label="操作" align="center" width="150" class-name="small-padding fixed-width">
           <template #default="scope">
             <el-tooltip content="修改" placement="top">
-              <el-button v-hasPermi="['system:config:edit']" link type="primary" icon="Edit" @click="handleUpdate(scope.row)"></el-button>
+              <el-button v-hasPermi="['system:config:edit']" link type="primary" icon="Edit" @click="handleUpdate(scope.row)" />
             </el-tooltip>
             <el-tooltip content="删除" placement="top">
-              <el-button v-hasPermi="['system:config:remove']" link type="primary" icon="Delete" @click="handleDelete(scope.row)"></el-button>
+              <el-button v-hasPermi="['system:config:remove']" link type="primary" icon="Delete" @click="handleDelete(scope.row)" />
             </el-tooltip>
           </template>
         </el-table-column>
@@ -90,7 +117,6 @@
       <pagination v-show="total > 0" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
     </el-card>
 
-    <!-- 添加或修改参数配置对话框 -->
     <el-dialog v-model="dialog.visible" :title="dialog.title" width="500px" append-to-body>
       <el-form ref="configFormRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="参数名称" prop="configName">
@@ -113,8 +139,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确定</el-button>
+          <el-button @click="cancel">取消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -122,12 +148,14 @@
 </template>
 
 <script setup name="Config" lang="ts">
-import { listConfig, getConfig, delConfig, addConfig, updateConfig, refreshCache } from '@/api/system/config';
-import { ConfigForm, ConfigQuery, ConfigVO } from '@/api/system/config/types';
+import { useUserStore } from '@/store/modules/user';
+import { listConfig, getConfig, getConfigKey, delConfig, addConfig, updateConfig, updateConfigByKey, refreshCache } from '@/api/system/config';
+import type { ConfigForm, ConfigQuery, ConfigVO } from '@/api/system/config/types';
 import { toDictRefs } from '@/utils/dict';
 
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
 const { sys_yes_no } = toDictRefs((proxy?.useDict('sys_yes_no') ?? {}) as Record<'sys_yes_no', DictDataOption[]>);
+const userStore = useUserStore();
 
 const configList = ref<ConfigVO[]>([]);
 const loading = ref(true);
@@ -137,6 +165,18 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const dateRange = ref<[DateModelType, DateModelType]>(['', '']);
+const accountSettingLoading = ref(false);
+const registerSwitchLoading = ref(false);
+const inviteSwitchLoading = ref(false);
+const accountSettings = reactive({
+  registerEnabled: false,
+  inviteRegisterEnabled: false
+});
+const accountConfigKeys = {
+  register: 'sys.account.registerUser',
+  invite: 'sys.account.inviteRegister'
+};
+const isSuperAdmin = computed(() => userStore.roles.includes('superadmin'));
 
 const queryFormRef = ref<ElFormInstance>();
 const configFormRef = ref<ElFormInstance>();
@@ -170,7 +210,20 @@ const data = reactive<PageData<ConfigForm, ConfigQuery>>({
 
 const { queryParams, form, rules } = toRefs(data);
 
-/** 查询参数列表 */
+const loadAccountSettings = async () => {
+  if (!isSuperAdmin.value) {
+    return;
+  }
+  accountSettingLoading.value = true;
+  try {
+    const [registerRes, inviteRes] = await Promise.all([getConfigKey(accountConfigKeys.register), getConfigKey(accountConfigKeys.invite)]);
+    accountSettings.registerEnabled = registerRes.data === 'true';
+    accountSettings.inviteRegisterEnabled = inviteRes.data === 'true';
+  } finally {
+    accountSettingLoading.value = false;
+  }
+};
+
 const getList = async () => {
   loading.value = true;
   const res = await listConfig(proxy?.addDateRange(queryParams.value, dateRange.value));
@@ -178,40 +231,40 @@ const getList = async () => {
   total.value = res.total;
   loading.value = false;
 };
-/** 取消按钮 */
+
 const cancel = () => {
   reset();
   dialog.visible = false;
 };
-/** 表单重置 */
+
 const reset = () => {
   form.value = { ...initFormData };
   configFormRef.value?.resetFields();
 };
-/** 搜索按钮操作 */
+
 const handleQuery = () => {
   queryParams.value.pageNum = 1;
   getList();
 };
-/** 重置按钮操作 */
+
 const resetQuery = () => {
   dateRange.value = ['', ''];
   queryFormRef.value?.resetFields();
   handleQuery();
 };
-/** 多选框选中数据 */
+
 const handleSelectionChange = (selection: ConfigVO[]) => {
   ids.value = selection.map((item) => item.configId);
-  single.value = selection.length != 1;
+  single.value = selection.length !== 1;
   multiple.value = !selection.length;
 };
-/** 新增按钮操作 */
+
 const handleAdd = () => {
   reset();
   dialog.visible = true;
   dialog.title = '添加参数';
 };
-/** 修改按钮操作 */
+
 const handleUpdate = async (row?: ConfigVO) => {
   reset();
   const configId = row?.configId || ids.value[0];
@@ -220,18 +273,19 @@ const handleUpdate = async (row?: ConfigVO) => {
   dialog.visible = true;
   dialog.title = '修改参数';
 };
-/** 提交按钮 */
+
 const submitForm = () => {
   configFormRef.value?.validate(async (valid: boolean) => {
-    if (valid) {
-      form.value.configId ? await updateConfig(form.value) : await addConfig(form.value);
-      proxy?.$modal.msgSuccess('操作成功');
-      dialog.visible = false;
-      await getList();
+    if (!valid) {
+      return;
     }
+    form.value.configId ? await updateConfig(form.value) : await addConfig(form.value);
+    proxy?.$modal.msgSuccess('操作成功');
+    dialog.visible = false;
+    await getList();
   });
 };
-/** 删除按钮操作 */
+
 const handleDelete = async (row?: ConfigVO) => {
   const configIds = row?.configId || ids.value;
   await proxy?.$modal.confirm('是否确认删除参数编号为"' + configIds + '"的数据项？');
@@ -239,7 +293,7 @@ const handleDelete = async (row?: ConfigVO) => {
   await getList();
   proxy?.$modal.msgSuccess('删除成功');
 };
-/** 导出按钮操作 */
+
 const handleExport = () => {
   proxy?.download(
     'system/config/export',
@@ -249,13 +303,91 @@ const handleExport = () => {
     `config_${new Date().getTime()}.xlsx`
   );
 };
-/** 刷新缓存按钮操作 */
+
 const handleRefreshCache = async () => {
   await refreshCache();
   proxy?.$modal.msgSuccess('刷新缓存成功');
 };
 
+const handleRegisterSettingChange = async (value: boolean) => {
+  const previous = !value;
+  registerSwitchLoading.value = true;
+  try {
+    await updateConfigByKey(accountConfigKeys.register, value);
+    await loadAccountSettings();
+    proxy?.$modal.msgSuccess('操作成功');
+  } catch (error) {
+    accountSettings.registerEnabled = previous;
+    throw error;
+  } finally {
+    registerSwitchLoading.value = false;
+  }
+};
+
+const handleInviteSettingChange = async (value: boolean) => {
+  const previous = !value;
+  inviteSwitchLoading.value = true;
+  try {
+    await updateConfigByKey(accountConfigKeys.invite, value);
+    await loadAccountSettings();
+    proxy?.$modal.msgSuccess('操作成功');
+  } catch (error) {
+    accountSettings.inviteRegisterEnabled = previous;
+    throw error;
+  } finally {
+    inviteSwitchLoading.value = false;
+  }
+};
+
 onMounted(() => {
   getList();
+  loadAccountSettings();
 });
 </script>
+
+<style lang="scss" scoped>
+.account-setting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.account-setting-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.account-setting-list {
+  display: grid;
+  gap: 16px;
+}
+
+.account-setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+.account-setting-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.account-setting-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.account-setting-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+</style>

@@ -222,8 +222,8 @@ const pyScriptPath = path.join(scriptDir, 'websocket_cluster_smoke.py');
 
 async function isServerReady(baseUrl) {
   try {
-    const health = await fetchText(`${baseUrl}/actuator/health`);
-    if ([200, 401].includes(health.response.status)) {
+    const health = await fetchText(`${baseUrl}/monitor/health`);
+    if (health.response.status === 200) {
       return true;
     }
   } catch {

@@ -44,4 +44,9 @@ public interface SysLoginService {
      */
     void checkLogin(LoginType loginType, String username, Supplier<Boolean> supplier);
 
+    /**
+     * 使指定用户的在线 token 失效
+     */
+    void invalidateUserSessions(Long userId, String userType);
+
 }

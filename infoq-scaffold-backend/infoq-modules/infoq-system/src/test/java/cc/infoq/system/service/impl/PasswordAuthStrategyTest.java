@@ -15,15 +15,11 @@ import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.SysLoginService;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -35,16 +31,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -162,6 +151,45 @@ class PasswordAuthStrategyTest {
             () -> strategy.login(passwordBodyWithExtraField("admin", "123456", "extra", "true"), buildClient()));
 
         assertTrue(exception.getCause() instanceof UnrecognizedPropertyException);
+    }
+
+    @Test
+    @DisplayName("login: should keep global token timeout when client timeout is null")
+    void loginShouldKeepGlobalTokenTimeoutWhenClientTimeoutNull() {
+        PasswordAuthStrategy strategy = new PasswordAuthStrategy(captchaProperties, loginService, userMapper);
+        when(captchaProperties.getEnable()).thenReturn(false);
+
+        SysUserVo user = new SysUserVo();
+        user.setUserName("admin");
+        user.setPassword(BCrypt.hashpw("123456"));
+        user.setStatus(SystemConstants.NORMAL);
+        when(userMapper.selectVoOne(any())).thenReturn(user);
+
+        LoginUser loginUser = new LoginUser();
+        when(loginService.buildLoginUser(user)).thenReturn(loginUser);
+        doAnswer(invocation -> {
+            Supplier<?> supplier = invocation.getArgument(2);
+            assertEquals(Boolean.FALSE, supplier.get());
+            return null;
+        }).when(loginService).checkLogin(eq(LoginType.PASSWORD), eq("admin"), any());
+
+        SysClientVo client = buildClient();
+        client.setTimeout(null);
+        client.setActiveTimeout(null);
+
+        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+             MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
+            stpUtil.when(StpUtil::getTokenValue).thenReturn("token-123");
+            stpUtil.when(StpUtil::getTokenTimeout).thenReturn(7200L);
+
+            LoginVo result = strategy.login(passwordBody("admin", "123456", null, null, false), client);
+
+            assertEquals("token-123", result.getAccessToken());
+            loginHelper.verify(() -> LoginHelper.login(eq(loginUser), argThat(model ->
+                "web".equals(model.getDeviceType())
+                    && model.getActiveTimeout() == null
+                    && "pc".equals(model.getExtra(LoginHelper.CLIENT_KEY)))));
+        }
     }
 
     private SysClientVo buildClient() {

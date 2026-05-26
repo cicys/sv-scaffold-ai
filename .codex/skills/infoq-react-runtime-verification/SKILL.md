@@ -21,16 +21,17 @@ description: 执行本项目 React 家族的仓库专用运行态验证，覆盖
 ## Admin 工作流
 
 1. 默认使用 `scripts/start_admin_dev_stack.mjs` 启动或重启 backend + React admin 栈。
-2. 若改用手动启动，启动前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
-3. 通过 `scripts/print_admin_login_inject_snippet.mjs` 或 `scripts/fetch_admin_routes_with_token.mjs` 获取辅助信息时，不要猜测真实路由。
-4. 默认使用 `infoq-browser-automation` 的跨平台 CLI 对 `http://127.0.0.1:5174` 执行受保护路由探测、截图与 console 检查：
+2. 共享默认后端端口是真值 `8080`。若开发者本地为避免冲突临时改到 `8081` 或其他端口，必须显式传 `--backend-port <port>`；该端口只作为本地 override，不应回写成共享默认值。
+3. 若改用手动启动，启动前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
+4. 通过 `scripts/print_admin_login_inject_snippet.mjs` 或 `scripts/fetch_admin_routes_with_token.mjs` 获取辅助信息时，不要猜测真实路由。
+5. 默认使用 `infoq-browser-automation` 的跨平台 CLI 对 `http://127.0.0.1:5174` 执行受保护路由探测、截图与 console 检查：
 
 ```bash
 pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe --frontend-origin "http://127.0.0.1:5174" --route "/index"
 ```
 
-5. 只有在临时交互探索时才改用 Playwright MCP。
-6. 使用 `scripts/stop_admin_dev_stack.mjs` 时，只停止本技能启动的进程。
+6. 只有在临时交互探索时才改用 Playwright MCP。
+7. 使用 `scripts/stop_admin_dev_stack.mjs` 时，只停止本技能启动的进程。
 
 ## Weapp 工作流
 
@@ -38,7 +39,7 @@ pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli adm
 2. 当任务是“自动化启动小程序”或“打开微信开发者工具联调”时，使用：
    - `pnpm --dir infoq-scaffold-frontend-weapp-react build-open:weapp:dev`
 3. 进行可复现的 smoke/e2e 验证时，使用 `scripts/run_weapp_smoke.mjs`，并根据范围选择 `--suite smoke|core|full`。
-4. 若 smoke 流程依赖后端登录，确保 backend `http://127.0.0.1:8080` 可达且关闭验证码。
+4. 若 smoke 流程依赖后端登录，确保 backend `http://127.0.0.1:8080` 可达且关闭验证码；若本地临时改了端口，显式传对应 `--base-url`。
 5. 将 smoke 日志里的 `[object Object]` 视为产品缺陷，而不是可容忍测试现象。
 
 ## 护栏

@@ -136,8 +136,8 @@ const baseUrl = `http://${config.host}:${config.port}`;
 
 async function isServerReady() {
   try {
-    const health = await fetchText(`${baseUrl}/actuator/health`);
-    if ([200, 401].includes(health.response.status)) {
+    const health = await fetchText(`${baseUrl}/monitor/health`);
+    if (health.response.status === 200) {
       return true;
     }
   } catch {

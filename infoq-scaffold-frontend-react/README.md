@@ -4,14 +4,14 @@
 
 ## 当前实现概览
 
-`infoq-scaffold-frontend-react` 是当前仓库的 React 管理端工作区，基于 React 19、Vite 7、Ant Design 6、React Router 7 与 Zustand。应用入口是 `src/main.tsx -> src/RootProviders.tsx -> src/App.tsx -> src/router/AppRouter.tsx`；固定路由只覆盖登录、注册、首页和少量壳路由，后台菜单路由依赖 `usePermissionStore().generateRoutes()` 在登录后动态装配。
+`infoq-scaffold-frontend-react` 是当前仓库的 React 管理端工作区，基于 React 19、Vite 7、Ant Design 6、React Router 7 与 Zustand。应用入口是 `src/main.tsx -> src/RootProviders.tsx -> src/App.tsx -> src/router/AppRouter.tsx`；固定路由覆盖登录、注册、忘记密码、首页和少量壳路由，后台菜单路由依赖 `usePermissionStore().generateRoutes()` 在登录后动态装配。
 
 当前代码能直接确认的几个关键事实：
 
 - `RootProviders.tsx` 负责 Ant Design locale、主题 token、暗色模式和全局样式变量。
 - `AuthGuard.tsx` 负责 token 检查、登录后 `getInfo()` 和动态路由装配的引导。
 - `BackendRouteView.tsx` 负责把后端返回的 `component` 字符串解析成真实页面组件，并同步 tags view。
-- `src/api/login.ts` 的登录和注册请求默认携带 `clientId`，并在 `isEncrypt: true` 时通过 `utils/request.ts` 走请求加密。
+- `src/api/login.ts` 的登录、注册和忘记密码公开请求沿用既有加密请求约定；`GET /auth/code` 现在也是登录页公开能力位的真值来源。
 - `useUserStore` 登录成功后会初始化 SSE 和 WebSocket；登出时会显式关闭连接。
 
 ## 模块导航
@@ -42,6 +42,7 @@
 - 路由与鉴权：
   - `src/router/AppRouter.tsx`
   - `src/router/AuthGuard.tsx`
+  - `src/router/public-routes.ts`
   - `src/router/BackendRouteView.tsx`
   - `src/store/modules/permission.ts`
 - 登录与请求：

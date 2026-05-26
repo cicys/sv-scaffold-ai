@@ -6,6 +6,7 @@ describe('router/index', () => {
     const paths = constantRoutes.map((route) => route.path);
     expect(paths).toContain('/login');
     expect(paths).toContain('/register');
+    expect(paths).toContain('/forgot-password');
     expect(paths).toContain('/401');
     expect(paths).toContain('/redirect');
     expect(dynamicRoutes).toEqual([]);

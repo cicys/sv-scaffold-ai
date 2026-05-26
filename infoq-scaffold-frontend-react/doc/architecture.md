@@ -43,6 +43,7 @@ main.tsx
 | `RootProviders.tsx` | 注入 Ant Design 主题、语言、暗色模式和全局样式变量 | `ConfigProvider`、`theme.getDesignToken(...)` |
 | `router/AppRouter.tsx` | 建立固定路由树并装配 `AuthGuard`/`MainLayout`/`BackendRouteView` | `BrowserRouter`、`Routes` |
 | `router/AuthGuard.tsx` | 校验 token，必要时触发 `getInfo()` 和 `generateRoutes()` | `useUserStore.getState().getInfo()`、`usePermissionStore.getState().generateRoutes()` |
+| `router/public-routes.ts` | 登录前公开认证路径白名单匹配 | `isWhiteListRoute()` |
 | `router/BackendRouteView.tsx` | 根据路径或后端 `component` 值解析页面组件，并同步 tags view | `resolvePageComponent()`、`convertPathToComponent()` |
 | `store/modules/user.ts` | 登录、拉取用户信息、登出、SSE/WebSocket 生命周期 | `login()`、`getInfo()`、`logout()` |
 | `store/modules/permission.ts` | 获取后端菜单、转换路由、构建侧边栏与组件映射 | `generateRoutes()`、`buildRouteComponentMap()` |
@@ -57,6 +58,7 @@ main.tsx
 
 - `/login`
 - `/register`
+- `/forgot-password`
 - `/401`
 - `/redirect/*`
 - `/index`
@@ -79,13 +81,15 @@ main.tsx
 
 ### 4.1 登录前后
 
-`src/api/login.ts` 明确给登录与注册请求补齐：
+`src/api/login.ts` 明确给登录、注册与公开认证请求补齐或约束：
 
 - `clientId`
 - `grantType`
 - `isToken: false`
 - `isEncrypt: true`
 - `repeatSubmit: false`
+
+同时，`GET /auth/code` 也是登录前公开认证能力的真值来源，除了验证码图片本身，还会驱动注册和忘记密码入口的展示与公开页停留条件。
 
 对应地，`utils/request.ts` 会在环境变量开启时为 `POST/PUT` 请求追加 `encrypt-key` 请求头并加密请求体。
 
@@ -119,7 +123,7 @@ main.tsx
 ## 6. 公共约束
 
 - 后端路由组件名必须能映射到 `src/pages` 中的真实页面组件。
-- 登录、注册等加密请求默认依赖 `VITE_APP_CLIENT_ID`、`VITE_APP_BASE_API` 和可选 RSA/AES 环境变量。
+- 登录、注册、忘记密码等加密请求默认依赖 `VITE_APP_CLIENT_ID`、`VITE_APP_BASE_API` 和可选 RSA/AES 环境变量。
 - SSE / WebSocket 只在用户登录成功后初始化，退出时会显式关闭。
 
 ## 7. 已知边界

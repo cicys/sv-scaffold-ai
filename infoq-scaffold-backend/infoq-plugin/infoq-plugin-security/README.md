@@ -2,7 +2,7 @@
 
 ## 1. 模块职责
 
-提供 backend 的请求鉴权入口，负责全路径登录校验、客户端 ID 一致性校验，以及 Actuator 的 Basic Auth 保护。
+提供 backend 的请求鉴权入口，负责全路径登录校验、客户端 ID 一致性校验，以及健康检查等免鉴权路径的统一排除。
 
 ## 2. 关键入口
 
@@ -28,15 +28,13 @@
 
 - `security.*`
 - `sse.*`
-- `spring.boot.admin.client.username`
-- `spring.boot.admin.client.password`
 
 ## 7. 关键数据流
 
 1. `SecurityConfig` 注册 Sa-Token 拦截器。
 2. 拦截器通过 `AllUrlHandler` 取得需要保护的路径。
 3. 请求进入后先检查是否登录，再校验 header / param 里的 `clientId` 是否与 token extra 一致。
-4. `/actuator` 路径再经 Basic Auth 过滤器保护。
+4. `/monitor/health` 与 SSE 路径在这里显式排除，避免健康检查和长连接入口被 Sa-Token 拦截。
 
 ## 8. 扩展点
 
@@ -45,11 +43,10 @@
 
 ## 9. 日志 / 监控切入点
 
-- 登录态异常、clientId 不一致、Actuator 访问失败都要从这里切入。
+- 登录态异常与 clientId 不一致都要从这里切入。
 - 当前实现里它是鉴权主入口之一。
 
 ## 10. 已知边界
 
 - 不负责 token 生成和存储细节，那部分在 `infoq-plugin-satoken`。
 - 不负责业务权限数据本身，那部分仍在 `infoq-system`。
-

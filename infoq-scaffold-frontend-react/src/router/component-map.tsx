@@ -18,6 +18,7 @@ const componentMap: Record<string, LazyExoticComponent<ComponentType>> = {
   'system/dept/index': lazy(() => import('@/pages/system/dept/index')),
   'system/dict/data': lazy(() => import('@/pages/system/dict/data')),
   'system/dict/index': lazy(() => import('@/pages/system/dict/index')),
+  'system/invite/index': lazy(() => import('@/pages/system/invite/index')),
   'system/menu/index': lazy(() => import('@/pages/system/menu/index')),
   'system/notice/index': lazy(() => import('@/pages/system/notice/index')),
   'system/oss/config': lazy(() => import('@/pages/system/oss/config')),

@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import type { ApiResponse, LoginData, LoginResult, VerifyCodeResult } from './types';
+import type { ApiResponse, ApiResult, ForgotPasswordForm, LoginData, LoginResult, RegisterForm, SendEmailCodeForm, VerifyCodeResult } from './types';
 import { UserInfo } from '@/api/system/user/types';
 
 // pc端固定客户端授权id
@@ -28,7 +28,7 @@ export function login(data: LoginData): Promise<ApiResponse<LoginResult>> {
 }
 
 // 注册方法
-export function register(data: Record<string, unknown>): Promise<ApiResponse<LoginResult>> {
+export function register(data: RegisterForm): Promise<ApiResult> {
   const params = {
     ...data,
     clientId: clientId,
@@ -43,6 +43,45 @@ export function register(data: Record<string, unknown>): Promise<ApiResponse<Log
     },
     method: 'post',
     data: params
+  });
+}
+
+export function sendEmailCode(data: SendEmailCodeForm): Promise<ApiResult> {
+  return request({
+    url: '/auth/email/code',
+    headers: {
+      isToken: false,
+      isEncrypt: true,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data
+  });
+}
+
+export function checkInviteCode(inviteCode: string): Promise<ApiResult> {
+  return request({
+    url: '/auth/invite/code/check',
+    headers: {
+      isToken: false
+    },
+    method: 'get',
+    params: {
+      inviteCode
+    }
+  });
+}
+
+export function forgotPassword(data: ForgotPasswordForm): Promise<ApiResult> {
+  return request({
+    url: '/auth/forgot-password',
+    headers: {
+      isToken: false,
+      isEncrypt: true,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data
   });
 }
 

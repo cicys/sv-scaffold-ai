@@ -1,11 +1,12 @@
 package cc.infoq.common.domain.model;
 
 import cc.infoq.common.constant.RegexConstants;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.Length;
-import jakarta.validation.constraints.Pattern;
 
 /**
  * 用户注册对象
@@ -32,8 +33,21 @@ public class RegisterBody extends LoginBody {
     private String password;
 
     /**
-     * 用户类型
+     * 邮箱
      */
-    private String userType;
+    @NotBlank(message = "{user.email.not.blank}")
+    @Email(message = "{user.email.not.valid}")
+    private String email;
+
+    /**
+     * 邮箱验证码
+     */
+    @NotBlank(message = "{email.code.not.blank}")
+    private String emailCode;
+
+    /**
+     * 邀请码
+     */
+    private String inviteCode;
 
 }

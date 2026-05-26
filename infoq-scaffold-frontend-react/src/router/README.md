@@ -2,12 +2,13 @@
 
 ## 1. 模块定位
 
-`src/router` 是 React admin 的路由与动态页面解析层，负责固定路由、鉴权守卫和后端菜单到前端页面组件的装配。
+`src/router` 是 React admin 的路由与动态页面解析层，负责固定路由、公开白名单、鉴权守卫和后端菜单到前端页面组件的装配。
 
 ## 2. 子模块清单
 
 - `AppRouter.tsx`：固定路由树与外层 `BrowserRouter` 壳。
 - `AuthGuard.tsx`：登录态检查、用户信息初始化、动态路由装配引导。
+- `public-routes.ts`：登录前公开路由白名单匹配。
 - `BackendRouteView.tsx`：后端组件名到真实页面组件的解析与 tags view 同步。
 - `route-transform.ts`：后端菜单结构转换、组件映射构建、冲突检测。
 - `component-map.tsx`、`path-to-component.ts`：组件路径和页面组件解析。
@@ -18,6 +19,7 @@
 | --- | --- |
 | `AppRouter.tsx` | 固定公开路由、主布局壳路由和 404 入口 |
 | `AuthGuard.tsx` | 有 token 时补齐用户信息和动态菜单 |
+| `public-routes.ts` | `/login`、`/register`、`/forgot-password` 等公开路径匹配 |
 | `BackendRouteView.tsx` | 根据路径或组件名渲染真实页面 |
 | `route-transform.ts` | 规范化后端菜单并生成 `routeComponentMap` |
 
@@ -39,7 +41,7 @@ App.tsx
 
 ## 6. 公共约束
 
-- `/login`、`/register`、`/401`、`/index` 等固定路由必须稳定存在。
+- `/login`、`/register`、`/forgot-password`、`/401`、`/index` 等固定路由必须稳定存在。
 - 后端返回的特殊组件名 `Layout`、`ParentView`、`InnerLink` 由本目录做特殊处理。
 - 路由冲突需要在 `route-transform.ts` 阶段显式检测，而不是等运行时偶发 404。
 
@@ -51,6 +53,7 @@ App.tsx
 ## 8. 下钻阅读路径
 
 1. 固定路由：`AppRouter.tsx`
-2. 守卫初始化：`AuthGuard.tsx`
-3. 动态组件解析：`BackendRouteView.tsx`
-4. 后端菜单转换：`route-transform.ts`
+2. 公开白名单：`public-routes.ts`
+3. 守卫初始化：`AuthGuard.tsx`
+4. 动态组件解析：`BackendRouteView.tsx`
+5. 后端菜单转换：`route-transform.ts`

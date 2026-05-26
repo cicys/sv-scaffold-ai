@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cc.infoq.system.mapper.SysInviteCodeMapper">
+
+    <resultMap id="SysInviteCodeResult" type="cc.infoq.system.domain.vo.SysInviteCodeVo">
+        <id property="inviteId" column="invite_id"/>
+    </resultMap>
+
+    <sql id="InviteCodeSelect">
+        select sic.invite_id,
+               sic.invite_code,
+               sic.status,
+               sic.expire_time,
+               sic.used_user_id,
+               sic.used_time,
+               sic.canceled_time,
+               sic.canceled_reason,
+               sic.remark,
+               sic.create_by,
+               sic.create_time,
+               used_user.email as used_user_email,
+               coalesce(creator.nick_name, creator.user_name) as creator_name
+        from sys_invite_code sic
+                 left join sys_user used_user on used_user.user_id = sic.used_user_id
+                 left join sys_user creator on creator.user_id = sic.create_by
+    </sql>
+
+    <sql id="InviteCodeWhere">
+        <where>
+            <if test="bo != null and bo.inviteCode != null and bo.inviteCode != ''">
+                and sic.invite_code like concat('%', #{bo.inviteCode}, '%')
+            </if>
+            <if test="bo != null and bo.status != null and bo.status != ''">
+                and sic.status = #{bo.status}
+            </if>
+            <if test="bo != null and bo.usedUserEmail != null and bo.usedUserEmail != ''">
+                and used_user.email like concat('%', #{bo.usedUserEmail}, '%')
+            </if>
+            <if test="bo != null and bo.creatorName != null and bo.creatorName != ''">
+                and coalesce(creator.nick_name, creator.user_name) like concat('%', #{bo.creatorName}, '%')
+            </if>
+            <if test="bo != null and bo.params != null and bo.params.beginTime != null and bo.params.endTime != null">
+                and sic.create_time between #{bo.params.beginTime} and #{bo.params.endTime}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectPageInviteCodeList" resultMap="SysInviteCodeResult">
+        <include refid="InviteCodeSelect"/>
+        <include refid="InviteCodeWhere"/>
+        order by sic.create_time desc, sic.invite_id desc
+    </select>
+
+    <select id="selectInviteCodeList" resultMap="SysInviteCodeResult">
+        <include refid="InviteCodeSelect"/>
+        <include refid="InviteCodeWhere"/>
+        order by sic.create_time desc, sic.invite_id desc
+    </select>
+
+    <update id="expireInviteCodes">
+        update sys_invite_code
+        set status = '3',
+            update_time = #{now}
+        where status = '0'
+          and expire_time is not null
+          and expire_time &lt;= #{now}
+    </update>
+
+    <update id="consumeInviteCode">
+        update sys_invite_code
+        set status = '1',
+            used_user_id = #{usedUserId},
+            used_time = #{usedTime},
+            update_time = #{usedTime}
+        where invite_code = #{inviteCode}
+          and status = '0'
+          and (expire_time is null or expire_time &gt; #{now})
+    </update>
+
+</mapper>

@@ -43,7 +43,11 @@
           <span v-if="!loading">{{ proxy.$t('login.login') }}</span>
           <span v-else>{{ proxy.$t('login.logging') }}</span>
         </el-button>
-        <div v-if="register" style="float: right">
+        <div v-if="register || forgotPasswordEnabled" class="auth-links">
+          <router-link v-if="forgotPasswordEnabled" class="link-type" :to="'/forgot-password'">{{
+            proxy.$t('login.switchForgotPasswordPage')
+          }}</router-link>
+          <span v-if="register && forgotPasswordEnabled" class="auth-links__divider">|</span>
           <router-link class="link-type" :to="'/register'">{{ proxy.$t('login.switchRegisterPage') }}</router-link>
         </div>
       </el-form-item>
@@ -91,6 +95,7 @@ const captchaEnabled = ref(true);
 
 // 注册开关
 const register = ref(false);
+const forgotPasswordEnabled = ref(false);
 const redirect = ref('/');
 const loginRef = ref<ElFormInstance>();
 
@@ -142,11 +147,17 @@ const getCode = async () => {
   const res = await getCodeImg();
   const { data } = res;
   captchaEnabled.value = data.captchaEnabled === undefined ? true : data.captchaEnabled;
+  register.value = Boolean(data.registerEnabled && data.mailEnabled);
+  forgotPasswordEnabled.value = Boolean(data.forgotPasswordEnabled && data.mailEnabled);
   if (captchaEnabled.value) {
     // 刷新验证码时清空输入框
     loginForm.value.code = '';
     codeUrl.value = 'data:image/gif;base64,' + data.img;
     loginForm.value.uuid = data.uuid;
+  } else {
+    loginForm.value.code = '';
+    loginForm.value.uuid = '';
+    codeUrl.value = '';
   }
 };
 
@@ -252,6 +263,18 @@ onMounted(() => {
     cursor: pointer;
     vertical-align: middle;
   }
+}
+
+.auth-links {
+  float: right;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.auth-links__divider {
+  color: var(--el-text-color-placeholder);
 }
 
 .el-login-footer {

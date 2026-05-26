@@ -12,7 +12,7 @@ import { usePermissionStore } from '@/store/modules/permission';
 import { ElMessage } from 'element-plus/es';
 
 NProgress.configure({ showSpinner: false });
-const whiteList = ['/login', '/register', '/register*', '/register/*'];
+const whiteList = ['/login', '/register', '/register*', '/register/*', '/forgot-password', '/forgot-password*', '/forgot-password/*'];
 
 const isWhiteList = (path: string) => {
   return whiteList.some((pattern) => isPathMatch(pattern, path));

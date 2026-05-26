@@ -5,8 +5,10 @@ import ConfigView from '@/views/system/config/index.vue';
 const configMocks = vi.hoisted(() => ({
   listConfig: vi.fn(),
   getConfig: vi.fn(),
+  getConfigKey: vi.fn(),
   addConfig: vi.fn(),
   updateConfig: vi.fn(),
+  updateConfigByKey: vi.fn(),
   delConfig: vi.fn(),
   refreshCache: vi.fn(),
   modalConfirm: vi.fn(() => Promise.resolve()),
@@ -28,10 +30,18 @@ const configMocks = vi.hoisted(() => ({
 vi.mock('@/api/system/config', () => ({
   listConfig: configMocks.listConfig,
   getConfig: configMocks.getConfig,
+  getConfigKey: configMocks.getConfigKey,
   addConfig: configMocks.addConfig,
   updateConfig: configMocks.updateConfig,
+  updateConfigByKey: configMocks.updateConfigByKey,
   delConfig: configMocks.delConfig,
   refreshCache: configMocks.refreshCache
+}));
+
+vi.mock('@/store/modules/user', () => ({
+  useUserStore: () => ({
+    roles: ['superadmin']
+  })
 }));
 
 const TABLE_DATA_SYMBOL = Symbol('config-table-data');
@@ -137,6 +147,33 @@ const ElButtonStub = defineComponent({
   }
 });
 
+const ElSwitchStub = defineComponent({
+  name: 'ElSwitch',
+  props: {
+    modelValue: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['update:modelValue', 'change'],
+  setup(props, { emit }) {
+    return () =>
+      h(
+        'button',
+        {
+          class: 'el-switch-stub',
+          'data-checked': String(props.modelValue),
+          onClick: () => {
+            const next = !props.modelValue;
+            emit('update:modelValue', next);
+            emit('change', next);
+          }
+        },
+        'switch'
+      );
+  }
+});
+
 const passthroughStub = (name: string) =>
   defineComponent({
     name,
@@ -177,6 +214,12 @@ describe('views/system/config/index', () => {
     });
     configMocks.addConfig.mockResolvedValue(undefined);
     configMocks.updateConfig.mockResolvedValue(undefined);
+    configMocks.getConfigKey.mockImplementation((key: string) =>
+      Promise.resolve({
+        data: key === 'sys.account.registerUser' ? 'true' : 'false'
+      })
+    );
+    configMocks.updateConfigByKey.mockResolvedValue(undefined);
     configMocks.delConfig.mockResolvedValue(undefined);
     configMocks.refreshCache.mockResolvedValue(undefined);
   });
@@ -232,7 +275,8 @@ describe('views/system/config/index', () => {
           'el-dialog': ElDialogStub,
           'el-radio-group': passthroughStub('ElRadioGroup'),
           'el-radio': passthroughStub('ElRadio'),
-          'el-button': ElButtonStub
+          'el-button': ElButtonStub,
+          'el-switch': ElSwitchStub
         }
       }
     });
@@ -247,6 +291,8 @@ describe('views/system/config/index', () => {
         pageSize: 10
       })
     );
+    expect(configMocks.getConfigKey).toHaveBeenCalledWith('sys.account.registerUser');
+    expect(configMocks.getConfigKey).toHaveBeenCalledWith('sys.account.inviteRegister');
   });
 
   it('adds config successfully', async () => {
@@ -358,5 +404,19 @@ describe('views/system/config/index', () => {
     expect(cancelButton).toBeDefined();
     await cancelButton!.trigger('click');
     await flushPromises();
+  });
+
+  it('updates account settings switch by key', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const switches = wrapper.findAll('button.el-switch-stub');
+    expect(switches.length).toBeGreaterThanOrEqual(2);
+
+    await switches[0].trigger('click');
+    await flushPromises();
+
+    expect(configMocks.updateConfigByKey).toHaveBeenCalledWith('sys.account.registerUser', false);
+    expect(configMocks.msgSuccess).toHaveBeenCalledWith('操作成功');
   });
 });

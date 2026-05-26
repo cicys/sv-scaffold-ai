@@ -1,6 +1,6 @@
 import { Button, Checkbox, Form, Input } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getCodeImg } from '@/api/login';
 import type { LoginData } from '@/api/types';
 import AuthPageShell from '@/components/AuthPageShell';
@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [captchaEnabled, setCaptchaEnabled] = useState(true);
   const [codeUrl, setCodeUrl] = useState('');
+  const [registerEnabled, setRegisterEnabled] = useState(false);
+  const [forgotPasswordEnabled, setForgotPasswordEnabled] = useState(false);
   const navigate = useNavigate();
   const login = useUserStore((state) => state.login);
   const { t } = useTranslation();
@@ -21,27 +23,28 @@ export default function LoginPage() {
   const authIconStyle = { color: '#bfbfbf' };
 
   const getCode = useCallback(async () => {
-    let data: { captchaEnabled?: boolean; uuid?: string; img?: string } | undefined;
     try {
       const res = await getCodeImg();
-      data = res?.data;
-    } catch {
-      data = undefined;
-    }
-    if (!data) {
-      setCaptchaEnabled(false);
-      return;
-    }
-    const enabled = data.captchaEnabled === undefined ? true : data.captchaEnabled;
-    setCaptchaEnabled(enabled);
-    if (enabled) {
-      setCodeUrl(`data:image/gif;base64,${data.img}`);
-      form.setFieldValue('uuid', data.uuid);
-      form.setFieldValue('code', '');
-    } else {
+      const data = res?.data;
+      const enabled = data?.captchaEnabled === undefined ? true : data.captchaEnabled;
+      setCaptchaEnabled(enabled);
+      setRegisterEnabled(Boolean(data?.registerEnabled && data.mailEnabled));
+      setForgotPasswordEnabled(Boolean(data?.forgotPasswordEnabled && data.mailEnabled));
+      if (enabled) {
+        setCodeUrl(`data:image/gif;base64,${data?.img || ''}`);
+        form.setFieldValue('uuid', data?.uuid);
+        form.setFieldValue('code', '');
+        return;
+      }
       setCodeUrl('');
       form.setFieldValue('uuid', undefined);
       form.setFieldValue('code', undefined);
+    } catch {
+      setRegisterEnabled(false);
+      setForgotPasswordEnabled(false);
+      setCodeUrl('');
+      form.setFieldValue('code', '');
+      form.setFieldValue('uuid', undefined);
     }
   }, [form]);
 
@@ -86,7 +89,7 @@ export default function LoginPage() {
         <Form.Item name="uuid" hidden>
           <Input />
         </Form.Item>
-        <Form.Item name="username" rules={[{ required: true, message: t('login.username') }]} style={{ marginBottom: 22 }}>
+        <Form.Item name="username" rules={[{ required: true, message: t('login.rule.username.required') }]} style={{ marginBottom: 22 }}>
           <Input
             size="large"
             placeholder={t('login.username')}
@@ -94,7 +97,7 @@ export default function LoginPage() {
             prefix={<SvgIcon iconClass="user" size={14} style={authIconStyle} />}
           />
         </Form.Item>
-        <Form.Item name="password" rules={[{ required: true, message: t('login.password') }]} style={{ marginBottom: 22 }}>
+        <Form.Item name="password" rules={[{ required: true, message: t('login.rule.password.required') }]} style={{ marginBottom: 22 }}>
           <Input.Password
             size="large"
             placeholder={t('login.password')}
@@ -106,7 +109,7 @@ export default function LoginPage() {
         </Form.Item>
         {captchaEnabled && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 25 }}>
-            <Form.Item name="code" rules={[{ required: true, message: t('login.code') }]} style={{ width: '63%', marginBottom: 0 }}>
+            <Form.Item name="code" rules={[{ required: true, message: t('login.rule.code.required') }]} style={{ width: '63%', marginBottom: 0 }}>
               <Input
                 size="large"
                 placeholder={t('login.code')}
@@ -142,6 +145,13 @@ export default function LoginPage() {
             {loading ? t('login.logging') : t('login.login')}
           </Button>
         </Form.Item>
+        {(registerEnabled || forgotPasswordEnabled) && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+            {forgotPasswordEnabled && <Link to="/forgot-password">{t('login.switchForgotPasswordPage')}</Link>}
+            {forgotPasswordEnabled && registerEnabled && <span style={{ color: '#bfbfbf' }}>|</span>}
+            {registerEnabled && <Link to="/register">{t('login.switchRegisterPage')}</Link>}
+          </div>
+        )}
       </Form>
     </AuthPageShell>
   );

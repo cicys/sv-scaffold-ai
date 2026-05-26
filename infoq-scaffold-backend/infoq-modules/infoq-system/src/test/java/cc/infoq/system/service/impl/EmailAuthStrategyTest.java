@@ -1,26 +1,23 @@
 package cc.infoq.system.service.impl;
 
+import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.model.LoginUser;
+import cc.infoq.common.enums.EmailCodeScene;
 import cc.infoq.common.enums.LoginType;
 import cc.infoq.common.exception.user.UserException;
-import cc.infoq.common.redis.utils.RedisUtils;
 import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.mapper.SysUserMapper;
+import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.SysLoginService;
 import cn.dev33.satoken.stp.StpUtil;
-import cc.infoq.common.constant.SystemConstants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -32,16 +29,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -53,6 +43,8 @@ class EmailAuthStrategyTest {
     private SysLoginService loginService;
     @Mock
     private SysUserMapper userMapper;
+    @Mock
+    private AuthEmailCodeService authEmailCodeService;
 
     @BeforeEach
     void initSpringContext() {
@@ -74,7 +66,7 @@ class EmailAuthStrategyTest {
     @Test
     @DisplayName("loadUserByEmail: should throw when user does not exist")
     void loadUserByEmailShouldThrowWhenUserNotExists() throws Exception {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         when(userMapper.selectVoOne(any())).thenReturn(null);
 
         Method method = EmailAuthStrategy.class.getDeclaredMethod("loadUserByEmail", String.class);
@@ -87,7 +79,7 @@ class EmailAuthStrategyTest {
     @Test
     @DisplayName("login: should throw when user is disabled")
     void loginShouldThrowWhenUserDisabled() {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         SysUserVo user = new SysUserVo();
         user.setEmail("a@b.com");
         user.setStatus(SystemConstants.DISABLE);
@@ -99,7 +91,7 @@ class EmailAuthStrategyTest {
     @Test
     @DisplayName("login: should return token when email code is valid")
     void loginShouldReturnTokenWhenEmailCodeValid() {
-        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper);
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
         SysUserVo user = new SysUserVo();
         user.setEmail("a@b.com");
         user.setUserName("admin");
@@ -108,16 +100,15 @@ class EmailAuthStrategyTest {
 
         LoginUser loginUser = new LoginUser();
         when(loginService.buildLoginUser(user)).thenReturn(loginUser);
+        when(authEmailCodeService.validateCode(EmailCodeScene.EMAIL_LOGIN, "a@b.com", "1234")).thenReturn(true);
         doAnswer(invocation -> {
             Supplier<?> supplier = invocation.getArgument(2);
             assertEquals(Boolean.FALSE, supplier.get());
             return null;
         }).when(loginService).checkLogin(eq(LoginType.EMAIL), eq("admin"), any());
 
-        try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
              MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
-            redisUtils.when(() -> RedisUtils.getCacheObject(anyString())).thenReturn("1234");
             stpUtil.when(StpUtil::getTokenValue).thenReturn("email-token");
             stpUtil.when(StpUtil::getTokenTimeout).thenReturn(3600L);
 
@@ -128,6 +119,45 @@ class EmailAuthStrategyTest {
             assertEquals("pc", result.getClientId());
             assertEquals("client-key", loginUser.getClientKey());
             assertEquals("web", loginUser.getDeviceType());
+            verify(authEmailCodeService).validateCode(EmailCodeScene.EMAIL_LOGIN, "a@b.com", "1234");
+        }
+    }
+
+    @Test
+    @DisplayName("login: should keep global token timeout when client timeout is null")
+    void loginShouldKeepGlobalTokenTimeoutWhenClientTimeoutNull() {
+        EmailAuthStrategy strategy = new EmailAuthStrategy(loginService, userMapper, authEmailCodeService);
+        SysUserVo user = new SysUserVo();
+        user.setEmail("a@b.com");
+        user.setUserName("admin");
+        user.setStatus(SystemConstants.NORMAL);
+        when(userMapper.selectVoOne(any())).thenReturn(user);
+
+        LoginUser loginUser = new LoginUser();
+        when(loginService.buildLoginUser(user)).thenReturn(loginUser);
+        when(authEmailCodeService.validateCode(EmailCodeScene.EMAIL_LOGIN, "a@b.com", "1234")).thenReturn(true);
+        doAnswer(invocation -> {
+            Supplier<?> supplier = invocation.getArgument(2);
+            assertEquals(Boolean.FALSE, supplier.get());
+            return null;
+        }).when(loginService).checkLogin(eq(LoginType.EMAIL), eq("admin"), any());
+
+        SysClientVo client = buildClient();
+        client.setTimeout(null);
+        client.setActiveTimeout(null);
+
+        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+             MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
+            stpUtil.when(StpUtil::getTokenValue).thenReturn("email-token");
+            stpUtil.when(StpUtil::getTokenTimeout).thenReturn(3600L);
+
+            LoginVo result = strategy.login(emailBody("a@b.com", "1234"), client);
+
+            assertEquals("email-token", result.getAccessToken());
+            loginHelper.verify(() -> LoginHelper.login(eq(loginUser), argThat(model ->
+                "web".equals(model.getDeviceType())
+                    && model.getActiveTimeout() == null
+                    && "pc".equals(model.getExtra(LoginHelper.CLIENT_KEY)))));
         }
     }
 
