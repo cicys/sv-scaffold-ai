@@ -8,7 +8,6 @@ import cc.infoq.common.domain.model.RegisterBody;
 import cc.infoq.common.encrypt.annotation.ApiEncrypt;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.json.utils.JsonUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.utils.DateUtils;
 import cc.infoq.common.utils.MessageUtils;
 import cc.infoq.common.utils.StringUtils;
@@ -18,7 +17,6 @@ import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.service.*;
 import cc.infoq.system.support.plugin.OptionalMailHelper;
 import cc.infoq.system.support.plugin.OptionalSseHelper;
-import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.ObjectUtil;
 import jakarta.validation.constraints.NotBlank;
@@ -38,7 +36,6 @@ import java.util.concurrent.TimeUnit;
  * @author Pontus
  */
 @Slf4j
-@SaIgnore
 @AllArgsConstructor
 @Validated
 @RestController
@@ -73,9 +70,13 @@ public class AuthController {
         } else if (!SystemConstants.NORMAL.equals(client.getStatus())) {
             return ApiResult.fail(MessageUtils.message("auth.grant.type.blocked"));
         }
-        LoginVo loginVo = AuthStrategy.login(body, client, grantType);
+        AuthStrategy.LoginResult loginResult = AuthStrategy.loginForResult(body, client, grantType);
+        LoginVo loginVo = loginResult.loginVo();
 
-        Long userId = LoginHelper.getUserId();
+        Long userId = loginResult.userId();
+        if (ObjectUtil.isNull(userId)) {
+            throw new ServiceException("Login user id is required");
+        }
         scheduledExecutorService.schedule(() -> {
             String message = DateUtils.getTodayHour(new Date()) + "好，欢迎登录 infoq-scaffold-backend 后台管理系统";
             OptionalSseHelper.publishToUsers(List.of(userId), message);

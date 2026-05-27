@@ -2,11 +2,11 @@ package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.CacheNames;
 import cc.infoq.common.constant.SystemConstants;
-import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.service.RoleService;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.StreamUtils;
@@ -22,8 +22,6 @@ import cc.infoq.system.mapper.SysRoleMapper;
 import cc.infoq.system.mapper.SysRoleMenuMapper;
 import cc.infoq.system.mapper.SysUserRoleMapper;
 import cc.infoq.system.service.SysRoleService;
-import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -52,6 +50,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
     private final SysRoleDeptMapper sysRoleDeptMapper;
+    private final SecurityTokenService securityTokenService;
 
     /**
      * 分页查询角色列表
@@ -220,7 +219,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
      */
     @Override
     public void checkRoleAllowed(SysRoleBo role) {
-        if (ObjectUtil.isNotNull(role.getRoleId()) && LoginHelper.isSuperAdmin(role.getRoleId())) {
+        if (ObjectUtil.isNotNull(role.getRoleId()) && LoginUserContext.isSuperAdmin(role.getRoleId())) {
             throw new ServiceException("不允许操作超级管理员角色");
         }
         String[] keys = new String[]{SystemConstants.SUPER_ADMIN_ROLE_KEY, SystemConstants.ADMIN_ROLE_KEY};
@@ -263,7 +262,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
      */
     @Override
     public void checkRoleDataScope(List<Long> roleIds) {
-        if (CollUtil.isEmpty(roleIds) || LoginHelper.isSuperAdmin()) {
+        if (CollUtil.isEmpty(roleIds) || LoginUserContext.isSuperAdmin()) {
             return;
         }
         long count = sysRoleMapper.selectRoleCount(roleIds);
@@ -449,7 +448,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
      */
     @Override
     public int deleteAuthUser(SysUserRole userRole) {
-        if (LoginHelper.getUserId().equals(userRole.getUserId())) {
+        if (LoginUserContext.getUserId().equals(userRole.getUserId())) {
             throw new ServiceException("不允许修改当前用户角色!");
         }
         int rows = sysUserRoleMapper.delete(new LambdaQueryWrapper<SysUserRole>()
@@ -471,7 +470,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
     @Override
     public int deleteAuthUsers(Long roleId, Long[] userIds) {
         List<Long> ids = List.of(userIds);
-        if (ids.contains(LoginHelper.getUserId())) {
+        if (ids.contains(LoginUserContext.getUserId())) {
             throw new ServiceException("不允许修改当前用户角色!");
         }
         int rows = sysUserRoleMapper.delete(new LambdaQueryWrapper<SysUserRole>()
@@ -495,7 +494,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
         // 新增用户与角色管理
         int rows = 1;
         List<Long> ids = List.of(userIds);
-        if (ids.contains(LoginHelper.getUserId())) {
+        if (ids.contains(LoginUserContext.getUserId())) {
             throw new ServiceException("不允许修改当前用户角色!");
         }
         List<SysUserRole> list = StreamUtils.toList(ids, userId -> {
@@ -517,9 +516,7 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
      * 根据角色ID清除该角色关联的所有在线用户的登录状态（踢出在线用户）
      *
      * <p>
-     * 先判断角色是否绑定用户，若无绑定则直接返回
-     * 然后遍历当前所有在线Token，查找拥有该角色的用户并强制登出
-     * 注意：在线用户量过大时，操作可能导致 Redis 阻塞，需谨慎调用
+     * 先判断角色是否绑定用户，若无绑定则直接返回；再通过 token store 角色索引撤销对应 token。
      * </p>
      *
      * @param roleId 角色ID
@@ -531,64 +528,27 @@ public class SysRoleServiceImpl implements SysRoleService, RoleService {
         if (num == 0) {
             return;
         }
-        List<String> keys = StpUtil.searchTokenValue("", 0, -1, false);
-        if (CollUtil.isEmpty(keys)) {
-            return;
-        }
-        // 角色关联的在线用户量过大会导致redis阻塞卡顿 谨慎操作
-        keys.parallelStream().forEach(key -> {
-            String token = StringUtils.substringAfterLast(key, ":");
-            // 如果已经过期则跳过
-            if (StpUtil.stpLogic.getTokenActiveTimeoutByToken(token) < -1) {
-                return;
-            }
-            LoginUser loginUser = LoginHelper.getLoginUser(token);
-            if (ObjectUtil.isNull(loginUser) || CollUtil.isEmpty(loginUser.getRoles())) {
-                return;
-            }
-            if (loginUser.getRoles().stream().anyMatch(r -> r.getRoleId().equals(roleId))) {
-                try {
-                    StpUtil.logoutByTokenValue(token);
-                } catch (NotLoginException ignored) {
-                }
-            }
-        });
+        securityTokenService.revokeByRoleId(roleId);
     }
 
     /**
      * 根据用户ID列表清除对应在线用户的登录状态（踢出指定用户）
      *
      * <p>
-     * 遍历当前所有在线Token，匹配用户ID列表中的用户，强制登出
-     * 注意：在线用户量过大时，操作可能导致 Redis 阻塞，需谨慎调用
+     * 通过 token store 用户索引撤销对应 token。
      * </p>
      *
      * @param userIds 需要清除的用户ID列表
      */
     @Override
     public void cleanOnlineUser(List<Long> userIds) {
-        List<String> keys = StpUtil.searchTokenValue("", 0, -1, false);
-        if (CollUtil.isEmpty(keys)) {
+        if (CollUtil.isEmpty(userIds)) {
             return;
         }
-        // 角色关联的在线用户量过大会导致redis阻塞卡顿 谨慎操作
-        keys.parallelStream().forEach(key -> {
-            String token = StringUtils.substringAfterLast(key, ":");
-            // 如果已经过期则跳过
-            if (StpUtil.stpLogic.getTokenActiveTimeoutByToken(token) < -1) {
-                return;
-            }
-            LoginUser loginUser = LoginHelper.getLoginUser(token);
-            if (ObjectUtil.isNull(loginUser)) {
-                return;
-            }
-            if (userIds.contains(loginUser.getUserId())) {
-                try {
-                    StpUtil.logoutByTokenValue(token);
-                } catch (NotLoginException ignored) {
-                }
-            }
-        });
+        userIds.stream()
+            .filter(Objects::nonNull)
+            .distinct()
+            .forEach(securityTokenService::revokeByUserId);
     }
 
     /**

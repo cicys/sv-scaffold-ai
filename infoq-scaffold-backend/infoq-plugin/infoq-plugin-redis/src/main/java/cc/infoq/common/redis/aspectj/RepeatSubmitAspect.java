@@ -9,7 +9,6 @@ import cc.infoq.common.redis.utils.RedisUtils;
 import cc.infoq.common.utils.MessageUtils;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.StringUtils;
-import cn.dev33.satoken.SaManager;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.crypto.SecureUtil;
@@ -20,6 +19,7 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.http.HttpHeaders;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +38,10 @@ public class RepeatSubmitAspect {
 
     private static final ThreadLocal<String> KEY_CACHE = new ThreadLocal<>();
 
+    private static final String TOKEN_NAME = HttpHeaders.AUTHORIZATION;
+
+    private static final String CLIENT_ID_NAME = "clientid";
+
     @Before("@annotation(repeatSubmit)")
     public void doBefore(JoinPoint point, RepeatSubmit repeatSubmit) throws Throwable {
         // 如果注解不为0 则使用注解数值
@@ -52,10 +56,8 @@ public class RepeatSubmitAspect {
         // 请求地址（作为存放cache的key值）
         String url = request.getRequestURI();
 
-        // 唯一值（没有消息头则使用请求地址）
-        String submitKey = StringUtils.trimToEmpty(request.getHeader(SaManager.getConfig().getTokenName()));
-
-        submitKey = SecureUtil.md5(submitKey + ":" + nowParams);
+        // 唯一值：优先使用新认证契约中的 token；公开请求使用客户端/来源指纹，避免匿名请求全局互锁。
+        String submitKey = SecureUtil.md5(resolveSubmitIdentity(request) + ":" + nowParams);
         // 唯一标识（指定key + url + 消息头）
         String cacheRepeatKey = GlobalConstants.REPEAT_SUBMIT_KEY + url + submitKey;
         if (RedisUtils.setObjectIfAbsent(cacheRepeatKey, "", Duration.ofMillis(interval))) {
@@ -115,6 +117,36 @@ public class RepeatSubmitAspect {
             }
         }
         return params.toString();
+    }
+
+    private String resolveSubmitIdentity(HttpServletRequest request) {
+        String token = firstNonBlank(request.getHeader(TOKEN_NAME), request.getParameter(TOKEN_NAME));
+        if (StringUtils.isNotBlank(token)) {
+            return "token:" + SecureUtil.md5(normalizeBearerToken(token));
+        }
+        String clientId = firstNonBlank(request.getHeader(CLIENT_ID_NAME), request.getParameter(CLIENT_ID_NAME));
+        String clientIp = firstNonBlank(ServletUtils.getClientIP(), request.getRemoteAddr());
+        String userAgent = StringUtils.trimToEmpty(request.getHeader(HttpHeaders.USER_AGENT));
+        return "anonymous:" + StringUtils.trimToEmpty(clientId) + ":" + StringUtils.trimToEmpty(clientIp) + ":" + userAgent;
+    }
+
+    private String normalizeBearerToken(String token) {
+        String value = token.trim();
+        String prefix = "Bearer ";
+        if (StringUtils.startsWithIgnoreCase(value, prefix)) {
+            return value.substring(prefix.length()).trim();
+        }
+        return value;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (StringUtils.isNotBlank(first)) {
+            return first.trim();
+        }
+        if (StringUtils.isNotBlank(second)) {
+            return second.trim();
+        }
+        return StringUtils.EMPTY;
     }
 
     /**

@@ -1,7 +1,7 @@
 package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.SystemConstants;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.service.PermissionService;
 import cc.infoq.system.service.SysMenuService;
 import cc.infoq.system.service.SysPermissionService;
@@ -34,7 +34,7 @@ public class SysPermissionServiceImpl implements SysPermissionService, Permissio
     public Set<String> getRolePermission(Long userId) {
         Set<String> roles = new HashSet<>();
         // 管理员拥有所有权限
-        if (LoginHelper.isSuperAdmin(userId)) {
+        if (LoginUserContext.isSuperAdmin(userId)) {
             roles.add(SystemConstants.SUPER_ADMIN_ROLE_KEY);
         } else {
             roles.addAll(sysRoleService.selectRolePermissionByUserId(userId));
@@ -52,7 +52,7 @@ public class SysPermissionServiceImpl implements SysPermissionService, Permissio
     public Set<String> getMenuPermission(Long userId) {
         Set<String> perms = new HashSet<>();
         // 管理员拥有所有权限
-        if (LoginHelper.isSuperAdmin(userId)) {
+        if (LoginUserContext.isSuperAdmin(userId)) {
             perms.add("*:*:*");
         } else {
             perms.addAll(sysMenuService.selectMenuPermsByUserId(userId));

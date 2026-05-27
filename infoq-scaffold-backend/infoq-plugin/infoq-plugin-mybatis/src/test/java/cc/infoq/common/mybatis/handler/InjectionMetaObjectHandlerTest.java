@@ -3,7 +3,8 @@ package cc.infoq.common.mybatis.handler;
 import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.core.domain.BaseEntity;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
+import cc.infoq.common.security.auth.SecurityAuthenticationException;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -12,11 +13,7 @@ import org.mockito.MockedStatic;
 
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mockStatic;
 
 @Tag("dev")
@@ -32,8 +29,8 @@ class InjectionMetaObjectHandlerTest {
         loginUser.setUserId(99L);
         loginUser.setDeptId(8L);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getLoginUser).thenReturn(loginUser);
 
             handler.insertFill(SystemMetaObject.forObject(entity));
         }
@@ -50,8 +47,8 @@ class InjectionMetaObjectHandlerTest {
     void insertFillShouldFallbackToDefaultUserIdWhenLoginUserMissing() {
         BaseEntity entity = new BaseEntity();
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getLoginUser).thenThrow(new IllegalStateException("no session"));
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getLoginUser).thenThrow(new SecurityAuthenticationException("no session"));
 
             handler.insertFill(SystemMetaObject.forObject(entity));
         }
@@ -84,8 +81,8 @@ class InjectionMetaObjectHandlerTest {
     void updateFillShouldUseCurrentLoginUserId() {
         BaseEntity entity = new BaseEntity();
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(12L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(12L);
             handler.updateFill(SystemMetaObject.forObject(entity));
         }
 
@@ -94,12 +91,12 @@ class InjectionMetaObjectHandlerTest {
     }
 
     @Test
-    @DisplayName("updateFill: should fallback to default user id when login id is null")
-    void updateFillShouldFallbackToDefaultWhenUserIdNull() {
+    @DisplayName("updateFill: should fallback to default user id when security context is unavailable")
+    void updateFillShouldFallbackToDefaultWhenSecurityContextUnavailable() {
         BaseEntity entity = new BaseEntity();
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(null);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenThrow(new SecurityAuthenticationException("no session"));
             handler.updateFill(SystemMetaObject.forObject(entity));
         }
 

@@ -25,7 +25,7 @@
 
 ## 5. 下游依赖
 
-- 编译期依赖 `infoq-core-common`、`infoq-plugin-redis`、`infoq-plugin-satoken`
+- 编译期依赖 `infoq-core-common`、`infoq-plugin-redis`、`infoq-plugin-security`、`spring-webmvc`
 
 ## 6. 关键配置
 
@@ -35,7 +35,7 @@
 ## 7. 关键数据流
 
 1. `sse.enabled=true` 时装配 SSE 控制器和管理器。
-2. 客户端建立 SSE 连接。
+2. 客户端通过 header 或 query token 建立 SSE 连接，认证由 security token service 完成。
 3. 业务侧通过消息工具或 Redis topic 把消息送给 `SseEmitterManager`。
 
 ## 8. 扩展点
@@ -47,7 +47,7 @@
 ## 9. 日志 / 监控切入点
 
 - 登录后欢迎消息能否收到，是验证 SSE 链路的一个直接信号。
-- 若连接建立正常但消息不达，需同时排查 Redis topic 和登录态。
+- 若连接建立正常但消息不达，需同时排查 Redis topic 和当前 token session。
 
 ## 10. 已知边界
 

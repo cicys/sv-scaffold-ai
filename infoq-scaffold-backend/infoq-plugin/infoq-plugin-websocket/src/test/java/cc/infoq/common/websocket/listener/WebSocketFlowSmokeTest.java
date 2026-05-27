@@ -1,14 +1,13 @@
 package cc.infoq.common.websocket.listener;
 
 import cc.infoq.common.domain.model.LoginUser;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.*;
 import cc.infoq.common.websocket.dto.WebSocketMessageDto;
 import cc.infoq.common.websocket.handler.PlusWebSocketHandler;
 import cc.infoq.common.websocket.holder.WebSocketSessionHolder;
 import cc.infoq.common.websocket.interceptor.PlusWebSocketInterceptor;
 import cc.infoq.common.websocket.utils.WebSocketClusterUtils;
 import cc.infoq.common.websocket.utils.WebSocketUtils;
-import cn.dev33.satoken.stp.StpUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -17,10 +16,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
@@ -42,7 +39,6 @@ class WebSocketFlowSmokeTest {
 
     @AfterEach
     void tearDown() {
-        RequestContextHolder.resetRequestAttributes();
         new ArrayList<>(WebSocketSessionHolder.getSessionsAll()).forEach(WebSocketSessionHolder::removeSession);
     }
 
@@ -52,20 +48,17 @@ class WebSocketFlowSmokeTest {
         LoginUser loginUser = new LoginUser();
         loginUser.setUserId(501L);
         loginUser.setUserType("sys_user");
-        bindCurrentRequest("pc");
 
-        PlusWebSocketInterceptor interceptor = new PlusWebSocketInterceptor();
+        SecurityTokenService tokenService = mock(SecurityTokenService.class);
+        when(tokenService.authenticate("valid-token", "pc"))
+            .thenReturn(authentication("valid-token", loginUser));
+        PlusWebSocketInterceptor interceptor = new PlusWebSocketInterceptor(tokenResolver(), tokenService);
         PlusWebSocketHandler handler = new PlusWebSocketHandler();
         Map<String, Object> attributes = new HashMap<>();
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
-             MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class);
-             MockedStatic<WebSocketClusterUtils> clusterUtils = mockStatic(WebSocketClusterUtils.class)) {
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
-            stpUtil.when(() -> StpUtil.getExtra(LoginHelper.CLIENT_KEY)).thenReturn("pc");
-
+        try (MockedStatic<WebSocketClusterUtils> clusterUtils = mockStatic(WebSocketClusterUtils.class)) {
             boolean handshakeOk = interceptor.beforeHandshake(
-                mock(ServerHttpRequest.class), mock(ServerHttpResponse.class), mock(WebSocketHandler.class), attributes);
+                handshakeRequest("valid-token", "pc"), mock(ServerHttpResponse.class), mock(WebSocketHandler.class), attributes);
 
             assertTrue(handshakeOk);
             assertEquals(loginUser, attributes.get(LOGIN_USER_KEY));
@@ -113,24 +106,19 @@ class WebSocketFlowSmokeTest {
         LoginUser loginUser = new LoginUser();
         loginUser.setUserId(502L);
         loginUser.setUserType("sys_user");
-        bindCurrentRequest("pc");
 
-        PlusWebSocketInterceptor interceptor = new PlusWebSocketInterceptor();
+        SecurityTokenService tokenService = mock(SecurityTokenService.class);
+        when(tokenService.authenticate("invalid-token", "pc"))
+            .thenThrow(new SecurityAuthenticationException("token session is missing or revoked"));
+        when(tokenService.shortDigest("invalid-token")).thenReturn("digest");
+        PlusWebSocketInterceptor interceptor = new PlusWebSocketInterceptor(tokenResolver(), tokenService);
         Map<String, Object> rejectedAttributes = new HashMap<>();
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
-             MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
-            stpUtil.when(() -> StpUtil.getExtra(LoginHelper.CLIENT_KEY)).thenReturn(null);
-            stpUtil.when(StpUtil::getLoginType).thenReturn("login");
-            stpUtil.when(StpUtil::getTokenValue).thenReturn("tk");
+        boolean handshakeOk = interceptor.beforeHandshake(
+            handshakeRequest("invalid-token", "pc"), mock(ServerHttpResponse.class), mock(WebSocketHandler.class), rejectedAttributes);
 
-            boolean handshakeOk = interceptor.beforeHandshake(
-                mock(ServerHttpRequest.class), mock(ServerHttpResponse.class), mock(WebSocketHandler.class), rejectedAttributes);
-
-            assertFalse(handshakeOk);
-            assertTrue(rejectedAttributes.isEmpty());
-        }
+        assertFalse(handshakeOk);
+        assertTrue(rejectedAttributes.isEmpty());
 
         PlusWebSocketHandler handler = new PlusWebSocketHandler();
         WebSocketSession brokenSession = mock(WebSocketSession.class);
@@ -156,11 +144,21 @@ class WebSocketFlowSmokeTest {
         }
     }
 
-    private static void bindCurrentRequest(String clientId) {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/websocket");
-        request.addHeader(LoginHelper.CLIENT_KEY, clientId);
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request, response));
+    private static SecurityTokenResolver tokenResolver() {
+        return new SecurityTokenResolver(new SecurityTokenProperties());
+    }
+
+    private static ServerHttpRequest handshakeRequest(String token, String clientId) {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/resource/websocket");
+        request.addHeader("Authorization", "Bearer " + token);
+        request.addHeader("clientid", clientId);
+        return new ServletServerHttpRequest(request);
+    }
+
+    private static SecurityTokenAuthentication authentication(String token, LoginUser loginUser) {
+        SecurityTokenSession session = new SecurityTokenSession();
+        session.setLoginUser(loginUser);
+        return new SecurityTokenAuthentication(token, "digest", null, session);
     }
 
     private static void invokeProtected(PlusWebSocketHandler handler, String method, Object... args) throws Exception {

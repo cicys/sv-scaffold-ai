@@ -1,24 +1,25 @@
 package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.SystemConstants;
+import cc.infoq.common.domain.dto.UserOnlineDTO;
 import cc.infoq.common.domain.model.EmailLoginBody;
 import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.enums.EmailCodeScene;
 import cc.infoq.common.enums.LoginType;
 import cc.infoq.common.exception.user.UserException;
 import cc.infoq.common.json.utils.JsonUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.SecurityIssuedToken;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.utils.ValidatorUtils;
 import cc.infoq.system.domain.entity.SysUser;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.domain.vo.SysUserVo;
+import cc.infoq.system.listener.UserActionListener;
 import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.AuthStrategy;
 import cc.infoq.system.service.SysLoginService;
-import cn.dev33.satoken.stp.StpUtil;
-import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.AllArgsConstructor;
@@ -38,9 +39,11 @@ public class EmailAuthStrategy implements AuthStrategy {
     private final SysLoginService loginService;
     private final SysUserMapper userMapper;
     private final AuthEmailCodeService authEmailCodeService;
+    private final SecurityTokenService tokenService;
+    private final UserActionListener userActionListener;
 
     @Override
-    public LoginVo login(String body, SysClientVo client) {
+    public AuthStrategy.LoginResult loginForResult(String body, SysClientVo client) {
         EmailLoginBody loginBody = JsonUtils.parseObjectStrict(body, EmailLoginBody.class);
         ValidatorUtils.validate(loginBody);
         String email = loginBody.getEmail();
@@ -51,20 +54,16 @@ public class EmailAuthStrategy implements AuthStrategy {
         LoginUser loginUser = loginService.buildLoginUser(user);
         loginUser.setClientKey(client.getClientKey());
         loginUser.setDeviceType(client.getDeviceType());
-        SaLoginParameter model = new SaLoginParameter();
-        model.setDeviceType(client.getDeviceType());
-        // 自定义分配 不同用户体系 不同 token 授权时间 不设置默认走全局 yml 配置
-        // 例如: 后台用户30分钟过期 app用户1天过期
-        AuthStrategy.applyClientTimeout(model, client);
-        model.setExtra(LoginHelper.CLIENT_KEY, client.getClientId());
-        // 生成token
-        LoginHelper.login(loginUser, model);
-
-        LoginVo loginVo = new LoginVo();
-        loginVo.setAccessToken(StpUtil.getTokenValue());
-        loginVo.setExpireIn(StpUtil.getTokenTimeout());
-        loginVo.setClientId(client.getClientId());
-        return loginVo;
+        UserOnlineDTO onlineUser = userActionListener.buildOnlineUser(loginUser, client.getClientId(), client.getDeviceType());
+        SecurityIssuedToken issuedToken = tokenService.issue(AuthStrategy.createIssueRequest(loginUser, client, onlineUser));
+        try {
+            userActionListener.recordLoginSuccess(loginUser);
+        } catch (RuntimeException e) {
+            tokenService.revoke(issuedToken.accessToken());
+            throw e;
+        }
+        LoginVo loginVo = AuthStrategy.createLoginVo(issuedToken, client);
+        return new AuthStrategy.LoginResult(loginVo, loginUser.getUserId());
     }
 
     private SysUserVo loadUserByEmail(String email) {

@@ -21,8 +21,8 @@
 
 ## 4. 上游依赖
 
-- 登录验证码、登录状态、在线用户、OSS 配置缓存、限流、防重提交等链路都依赖这个模块。
-- `infoq-plugin-satoken`、`infoq-plugin-sse`、`infoq-plugin-websocket`、`infoq-plugin-oss` 都继续构建在这里之上。
+- 登录验证码、Spring Security token session / revocation / online index、OSS 配置缓存、限流、防重提交等链路都依赖这个模块。
+- `infoq-plugin-security`、`infoq-plugin-sse`、`infoq-plugin-websocket`、`infoq-plugin-oss` 都继续构建在这里之上。
 
 ## 5. 下游依赖
 

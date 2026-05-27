@@ -5,8 +5,8 @@ import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.exception.SseException;
 import cc.infoq.common.exception.base.BaseException;
 import cc.infoq.common.utils.SpringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
@@ -40,9 +40,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("dev")
 class GlobalExceptionHandlerTest {
@@ -133,12 +131,12 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleNotLogin/handleServlet/handleBase: should map to expected error payload")
+    @DisplayName("authentication/servlet/base exceptions: should map to expected error payload")
     void securityAndBaseExceptionsShouldMapToExpectedPayload() {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getRequestURI()).thenReturn("/api/sse/connect");
 
-        String unauthorizedJson = handler.handleNotLoginException(new SseException("token invalid"), request);
+        String unauthorizedJson = handler.handleAuthenticationException(new SseException("token invalid"), request);
         ApiResult<Void> servletResult = handler.handleServletException(new ServletException("servlet failed"), request);
         ApiResult<Void> baseResult = handler.handleBaseException(new BaseException("base failed"), request);
 

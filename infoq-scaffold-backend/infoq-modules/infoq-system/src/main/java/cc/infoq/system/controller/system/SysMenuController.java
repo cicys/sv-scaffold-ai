@@ -5,7 +5,7 @@ import cc.infoq.common.domain.ApiResult;
 import cc.infoq.common.log.annotation.Log;
 import cc.infoq.common.log.enums.BusinessType;
 import cc.infoq.common.redis.annotation.RepeatSubmit;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.StringUtils;
 import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysMenuBo;
@@ -13,10 +13,9 @@ import cc.infoq.system.domain.entity.SysMenu;
 import cc.infoq.system.domain.vo.RouterVo;
 import cc.infoq.system.domain.vo.SysMenuVo;
 import cc.infoq.system.service.SysMenuService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
-import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.hutool.core.lang.tree.Tree;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,18 +41,17 @@ public class SysMenuController extends BaseController {
      */
     @GetMapping("/getRouters")
     public ApiResult<List<RouterVo>> getRouters() {
-        List<SysMenu> menus = sysMenuService.selectMenuTreeByUserId(LoginHelper.getUserId());
+        List<SysMenu> menus = sysMenuService.selectMenuTreeByUserId(LoginUserContext.getUserId());
         return ApiResult.ok(sysMenuService.buildMenus(menus));
     }
 
     /**
      * 获取菜单列表
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:menu:list")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:menu:list')")
     @GetMapping("/list")
     public ApiResult<List<SysMenuVo>> list(SysMenuBo menu) {
-        List<SysMenuVo> menus = sysMenuService.selectMenuList(menu, LoginHelper.getUserId());
+        List<SysMenuVo> menus = sysMenuService.selectMenuList(menu, LoginUserContext.getUserId());
         return ApiResult.ok(menus);
     }
 
@@ -62,8 +60,7 @@ public class SysMenuController extends BaseController {
      *
      * @param menuId 菜单ID
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:menu:query")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:menu:query')")
     @GetMapping(value = "/{menuId}")
     public ApiResult<SysMenuVo> getInfo(@PathVariable Long menuId) {
         return ApiResult.ok(sysMenuService.selectMenuById(menuId));
@@ -72,10 +69,10 @@ public class SysMenuController extends BaseController {
     /**
      * 获取菜单下拉树列表
      */
-    @SaCheckPermission("system:menu:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:menu:query')")
     @GetMapping("/treeselect")
     public ApiResult<List<Tree<Long>>> treeselect(SysMenuBo menu) {
-        List<SysMenuVo> menus = sysMenuService.selectMenuList(menu, LoginHelper.getUserId());
+        List<SysMenuVo> menus = sysMenuService.selectMenuList(menu, LoginUserContext.getUserId());
         return ApiResult.ok(sysMenuService.buildMenuTreeSelect(menus));
     }
 
@@ -84,10 +81,10 @@ public class SysMenuController extends BaseController {
      *
      * @param roleId 角色ID
      */
-    @SaCheckPermission("system:menu:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:menu:query')")
     @GetMapping(value = "/roleMenuTreeselect/{roleId}")
     public ApiResult<MenuTreeSelectVo> roleMenuTreeselect(@PathVariable("roleId") Long roleId) {
-        List<SysMenuVo> menus = sysMenuService.selectMenuList(LoginHelper.getUserId());
+        List<SysMenuVo> menus = sysMenuService.selectMenuList(LoginUserContext.getUserId());
         MenuTreeSelectVo selectVo = new MenuTreeSelectVo(
             sysMenuService.selectMenuListByRoleId(roleId),
             sysMenuService.buildMenuTreeSelect(menus));
@@ -97,8 +94,7 @@ public class SysMenuController extends BaseController {
     /**
      * 新增菜单
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:menu:add")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:menu:add')")
     @Log(title = "菜单管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -116,8 +112,7 @@ public class SysMenuController extends BaseController {
     /**
      * 修改菜单
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:menu:edit")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:menu:edit')")
     @Log(title = "菜单管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -139,8 +134,7 @@ public class SysMenuController extends BaseController {
      *
      * @param menuId 菜单ID
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:menu:remove")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:menu:remove')")
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{menuId}")
     public ApiResult<Void> remove(@PathVariable("menuId") Long menuId) {
@@ -167,8 +161,7 @@ public class SysMenuController extends BaseController {
      *
      * @param menuIds 菜单ID串
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:menu:remove")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:menu:remove')")
     @Log(title = "菜单管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/cascade/{menuIds}")
     public ApiResult<Void> remove(@PathVariable("menuIds") Long[] menuIds) {

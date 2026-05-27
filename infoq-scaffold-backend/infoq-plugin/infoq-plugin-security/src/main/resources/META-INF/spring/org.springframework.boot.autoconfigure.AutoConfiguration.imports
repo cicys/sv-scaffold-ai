@@ -1,2 +1,1 @@
-cc.infoq.common.security.handler.AllUrlHandler
-cc.infoq.common.security.config.SecurityConfig
+cc.infoq.common.security.config.SpringSecurityAutoConfiguration

@@ -7,7 +7,7 @@ import cc.infoq.common.json.utils.JsonUtils;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.redis.utils.CacheUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.service.ConfigService;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.ObjectUtils;
@@ -293,7 +293,7 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
         if (!isRegisterConfig(config.getConfigKey())) {
             return;
         }
-        if (LoginHelper.isLogin() && !LoginHelper.isSuperAdmin()) {
+        if (LoginUserContext.isLogin() && !LoginUserContext.isSuperAdmin()) {
             throw new ServiceException("仅超级管理员可修改该参数");
         }
     }

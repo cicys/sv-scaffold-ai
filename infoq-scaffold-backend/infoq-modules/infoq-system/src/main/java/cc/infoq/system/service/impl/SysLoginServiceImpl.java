@@ -10,7 +10,9 @@ import cc.infoq.common.exception.user.UserException;
 import cc.infoq.common.log.event.LoginInfoEvent;
 import cc.infoq.common.mybatis.helper.DataPermissionHelper;
 import cc.infoq.common.redis.utils.RedisUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.CurrentUserService;
+import cc.infoq.common.security.auth.SecurityTokenAuthentication;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.utils.*;
 import cc.infoq.system.domain.entity.SysUser;
 import cc.infoq.system.domain.vo.SysDeptVo;
@@ -19,10 +21,7 @@ import cc.infoq.system.domain.vo.SysRoleVo;
 import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.mapper.SysUserMapper;
 import cc.infoq.system.service.*;
-import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Opt;
 import cn.hutool.core.util.ObjectUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,25 +54,20 @@ public class SysLoginServiceImpl implements SysLoginService {
     private final SysDeptService deptService;
     private final SysPostService postService;
     private final SysUserMapper userMapper;
+    private final CurrentUserService currentUserService;
+    private final SecurityTokenService tokenService;
 
 
     /**
      * 退出登录
      */
     public void logout() {
-        try {
-            LoginUser loginUser = LoginHelper.getLoginUser();
-            if (ObjectUtil.isNull(loginUser)) {
-                return;
-            }
-            recordLoginInfo(loginUser.getUsername(), Constants.LOGOUT, MessageUtils.message("user.logout.success"));
-        } catch (NotLoginException ignored) {
-        } finally {
-            try {
-                StpUtil.logout();
-            } catch (NotLoginException ignored) {
-            }
+        SecurityTokenAuthentication authentication = currentUserService.getAuthentication();
+        LoginUser loginUser = currentUserService.getLoginUser();
+        if (!tokenService.revoke(authentication.accessToken())) {
+            log.warn("Logout requested for an already revoked or missing token session, username={}", loginUser.getUsername());
         }
+        recordLoginInfo(loginUser.getUsername(), Constants.LOGOUT, MessageUtils.message("user.logout.success"));
     }
 
     /**
@@ -168,16 +162,7 @@ public class SysLoginServiceImpl implements SysLoginService {
     @Override
     public void invalidateUserSessions(Long userId, String userType) {
         String loginId = userType + ":" + userId;
-        List<String> tokenIds = StpUtil.getTokenValueListByLoginId(loginId);
-        if (CollUtil.isEmpty(tokenIds)) {
-            return;
-        }
-        tokenIds.forEach(tokenId -> {
-            try {
-                StpUtil.logoutByTokenValue(tokenId);
-            } catch (NotLoginException ignored) {
-            }
-        });
+        tokenService.revokeByLoginId(loginId);
     }
 
     private HttpServletRequest resolveCurrentRequest() {

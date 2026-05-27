@@ -11,9 +11,9 @@ import cc.infoq.system.domain.bo.SysDeptBo;
 import cc.infoq.system.domain.vo.SysDeptVo;
 import cc.infoq.system.service.SysDeptService;
 import cc.infoq.system.service.SysPostService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.convert.Convert;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +36,7 @@ public class SysDeptController extends BaseController {
     /**
      * 获取部门列表
      */
-    @SaCheckPermission("system:dept:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:list')")
     @GetMapping("/list")
     public ApiResult<List<SysDeptVo>> list(SysDeptBo dept) {
         List<SysDeptVo> depts = sysDeptService.selectDeptList(dept);
@@ -48,7 +48,7 @@ public class SysDeptController extends BaseController {
      *
      * @param deptId 部门ID
      */
-    @SaCheckPermission("system:dept:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:list')")
     @GetMapping("/list/exclude/{deptId}")
     public ApiResult<List<SysDeptVo>> excludeChild(@PathVariable(value = "deptId", required = false) Long deptId) {
         List<SysDeptVo> depts = sysDeptService.selectDeptList(new SysDeptBo());
@@ -62,7 +62,7 @@ public class SysDeptController extends BaseController {
      *
      * @param deptId 部门ID
      */
-    @SaCheckPermission("system:dept:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:query')")
     @GetMapping(value = "/{deptId}")
     public ApiResult<SysDeptVo> getInfo(@PathVariable Long deptId) {
         sysDeptService.checkDeptDataScope(deptId);
@@ -72,7 +72,7 @@ public class SysDeptController extends BaseController {
     /**
      * 新增部门
      */
-    @SaCheckPermission("system:dept:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:add')")
     @Log(title = "部门管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -86,7 +86,7 @@ public class SysDeptController extends BaseController {
     /**
      * 修改部门
      */
-    @SaCheckPermission("system:dept:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:edit')")
     @Log(title = "部门管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -112,7 +112,7 @@ public class SysDeptController extends BaseController {
      *
      * @param deptId 部门ID
      */
-    @SaCheckPermission("system:dept:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:remove')")
     @Log(title = "部门管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{deptId}")
     public ApiResult<Void> remove(@PathVariable Long deptId) {
@@ -137,7 +137,7 @@ public class SysDeptController extends BaseController {
      *
      * @param deptIds 部门ID串
      */
-    @SaCheckPermission("system:dept:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dept:query')")
     @GetMapping("/optionselect")
     public ApiResult<List<SysDeptVo>> optionselect(@RequestParam(required = false) Long[] deptIds) {
         return ApiResult.ok(sysDeptService.selectDeptByIds(deptIds == null ? null : List.of(deptIds)));

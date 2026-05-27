@@ -4,21 +4,17 @@ import cc.infoq.common.constant.CacheNames;
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.dto.UserDTO;
 import cc.infoq.common.exception.ServiceException;
-import cc.infoq.common.mybatis.helper.DataPermissionHelper;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.mybatis.helper.DataPermissionHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.service.UserService;
 import cc.infoq.common.utils.*;
 import cc.infoq.system.domain.bo.SysUserBo;
 import cc.infoq.system.domain.entity.SysUser;
 import cc.infoq.system.domain.entity.SysUserPost;
 import cc.infoq.system.domain.entity.SysUserRole;
-import cc.infoq.system.domain.vo.SysDeptVo;
-import cc.infoq.system.domain.vo.SysPostVo;
-import cc.infoq.system.domain.vo.SysRoleVo;
-import cc.infoq.system.domain.vo.SysUserExportVo;
-import cc.infoq.system.domain.vo.SysUserVo;
+import cc.infoq.system.domain.vo.*;
 import cc.infoq.system.mapper.*;
 import cc.infoq.system.service.SysUserService;
 import cn.hutool.core.bean.BeanUtil;
@@ -286,7 +282,7 @@ public class SysUserServiceImpl implements SysUserService, UserService {
      */
     @Override
     public void checkUserAllowed(Long userId) {
-        if (ObjectUtil.isNotNull(userId) && LoginHelper.isSuperAdmin(userId)) {
+        if (ObjectUtil.isNotNull(userId) && LoginUserContext.isSuperAdmin(userId)) {
             throw new ServiceException("不允许操作超级管理员用户");
         }
     }
@@ -301,7 +297,7 @@ public class SysUserServiceImpl implements SysUserService, UserService {
         if (ObjectUtil.isNull(userId)) {
             return;
         }
-        if (LoginHelper.isSuperAdmin()) {
+        if (LoginUserContext.isSuperAdmin()) {
             return;
         }
         if (sysUserMapper.countUserById(userId) == 0) {
@@ -513,7 +509,7 @@ public class SysUserServiceImpl implements SysUserService, UserService {
         List<Long> roleList = new ArrayList<>(Arrays.asList(roleIds));
 
         // 非超级管理员，禁止包含超级管理员角色
-        if (!LoginHelper.isSuperAdmin(userId)) {
+        if (!LoginUserContext.isSuperAdmin(userId)) {
             roleList.remove(SystemConstants.SUPER_ADMIN_ID);
         }
 

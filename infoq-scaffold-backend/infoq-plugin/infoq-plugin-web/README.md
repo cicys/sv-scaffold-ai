@@ -55,6 +55,6 @@
 
 ## 10. 已知边界
 
-- 不负责权限校验，权限在 `security` / `satoken`。
+- 不负责权限校验，权限在 `security`。
 - 不负责业务 Controller 实现。
 

@@ -1,5 +1,7 @@
 package cc.infoq.common.websocket.config;
 
+import cc.infoq.common.security.auth.SecurityTokenResolver;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.websocket.config.properties.WebSocketProperties;
 import cc.infoq.common.websocket.handler.PlusWebSocketHandler;
 import cc.infoq.common.websocket.interceptor.PlusWebSocketInterceptor;
@@ -14,12 +16,8 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistra
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @Tag("dev")
 class WebSocketConfigTest {
@@ -80,7 +78,8 @@ class WebSocketConfigTest {
     void beanMethodsShouldCreateExpectedInstances() {
         WebSocketConfig config = new WebSocketConfig();
 
-        assertInstanceOf(PlusWebSocketInterceptor.class, config.handshakeInterceptor());
+        assertInstanceOf(PlusWebSocketInterceptor.class,
+            config.handshakeInterceptor(mock(SecurityTokenResolver.class), mock(SecurityTokenService.class)));
         assertInstanceOf(PlusWebSocketHandler.class, config.webSocketHandler());
         assertInstanceOf(WebSocketTopicListener.class, config.topicListener());
         assertInstanceOf(WebSocketClusterLifecycle.class, config.clusterLifecycle());

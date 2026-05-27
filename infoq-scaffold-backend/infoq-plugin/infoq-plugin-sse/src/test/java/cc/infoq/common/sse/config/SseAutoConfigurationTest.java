@@ -1,5 +1,8 @@
 package cc.infoq.common.sse.config;
 
+import cc.infoq.common.security.auth.CurrentUserService;
+import cc.infoq.common.security.auth.SecurityTokenResolver;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.sse.controller.SseController;
 import cc.infoq.common.sse.core.SseEmitterManager;
 import cc.infoq.common.sse.listener.SseTopicListener;
@@ -20,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @Tag("dev")
 class SseAutoConfigurationTest {
@@ -48,7 +50,11 @@ class SseAutoConfigurationTest {
         SseAutoConfiguration configuration = new SseAutoConfiguration();
         SseEmitterManager manager = configuration.sseEmitterManager();
         SseTopicListener listener = configuration.sseTopicListener();
-        SseController controller = configuration.sseController(manager);
+        SseController controller = configuration.sseController(
+            manager,
+            mock(SecurityTokenResolver.class),
+            mock(SecurityTokenService.class),
+            mock(CurrentUserService.class));
 
         assertNotNull(manager);
         assertNotNull(listener);

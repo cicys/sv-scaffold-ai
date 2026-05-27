@@ -7,6 +7,7 @@ import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.redis.utils.CacheUtils;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.bo.SysDeptBo;
@@ -259,7 +260,11 @@ class SysDeptServiceImplTest {
         SysDeptServiceImpl service = newService();
         when(sysDeptMapper.countDeptById(30L)).thenReturn(0L);
 
-        ServiceException ex = assertThrows(ServiceException.class, () -> service.checkDeptDataScope(30L));
+        ServiceException ex;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            ex = assertThrows(ServiceException.class, () -> service.checkDeptDataScope(30L));
+        }
 
         assertTrue(ex.getMessage().contains("没有权限访问部门数据"));
     }

@@ -26,7 +26,7 @@
 
 ## 5. 下游依赖
 
-- 编译期依赖 `infoq-core-common`、`infoq-plugin-satoken`
+- 编译期依赖 `infoq-core-common`、`infoq-plugin-security`
 - 依赖 dynamic-datasource、MyBatis-Plus、p6spy
 
 ## 6. 关键配置

@@ -3,7 +3,7 @@ package cc.infoq.system.listener;
 import cc.infoq.common.excel.core.ExcelListener;
 import cc.infoq.common.excel.core.ExcelResult;
 import cc.infoq.common.exception.ServiceException;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.StreamUtils;
 import cc.infoq.common.utils.ValidatorUtils;
@@ -50,7 +50,7 @@ public class SysUserImportListener extends AnalysisEventListener<SysUserImportVo
         this.userService = SpringUtils.getBean(SysUserService.class);
         this.password = BCrypt.hashpw(initPassword);
         this.isUpdateSupport = isUpdateSupport;
-        this.operUserId = LoginHelper.getUserId();
+        this.operUserId = LoginUserContext.getUserId();
     }
 
     @Override

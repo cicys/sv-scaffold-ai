@@ -1,14 +1,14 @@
 package cc.infoq.system.listener;
 
-import cc.infoq.common.constant.CacheConstants;
+import cc.infoq.common.constant.Constants;
 import cc.infoq.common.domain.dto.UserOnlineDTO;
-import cc.infoq.common.redis.utils.RedisUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.domain.model.LoginUser;
+import cc.infoq.common.log.event.LoginInfoEvent;
+import cc.infoq.common.security.auth.SecurityTokenSession;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.ip.AddressUtils;
 import cc.infoq.system.service.SysLoginService;
-import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,10 +16,15 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.support.GenericApplicationContext;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.*;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @Tag("dev")
@@ -34,82 +39,47 @@ class UserActionListenerTest {
     }
 
     @Test
-    @DisplayName("no-op callbacks: should execute without exceptions")
-    void noOpCallbacksShouldExecuteWithoutExceptions() {
-        UserActionListener listener = new UserActionListener(mock(SysLoginService.class));
-
-        assertDoesNotThrow(() -> {
-            listener.doDisable("login", 1L, "service", 1, 60L);
-            listener.doUntieDisable("login", 1L, "service");
-            listener.doOpenSafe("login", "token", "service", 60L);
-            listener.doCloseSafe("login", "token", "service");
-            listener.doCreateSession("sid");
-            listener.doLogoutSession("sid");
-            listener.doRenewTimeout("login", 1L, "token", 60L);
-        });
+    @DisplayName("listener: should not implement legacy listener callbacks")
+    void listenerShouldNotImplementLegacyCallbacks() {
+        assertEquals(0, UserActionListener.class.getInterfaces().length);
     }
 
     @Test
-    @DisplayName("logout/kickout/replaced: should remove token cache key")
-    void logoutCallbacksShouldDeleteOnlineTokenCache() {
+    @DisplayName("buildOnlineUser: should build token-store metadata from login user and request")
+    void buildOnlineUserShouldBuildTokenStoreMetadata() {
         UserActionListener listener = new UserActionListener(mock(SysLoginService.class));
-
-        try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
-            listener.doLogout("login", 1L, "t1");
-            listener.doKickout("login", 1L, "t2");
-            listener.doReplaced("login", 1L, "t3");
-
-            redisUtils.verify(() -> RedisUtils.deleteObject(CacheConstants.ONLINE_TOKEN_KEY + "t1"));
-            redisUtils.verify(() -> RedisUtils.deleteObject(CacheConstants.ONLINE_TOKEN_KEY + "t2"));
-            redisUtils.verify(() -> RedisUtils.deleteObject(CacheConstants.ONLINE_TOKEN_KEY + "t3"));
-        }
-    }
-
-    @Test
-    @DisplayName("doLogin: should record login info for user and publish login event")
-    void doLoginShouldRecordLoginInfoForUserAndPublishEvent() {
-        SysLoginService loginService = mock(SysLoginService.class);
-        UserActionListener listener = new UserActionListener(loginService);
-        SaLoginParameter parameter = new SaLoginParameter();
-        parameter.setDeviceType("pc");
-        parameter.setTimeout(120L);
-        parameter.setExtra(LoginHelper.USER_NAME_KEY, "admin");
-        parameter.setExtra(LoginHelper.CLIENT_KEY, "admin-client");
-        parameter.setExtra(LoginHelper.DEPT_NAME_KEY, "研发中心");
-        parameter.setExtra(LoginHelper.USER_KEY, 100L);
-
+        LoginUser loginUser = loginUser();
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("User-Agent"))
             .thenReturn("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36");
 
         try (MockedStatic<ServletUtils> servletUtils = mockStatic(ServletUtils.class);
-             MockedStatic<AddressUtils> addressUtils = mockStatic(AddressUtils.class);
-             MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
+             MockedStatic<AddressUtils> addressUtils = mockStatic(AddressUtils.class)) {
             servletUtils.when(ServletUtils::getRequest).thenReturn(request);
             servletUtils.when(ServletUtils::getClientIP).thenReturn("127.0.0.1");
             addressUtils.when(() -> AddressUtils.getRealAddressByIP("127.0.0.1")).thenReturn("内网IP");
 
-            listener.doLogin("login", 100L, "token-abc", parameter);
+            UserOnlineDTO dto = listener.buildOnlineUser(loginUser, "admin-client", "pc");
 
-            verify(loginService).recordLoginInfo(100L, "127.0.0.1");
-            redisUtils.verify(() -> RedisUtils.setCacheObject(org.mockito.ArgumentMatchers.eq(CacheConstants.ONLINE_TOKEN_KEY + "token-abc"),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()));
+            assertEquals("admin", dto.getUserName());
+            assertEquals("研发中心", dto.getDeptName());
+            assertEquals("admin-client", dto.getClientKey());
+            assertEquals("pc", dto.getDeviceType());
+            assertEquals("127.0.0.1", dto.getIpaddr());
+            assertEquals("内网IP", dto.getLoginLocation());
+            assertEquals("Chrome", dto.getBrowser());
+            assertNotNull(dto.getLoginTime());
+            assertEquals("admin-client", loginUser.getClientKey());
+            assertEquals("pc", loginUser.getDeviceType());
+            assertEquals("内网IP", loginUser.getLoginLocation());
         }
     }
 
     @Test
-    @DisplayName("doLogin: should prefer runtime mini-program headers for online session metadata")
-    void doLoginShouldPreferRuntimeHeadersForOnlineSessionMetadata() {
-        SysLoginService loginService = mock(SysLoginService.class);
-        UserActionListener listener = new UserActionListener(loginService);
-        SaLoginParameter parameter = new SaLoginParameter();
-        parameter.setDeviceType("pc");
-        parameter.setTimeout(120L);
-        parameter.setExtra(LoginHelper.USER_NAME_KEY, "admin");
-        parameter.setExtra(LoginHelper.CLIENT_KEY, "admin-client");
-        parameter.setExtra(LoginHelper.DEPT_NAME_KEY, "研发中心");
-        parameter.setExtra(LoginHelper.USER_KEY, 100L);
-
+    @DisplayName("buildOnlineUser: should prefer runtime mini-program headers")
+    void buildOnlineUserShouldPreferRuntimeHeadersForOnlineMetadata() {
+        UserActionListener listener = new UserActionListener(mock(SysLoginService.class));
+        LoginUser loginUser = loginUser();
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("User-Agent"))
             .thenReturn("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36");
@@ -117,57 +87,75 @@ class UserActionListenerTest {
         when(request.getHeader("x-device-type")).thenReturn("weapp");
 
         try (MockedStatic<ServletUtils> servletUtils = mockStatic(ServletUtils.class);
-             MockedStatic<AddressUtils> addressUtils = mockStatic(AddressUtils.class);
-             MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
+             MockedStatic<AddressUtils> addressUtils = mockStatic(AddressUtils.class)) {
             servletUtils.when(ServletUtils::getRequest).thenReturn(request);
             servletUtils.when(ServletUtils::getClientIP).thenReturn("127.0.0.1");
             addressUtils.when(() -> AddressUtils.getRealAddressByIP("127.0.0.1")).thenReturn("内网IP");
 
-            listener.doLogin("login", 100L, "token-mini", parameter);
+            UserOnlineDTO dto = listener.buildOnlineUser(loginUser, "admin-client", "pc");
 
-            redisUtils.verify(() -> RedisUtils.setCacheObject(
-                eq(CacheConstants.ONLINE_TOKEN_KEY + "token-mini"),
-                argThat((UserOnlineDTO dto) -> "weapp".equals(dto.getClientKey()) && "weapp".equals(dto.getDeviceType())),
-                any()
-            ));
+            assertEquals("weapp", dto.getClientKey());
+            assertEquals("weapp", dto.getDeviceType());
+            assertEquals("weapp", loginUser.getClientKey());
+            assertEquals("weapp", loginUser.getDeviceType());
         }
     }
 
     @Test
-    @DisplayName("doLogin: should store online token without ttl when token never expires")
-    void doLoginShouldStoreOnlineTokenWithoutTtlWhenTokenNeverExpires() {
+    @DisplayName("recordLoginSuccess: should publish login event and update latest login info")
+    void recordLoginSuccessShouldPublishEventAndUpdateLoginInfo() {
         SysLoginService loginService = mock(SysLoginService.class);
         UserActionListener listener = new UserActionListener(loginService);
-        SaLoginParameter parameter = new SaLoginParameter();
-        parameter.setDeviceType("pc");
-        parameter.setTimeout(-1L);
-        parameter.setExtra(LoginHelper.USER_NAME_KEY, "admin");
-        parameter.setExtra(LoginHelper.CLIENT_KEY, "admin-client");
-        parameter.setExtra(LoginHelper.DEPT_NAME_KEY, "研发中心");
-        parameter.setExtra(LoginHelper.USER_KEY, 100L);
+        LoginUser loginUser = loginUser();
+        loginUser.setIpaddr("127.0.0.1");
+        AtomicReference<LoginInfoEvent> eventRef = new AtomicReference<>();
+        ApplicationListener<ApplicationEvent> applicationListener = event -> {
+            if (event instanceof PayloadApplicationEvent<?> payloadEvent
+                && payloadEvent.getPayload() instanceof LoginInfoEvent loginInfoEvent) {
+                eventRef.set(loginInfoEvent);
+            }
+        };
+        ((GenericApplicationContext) SpringUtils.context()).addApplicationListener(applicationListener);
 
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("User-Agent"))
-            .thenReturn("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36");
+        listener.recordLoginSuccess(loginUser);
+
+        verify(loginService).recordLoginInfo(100L, "127.0.0.1");
+        LoginInfoEvent event = eventRef.get();
+        assertNotNull(event);
+        assertEquals("admin", event.getUsername());
+        assertEquals(Constants.LOGIN_SUCCESS, event.getStatus());
+    }
+
+    @Test
+    @DisplayName("recordLoginSuccess(session): should attach online metadata for token-store callers")
+    void recordLoginSuccessSessionShouldAttachOnlineMetadata() {
+        SysLoginService loginService = mock(SysLoginService.class);
+        UserActionListener listener = new UserActionListener(loginService);
+        SecurityTokenSession session = new SecurityTokenSession();
+        session.setAccessToken("token-abc");
+        session.setClientId("admin-client");
+        session.setDeviceType("pc");
+        session.setLoginUser(loginUser());
 
         try (MockedStatic<ServletUtils> servletUtils = mockStatic(ServletUtils.class);
-             MockedStatic<AddressUtils> addressUtils = mockStatic(AddressUtils.class);
-             MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
-            servletUtils.when(ServletUtils::getRequest).thenReturn(request);
-            servletUtils.when(ServletUtils::getClientIP).thenReturn("127.0.0.1");
-            addressUtils.when(() -> AddressUtils.getRealAddressByIP("127.0.0.1")).thenReturn("内网IP");
+             MockedStatic<AddressUtils> addressUtils = mockStatic(AddressUtils.class)) {
+            servletUtils.when(ServletUtils::getRequest).thenThrow(new IllegalStateException("no request"));
+            addressUtils.when(() -> AddressUtils.getRealAddressByIP("")).thenReturn("");
 
-            listener.doLogin("login", 100L, "token-no-expire", parameter);
+            listener.recordLoginSuccess(session);
 
-            redisUtils.verify(() -> RedisUtils.setCacheObject(
-                eq(CacheConstants.ONLINE_TOKEN_KEY + "token-no-expire"),
-                any(UserOnlineDTO.class)
-            ));
-            redisUtils.verify(() -> RedisUtils.setCacheObject(
-                eq(CacheConstants.ONLINE_TOKEN_KEY + "token-no-expire"),
-                any(UserOnlineDTO.class),
-                any()
-            ), never());
+            assertNotNull(session.getOnlineUser());
+            assertEquals("token-abc", session.getOnlineUser().getTokenId());
+            verify(loginService).recordLoginInfo(100L, "");
         }
+    }
+
+    private LoginUser loginUser() {
+        LoginUser loginUser = new LoginUser();
+        loginUser.setUserId(100L);
+        loginUser.setUserType("sys_user");
+        loginUser.setUsername("admin");
+        loginUser.setDeptName("研发中心");
+        return loginUser;
     }
 }

@@ -6,27 +6,16 @@ import cc.infoq.common.excel.core.ExcelResult;
 import cc.infoq.common.excel.utils.ExcelUtil;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.system.domain.bo.SysUserBo;
-import cc.infoq.system.domain.vo.SysUserExportVo;
-import cc.infoq.system.domain.vo.SysUserImportVo;
-import cc.infoq.system.domain.vo.SysPostVo;
-import cc.infoq.system.domain.vo.SysRoleVo;
-import cc.infoq.system.domain.vo.SysUserInfoVo;
-import cc.infoq.system.domain.vo.SysUserVo;
-import cc.infoq.system.domain.vo.UserInfoVo;
+import cc.infoq.system.domain.vo.*;
 import cc.infoq.system.listener.SysUserImportListener;
-import cc.infoq.system.service.SysConfigService;
-import cc.infoq.system.service.SysDeptService;
-import cc.infoq.system.service.SysPostService;
-import cc.infoq.system.service.SysRoleService;
-import cc.infoq.system.service.SysUserService;
+import cc.infoq.system.service.*;
 import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.crypto.digest.BCrypt;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.springframework.web.multipart.MultipartFile;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -37,20 +26,14 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -73,8 +56,8 @@ class SysUserControllerTest {
     @Test
     @DisplayName("remove: should fail when current user is included")
     void removeShouldFailWhenContainsCurrentUser() {
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(1L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(1L);
 
             ApiResult<Void> result = controller.remove(new Long[]{1L, 2L});
 
@@ -106,7 +89,11 @@ class SysUserControllerTest {
         normalRole.setRoleId(2L);
         when(sysRoleService.selectRoleList(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(superAdminRole, normalRole));
 
-        ApiResult<SysUserInfoVo> result = controller.getInfo(userId);
+        ApiResult<SysUserInfoVo> result;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(userId)).thenReturn(false);
+            result = controller.getInfo(userId);
+        }
 
         assertEquals(ApiResult.SUCCESS, result.getCode());
         assertNotNull(result.getData());
@@ -168,8 +155,8 @@ class SysUserControllerTest {
         loginUser.setMenuPermission(Set.of("system:user:list"));
         loginUser.setRolePermission(Set.of("admin"));
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getLoginUser).thenReturn(loginUser);
             when(sysUserService.selectUserById(30L)).thenReturn(null);
 
             ApiResult<UserInfoVo> result = controller.getInfo();
@@ -190,8 +177,8 @@ class SysUserControllerTest {
         userVo.setUserId(31L);
         userVo.setUserName("tester");
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getLoginUser).thenReturn(loginUser);
             when(sysUserService.selectUserById(31L)).thenReturn(userVo);
 
             ApiResult<UserInfoVo> result = controller.getInfo();
@@ -217,8 +204,8 @@ class SysUserControllerTest {
         when(sysUserService.selectUserById(userId)).thenReturn(userVo);
         when(sysRoleService.selectRolesAuthByUserId(userId)).thenReturn(List.of(superAdmin, normalRole));
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(userId)).thenReturn(false);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(userId)).thenReturn(false);
 
             ApiResult<SysUserInfoVo> result = controller.authRole(userId);
 
@@ -361,7 +348,9 @@ class SysUserControllerTest {
         context.refresh();
         new cc.infoq.common.utils.SpringUtils().setApplicationContext(context);
 
-        try (MockedStatic<ExcelUtil> excelUtil = mockStatic(ExcelUtil.class)) {
+        try (MockedStatic<ExcelUtil> excelUtil = mockStatic(ExcelUtil.class);
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(1L);
             excelUtil.when(() -> ExcelUtil.importExcel(any(java.io.InputStream.class), eq(SysUserImportVo.class), any(SysUserImportListener.class)))
                 .thenReturn(excelResult);
 

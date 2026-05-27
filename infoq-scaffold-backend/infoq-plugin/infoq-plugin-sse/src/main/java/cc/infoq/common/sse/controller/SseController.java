@@ -1,18 +1,21 @@
 package cc.infoq.common.sse.controller;
 
 import cc.infoq.common.domain.ApiResult;
+import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.exception.SseException;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.*;
 import cc.infoq.common.sse.core.SseEmitterManager;
-import cn.dev33.satoken.annotation.SaIgnore;
-import cn.dev33.satoken.stp.StpUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.util.Optional;
 
 /**
  * SSE 控制器
@@ -22,32 +25,33 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RestController
 @ConditionalOnProperty(value = "sse.enabled", havingValue = "true")
 @AllArgsConstructor
+@Slf4j
 public class SseController implements DisposableBean {
 
     private final SseEmitterManager sseEmitterManager;
+
+    private final SecurityTokenResolver tokenResolver;
+
+    private final SecurityTokenService tokenService;
+
+    private final CurrentUserService currentUserService;
 
     /**
      * 建立 SSE 连接
      */
     @GetMapping(value = "${sse.path}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter connect() {
-        if (!StpUtil.isLogin()) {
-            throw new SseException("认证失败，无法访问系统资源");
-        }
-        String tokenValue = StpUtil.getTokenValue();
-        Long userId = LoginHelper.getUserId();
-        return sseEmitterManager.connect(userId, tokenValue);
+    public SseEmitter connect(HttpServletRequest request) {
+        SecurityTokenAuthentication authentication = authenticate(request);
+        return sseEmitterManager.connect(requireUserId(authentication), authentication.accessToken());
     }
 
     /**
      * 关闭 SSE 连接
      */
-    @SaIgnore
     @GetMapping(value = "${sse.path}/close")
     public ApiResult<Void> close() {
-        String tokenValue = StpUtil.getTokenValue();
-        Long userId = LoginHelper.getUserId();
-        sseEmitterManager.disconnect(userId, tokenValue);
+        SecurityTokenAuthentication authentication = currentAuthentication();
+        sseEmitterManager.disconnect(requireUserId(authentication), authentication.accessToken());
         return ApiResult.ok();
     }
 
@@ -84,6 +88,44 @@ public class SseController implements DisposableBean {
     @Override
     public void destroy() throws Exception {
         // 销毁时不需要做什么 此方法避免无用操作报错
+    }
+
+    private SecurityTokenAuthentication authenticate(HttpServletRequest request) {
+        Optional<SecurityResolvedToken> resolvedToken = Optional.empty();
+        Optional<SecurityResolvedClientId> resolvedClientId = Optional.empty();
+        try {
+            resolvedToken = tokenResolver.resolve(request);
+            SecurityResolvedToken token = resolvedToken
+                .orElseThrow(() -> new SecurityAuthenticationException("access token is required"));
+            resolvedClientId = tokenResolver.resolveClientId(request);
+            SecurityResolvedClientId clientId = resolvedClientId
+                .orElseThrow(() -> new SecurityAuthenticationException("request clientId is required"));
+            return tokenService.authenticate(token.token(), clientId.clientId());
+        } catch (SecurityAuthenticationException ex) {
+            log.warn("SSE认证失败, path={}, tokenDigest={}, clientIdSource={}, reason={}",
+                request.getRequestURI(),
+                resolvedToken.map(value -> tokenService.shortDigest(value.token())).orElse("none"),
+                resolvedClientId.map(value -> value.source().name()).orElse("none"),
+                ex.getMessage());
+            throw new SseException("认证失败，无法访问系统资源");
+        }
+    }
+
+    private SecurityTokenAuthentication currentAuthentication() {
+        try {
+            return currentUserService.getAuthentication();
+        } catch (SecurityAuthenticationException ex) {
+            log.warn("SSE关闭认证失败, reason={}", ex.getMessage());
+            throw new SseException("认证失败，无法访问系统资源");
+        }
+    }
+
+    private Long requireUserId(SecurityTokenAuthentication authentication) {
+        LoginUser loginUser = authentication.loginUser();
+        if (loginUser == null || loginUser.getUserId() == null) {
+            throw new SseException("认证失败，无法访问系统资源");
+        }
+        return loginUser.getUserId();
     }
 
 }

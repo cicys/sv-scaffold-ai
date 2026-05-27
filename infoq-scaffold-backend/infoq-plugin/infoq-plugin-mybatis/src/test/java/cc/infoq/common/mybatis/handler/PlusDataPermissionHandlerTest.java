@@ -6,7 +6,7 @@ import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.annotation.DataColumn;
 import cc.infoq.common.mybatis.annotation.DataPermission;
 import cc.infoq.common.mybatis.helper.DataPermissionHelper;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.SpringUtils;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -27,17 +27,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Tag("dev")
 class PlusDataPermissionHandlerTest {
@@ -78,10 +70,10 @@ class PlusDataPermissionHandlerTest {
         Expression where = CCJSqlParserUtil.parseCondExpression("status = 1");
 
         try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
             helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
-            loginHelper.when(LoginHelper::isSuperAdmin).thenReturn(true);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(true);
 
             Expression result = handler.getSqlSegment(where, true);
             assertSame(where, result);
@@ -99,19 +91,46 @@ class PlusDataPermissionHandlerTest {
         context.put("user", loginUser);
 
         try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
             helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
             helper.when(DataPermissionHelper::getContext).thenReturn(context);
             helper.when(() -> DataPermissionHelper.ignore(org.mockito.ArgumentMatchers.<Supplier<String>>any()))
                 .thenAnswer(PlusDataPermissionHandlerTest::invokeSupplier);
-            loginHelper.when(LoginHelper::isSuperAdmin).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
 
             Expression result = handler.getSqlSegment(where, true);
             assertNotNull(result);
             assertTrue(result.toString().contains("status = 1"));
             assertTrue(result.toString().contains("dept_id = 100"));
             helper.verify(DataPermissionHelper::removePermission);
+        }
+    }
+
+    @Test
+    @DisplayName("getSqlSegment: should load current user from security context when helper variable is missing")
+    void getSqlSegmentShouldLoadCurrentUserFromSecurityContextWhenVariableMissing() throws Exception {
+        DataPermission dataPermission = getDataPermissionAnnotation("query");
+        LoginUser loginUser = loginUser("3", Set.of());
+        PlusDataPermissionHandler handler = new PlusDataPermissionHandler();
+        Map<String, Object> context = new HashMap<>();
+        context.put("user", loginUser);
+
+        try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
+            helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(null, loginUser);
+            helper.when(DataPermissionHelper::getContext).thenReturn(context);
+            helper.when(() -> DataPermissionHelper.ignore(org.mockito.ArgumentMatchers.<Supplier<String>>any()))
+                .thenAnswer(PlusDataPermissionHandlerTest::invokeSupplier);
+            loginHelper.when(LoginUserContext::getLoginUser).thenReturn(loginUser);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
+
+            Expression result = handler.getSqlSegment(null, true);
+
+            assertNotNull(result);
+            loginHelper.verify(LoginUserContext::getLoginUser);
+            helper.verify(() -> DataPermissionHelper.setVariable("user", loginUser));
         }
     }
 
@@ -125,13 +144,13 @@ class PlusDataPermissionHandlerTest {
         context.put("user", loginUser);
 
         try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
             helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
             helper.when(DataPermissionHelper::getContext).thenReturn(context);
             helper.when(() -> DataPermissionHelper.ignore(org.mockito.ArgumentMatchers.<Supplier<String>>any()))
                 .thenAnswer(PlusDataPermissionHandlerTest::invokeSupplier);
-            loginHelper.when(LoginHelper::isSuperAdmin).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
 
             Expression result = handler.getSqlSegment(null, true);
             assertNotNull(result);
@@ -149,13 +168,13 @@ class PlusDataPermissionHandlerTest {
         context.put("user", loginUser);
 
         try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
             helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
             helper.when(DataPermissionHelper::getContext).thenReturn(context);
             helper.when(() -> DataPermissionHelper.ignore(org.mockito.ArgumentMatchers.<Supplier<String>>any()))
                 .thenAnswer(PlusDataPermissionHandlerTest::invokeSupplier);
-            loginHelper.when(LoginHelper::isSuperAdmin).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
 
             Expression result = handler.getSqlSegment(null, true);
             assertNotNull(result);
@@ -173,11 +192,11 @@ class PlusDataPermissionHandlerTest {
         context.put("user", loginUser);
 
         try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
             helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
             helper.when(DataPermissionHelper::getContext).thenReturn(context);
-            loginHelper.when(LoginHelper::isSuperAdmin).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
 
             assertThrows(ServiceException.class, () -> handler.getSqlSegment(null, true));
         }
@@ -193,11 +212,11 @@ class PlusDataPermissionHandlerTest {
         context.put("user", loginUser);
 
         try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
             helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
             helper.when(DataPermissionHelper::getContext).thenReturn(context);
-            loginHelper.when(LoginHelper::isSuperAdmin).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
 
             assertThrows(ServiceException.class, () -> handler.getSqlSegment(null, false));
         }

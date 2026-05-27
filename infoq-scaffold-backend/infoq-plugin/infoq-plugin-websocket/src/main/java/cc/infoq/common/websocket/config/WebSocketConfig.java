@@ -1,5 +1,7 @@
 package cc.infoq.common.websocket.config;
 
+import cc.infoq.common.security.auth.SecurityTokenResolver;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.websocket.config.properties.WebSocketProperties;
 import cc.infoq.common.websocket.handler.PlusWebSocketHandler;
 import cc.infoq.common.websocket.interceptor.PlusWebSocketInterceptor;
@@ -48,8 +50,8 @@ public class WebSocketConfig {
     }
 
     @Bean
-    public HandshakeInterceptor handshakeInterceptor() {
-        return new PlusWebSocketInterceptor();
+    public HandshakeInterceptor handshakeInterceptor(SecurityTokenResolver tokenResolver, SecurityTokenService tokenService) {
+        return new PlusWebSocketInterceptor(tokenResolver, tokenService);
     }
 
     @Bean

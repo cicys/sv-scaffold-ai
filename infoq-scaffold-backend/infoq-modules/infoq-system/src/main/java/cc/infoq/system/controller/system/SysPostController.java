@@ -14,11 +14,11 @@ import cc.infoq.system.domain.bo.SysPostBo;
 import cc.infoq.system.domain.vo.SysPostVo;
 import cc.infoq.system.service.SysDeptService;
 import cc.infoq.system.service.SysPostService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.util.ObjectUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +43,7 @@ public class SysPostController extends BaseController {
     /**
      * 获取岗位列表
      */
-    @SaCheckPermission("system:post:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:list')")
     @GetMapping("/list")
     public TableDataInfo<SysPostVo> list(SysPostBo post, PageQuery pageQuery) {
         return sysPostService.selectPagePostList(post, pageQuery);
@@ -53,7 +53,7 @@ public class SysPostController extends BaseController {
      * 导出岗位列表
      */
     @Log(title = "岗位管理", businessType = BusinessType.EXPORT)
-    @SaCheckPermission("system:post:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:export')")
     @PostMapping("/export")
     public void export(SysPostBo post, HttpServletResponse response) {
         List<SysPostVo> list = sysPostService.selectPostList(post);
@@ -65,7 +65,7 @@ public class SysPostController extends BaseController {
      *
      * @param postId 岗位ID
      */
-    @SaCheckPermission("system:post:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:query')")
     @GetMapping(value = "/{postId}")
     public ApiResult<SysPostVo> getInfo(@PathVariable Long postId) {
         return ApiResult.ok(sysPostService.selectPostById(postId));
@@ -74,7 +74,7 @@ public class SysPostController extends BaseController {
     /**
      * 新增岗位
      */
-    @SaCheckPermission("system:post:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:add')")
     @Log(title = "岗位管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -90,7 +90,7 @@ public class SysPostController extends BaseController {
     /**
      * 修改岗位
      */
-    @SaCheckPermission("system:post:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:edit')")
     @Log(title = "岗位管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -111,7 +111,7 @@ public class SysPostController extends BaseController {
      *
      * @param postIds 岗位ID串
      */
-    @SaCheckPermission("system:post:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:remove')")
     @Log(title = "岗位管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{postIds}")
     public ApiResult<Void> remove(@PathVariable Long[] postIds) {
@@ -124,7 +124,7 @@ public class SysPostController extends BaseController {
      * @param postIds 岗位ID串
      * @param deptId  部门id
      */
-    @SaCheckPermission("system:post:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:query')")
     @GetMapping("/optionselect")
     public ApiResult<List<SysPostVo>> optionselect(@RequestParam(required = false) Long[] postIds, @RequestParam(required = false) Long deptId) {
         List<SysPostVo> list = new ArrayList<>();
@@ -141,7 +141,7 @@ public class SysPostController extends BaseController {
     /**
      * 获取部门树列表
      */
-    @SaCheckPermission("system:post:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:post:list')")
     @GetMapping("/deptTree")
     public ApiResult<List<Tree<Long>>> deptTree(SysDeptBo dept) {
         return ApiResult.ok(sysDeptService.selectDeptTreeList(dept));

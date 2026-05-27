@@ -5,24 +5,15 @@ import cc.infoq.common.domain.dto.UserDTO;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.bo.SysUserBo;
 import cc.infoq.system.domain.entity.SysUser;
 import cc.infoq.system.domain.entity.SysUserPost;
 import cc.infoq.system.domain.entity.SysUserRole;
-import cc.infoq.system.domain.vo.SysDeptVo;
-import cc.infoq.system.domain.vo.SysPostVo;
-import cc.infoq.system.domain.vo.SysRoleVo;
-import cc.infoq.system.domain.vo.SysUserExportVo;
-import cc.infoq.system.domain.vo.SysUserVo;
-import cc.infoq.system.mapper.SysDeptMapper;
-import cc.infoq.system.mapper.SysPostMapper;
-import cc.infoq.system.mapper.SysRoleMapper;
-import cc.infoq.system.mapper.SysUserMapper;
-import cc.infoq.system.mapper.SysUserPostMapper;
-import cc.infoq.system.mapper.SysUserRoleMapper;
+import cc.infoq.system.domain.vo.*;
+import cc.infoq.system.mapper.*;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.linpeilie.Converter;
@@ -33,7 +24,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -45,22 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -525,7 +502,10 @@ class SysUserServiceImplTest {
         when(sysRoleMapper.selectRoleCount(List.of(2L))).thenReturn(1L);
         when(sysUserRoleMapper.insertBatch(any())).thenReturn(true);
 
-        service.insertUserAuth(2L, new Long[]{SystemConstants.SUPER_ADMIN_ID, 2L});
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(2L)).thenReturn(false);
+            service.insertUserAuth(2L, new Long[]{SystemConstants.SUPER_ADMIN_ID, 2L});
+        }
 
         verify(sysUserRoleMapper).delete(any());
         verify(sysUserRoleMapper).insertBatch(argThat(list -> {
@@ -542,8 +522,12 @@ class SysUserServiceImplTest {
         SysUserServiceImpl service = newService();
         when(sysRoleMapper.selectRoleCount(List.of(2L, 3L))).thenReturn(1L);
 
-        ServiceException ex = assertThrows(ServiceException.class,
-            () -> service.insertUserAuth(100L, new Long[]{2L, 3L}));
+        ServiceException ex;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(100L)).thenReturn(false);
+            ex = assertThrows(ServiceException.class,
+                () -> service.insertUserAuth(100L, new Long[]{2L, 3L}));
+        }
 
         assertTrue(ex.getMessage().contains("没有权限访问角色的数据"));
     }
@@ -589,7 +573,11 @@ class SysUserServiceImplTest {
     void deleteUserByIdsShouldThrowWhenSuperAdminIncluded() {
         SysUserServiceImpl service = newService();
 
-        ServiceException ex = assertThrows(ServiceException.class, () -> service.deleteUserByIds(new Long[]{1L}));
+        ServiceException ex;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(1L)).thenReturn(true);
+            ex = assertThrows(ServiceException.class, () -> service.deleteUserByIds(new Long[]{1L}));
+        }
 
         assertTrue(ex.getMessage().contains("不允许操作超级管理员用户"));
     }
@@ -600,7 +588,12 @@ class SysUserServiceImplTest {
         SysUserServiceImpl service = newService();
         when(sysUserMapper.countUserById(2L)).thenReturn(0L);
 
-        ServiceException ex = assertThrows(ServiceException.class, () -> service.deleteUserByIds(new Long[]{2L}));
+        ServiceException ex;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(2L)).thenReturn(false);
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            ex = assertThrows(ServiceException.class, () -> service.deleteUserByIds(new Long[]{2L}));
+        }
 
         assertTrue(ex.getMessage().contains("没有权限访问用户数据"));
     }
@@ -612,7 +605,11 @@ class SysUserServiceImplTest {
         when(sysUserMapper.countUserById(anyLong())).thenReturn(1L);
         when(sysUserMapper.deleteByIds(any())).thenReturn(0);
 
-        ServiceException ex = assertThrows(ServiceException.class, () -> service.deleteUserByIds(new Long[]{2L, 3L}));
+        ServiceException ex;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            ex = assertThrows(ServiceException.class, () -> service.deleteUserByIds(new Long[]{2L, 3L}));
+        }
 
         assertTrue(ex.getMessage().contains("删除用户失败"));
     }
@@ -624,7 +621,11 @@ class SysUserServiceImplTest {
         when(sysUserMapper.countUserById(anyLong())).thenReturn(1L);
         when(sysUserMapper.deleteByIds(any())).thenReturn(2);
 
-        int rows = service.deleteUserByIds(new Long[]{2L, 3L});
+        int rows;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            rows = service.deleteUserByIds(new Long[]{2L, 3L});
+        }
 
         assertEquals(2, rows);
         verify(sysUserRoleMapper).delete(any());
@@ -661,9 +662,9 @@ class SysUserServiceImplTest {
         when(sysUserPostMapper.insertBatch(any())).thenReturn(true);
 
         try (MockedStatic<MapstructUtils> mapstructUtils = mockStatic(MapstructUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             mapstructUtils.when(() -> MapstructUtils.convert(bo, SysUser.class)).thenReturn(converted);
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(88L)).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(88L)).thenReturn(false);
 
             int rows = service.insertUser(bo);
 
@@ -741,11 +742,11 @@ class SysUserServiceImplTest {
         when(sysUserMapper.updateById(failUser)).thenReturn(0);
 
         try (MockedStatic<MapstructUtils> mapstructUtils = mockStatic(MapstructUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             mapstructUtils.when(() -> MapstructUtils.convert(successBo, SysUser.class)).thenReturn(successUser);
             mapstructUtils.when(() -> MapstructUtils.convert(failBo, SysUser.class)).thenReturn(failUser);
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(50L)).thenReturn(false);
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(51L)).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(50L)).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(51L)).thenReturn(false);
 
             int rows = service.updateUser(successBo);
             ServiceException ex = assertThrows(ServiceException.class, () -> service.updateUser(failBo));

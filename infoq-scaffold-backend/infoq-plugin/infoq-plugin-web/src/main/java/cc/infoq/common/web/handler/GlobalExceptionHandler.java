@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(org.springframework.http.HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(SseException.class)
-    public String handleNotLoginException(SseException e, HttpServletRequest request) {
+    public String handleAuthenticationException(SseException e, HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         log.debug("请求地址'{}',认证失败'{}',无法访问系统资源", requestURI, e.getMessage());
         return JsonUtils.toJsonString(ApiResult.fail(HttpStatus.HTTP_UNAUTHORIZED, "认证失败，无法访问系统资源"));

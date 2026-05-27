@@ -12,7 +12,7 @@ import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.mybatis.helper.DataPermissionHelper;
 import cc.infoq.common.redis.annotation.RepeatSubmit;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.StreamUtils;
 import cc.infoq.common.utils.StringUtils;
 import cc.infoq.common.validate.ResetPwdGroup;
@@ -24,8 +24,10 @@ import cc.infoq.system.domain.bo.SysRoleBo;
 import cc.infoq.system.domain.bo.SysUserBo;
 import cc.infoq.system.domain.vo.*;
 import cc.infoq.system.listener.SysUserImportListener;
-import cc.infoq.system.service.*;
-import cn.dev33.satoken.annotation.SaCheckPermission;
+import cc.infoq.system.service.SysDeptService;
+import cc.infoq.system.service.SysPostService;
+import cc.infoq.system.service.SysRoleService;
+import cc.infoq.system.service.SysUserService;
 import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -34,6 +36,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,7 +63,7 @@ public class SysUserController extends BaseController {
     /**
      * 获取用户列表
      */
-    @SaCheckPermission("system:user:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:list')")
     @GetMapping("/list")
     public TableDataInfo<SysUserVo> list(SysUserBo user, PageQuery pageQuery) {
         return sysUserService.selectPageUserList(user, pageQuery);
@@ -70,7 +73,7 @@ public class SysUserController extends BaseController {
      * 导出用户列表
      */
     @Log(title = "用户管理", businessType = BusinessType.EXPORT)
-    @SaCheckPermission("system:user:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:export')")
     @PostMapping("/export")
     public void export(SysUserBo user, HttpServletResponse response) {
         List<SysUserExportVo> list = sysUserService.selectUserExportList(user);
@@ -84,7 +87,7 @@ public class SysUserController extends BaseController {
      * @param updateSupport 是否更新已存在数据
      */
     @Log(title = "用户管理", businessType = BusinessType.IMPORT)
-    @SaCheckPermission("system:user:import")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:import')")
     @PostMapping(value = "/importData", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResult<Void> importData(@RequestPart("file") MultipartFile file, boolean updateSupport) throws Exception {
         ExcelResult<SysUserImportVo> result = ExcelUtil.importExcel(file.getInputStream(), SysUserImportVo.class, new SysUserImportListener(updateSupport));
@@ -107,7 +110,7 @@ public class SysUserController extends BaseController {
     @GetMapping("/getInfo")
     public ApiResult<UserInfoVo> getInfo() {
         UserInfoVo userInfoVo = new UserInfoVo();
-        LoginUser loginUser = LoginHelper.getLoginUser();
+        LoginUser loginUser = LoginUserContext.getLoginUser();
         SysUserVo user = DataPermissionHelper.ignore(() -> sysUserService.selectUserById(loginUser.getUserId()));
         if (ObjectUtil.isNull(user)) {
             return ApiResult.fail("没有权限访问用户数据!");
@@ -123,7 +126,7 @@ public class SysUserController extends BaseController {
      *
      * @param userId 用户ID
      */
-    @SaCheckPermission("system:user:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:query')")
     @GetMapping(value = {"/", "/{userId}"})
     public ApiResult<SysUserInfoVo> getInfo(@PathVariable(value = "userId", required = false) Long userId) {
         SysUserInfoVo userInfoVo = new SysUserInfoVo();
@@ -143,14 +146,14 @@ public class SysUserController extends BaseController {
         SysRoleBo roleBo = new SysRoleBo();
         roleBo.setStatus(SystemConstants.NORMAL);
         List<SysRoleVo> roles = sysRoleService.selectRoleList(roleBo);
-        userInfoVo.setRoles(LoginHelper.isSuperAdmin(userId) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
+        userInfoVo.setRoles(LoginUserContext.isSuperAdmin(userId) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
         return ApiResult.ok(userInfoVo);
     }
 
     /**
      * 新增用户
      */
-    @SaCheckPermission("system:user:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:add')")
     @Log(title = "用户管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -170,7 +173,7 @@ public class SysUserController extends BaseController {
     /**
      * 修改用户
      */
-    @SaCheckPermission("system:user:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:edit')")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -193,11 +196,11 @@ public class SysUserController extends BaseController {
      *
      * @param userIds 角色ID串
      */
-    @SaCheckPermission("system:user:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:remove')")
     @Log(title = "用户管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{userIds}")
     public ApiResult<Void> remove(@PathVariable Long[] userIds) {
-        if (ArrayUtil.contains(userIds, LoginHelper.getUserId())) {
+        if (ArrayUtil.contains(userIds, LoginUserContext.getUserId())) {
             return ApiResult.fail("当前用户不能删除");
         }
         return toAjax(sysUserService.deleteUserByIds(userIds));
@@ -209,7 +212,7 @@ public class SysUserController extends BaseController {
      * @param userIds 用户ID串
      * @param deptId  部门ID
      */
-    @SaCheckPermission("system:user:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:query')")
     @GetMapping("/optionselect")
     public ApiResult<List<SysUserVo>> optionselect(@RequestParam(required = false) Long[] userIds,
                                                    @RequestParam(required = false) Long deptId) {
@@ -220,7 +223,7 @@ public class SysUserController extends BaseController {
      * 重置密码
      */
     @ApiEncrypt
-    @SaCheckPermission("system:user:resetPwd")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:resetPwd')")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping("/resetPwd")
@@ -234,7 +237,7 @@ public class SysUserController extends BaseController {
     /**
      * 状态修改
      */
-    @SaCheckPermission("system:user:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:edit')")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping("/changeStatus")
@@ -249,7 +252,7 @@ public class SysUserController extends BaseController {
      *
      * @param userId 用户ID
      */
-    @SaCheckPermission("system:user:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:query')")
     @GetMapping("/authRole/{userId}")
     public ApiResult<SysUserInfoVo> authRole(@PathVariable Long userId) {
         sysUserService.checkUserDataScope(userId);
@@ -257,7 +260,7 @@ public class SysUserController extends BaseController {
         List<SysRoleVo> roles = sysRoleService.selectRolesAuthByUserId(userId);
         SysUserInfoVo userInfoVo = new SysUserInfoVo();
         userInfoVo.setUser(user);
-        userInfoVo.setRoles(LoginHelper.isSuperAdmin(userId) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
+        userInfoVo.setRoles(LoginUserContext.isSuperAdmin(userId) ? roles : StreamUtils.filter(roles, r -> !r.isSuperAdmin()));
         return ApiResult.ok(userInfoVo);
     }
 
@@ -267,7 +270,7 @@ public class SysUserController extends BaseController {
      * @param userId  用户Id
      * @param roleIds 角色ID串
      */
-    @SaCheckPermission("system:user:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:edit')")
     @Log(title = "用户管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
     @PutMapping("/authRole")
@@ -280,7 +283,7 @@ public class SysUserController extends BaseController {
     /**
      * 获取部门树列表
      */
-    @SaCheckPermission("system:user:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:list')")
     @GetMapping("/deptTree")
     public ApiResult<List<Tree<Long>>> deptTree(SysDeptBo dept) {
         return ApiResult.ok(sysDeptService.selectDeptTreeList(dept));
@@ -289,7 +292,7 @@ public class SysUserController extends BaseController {
     /**
      * 获取部门下的所有用户信息
      */
-    @SaCheckPermission("system:user:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:user:list')")
     @GetMapping("/list/dept/{deptId}")
     public ApiResult<List<SysUserVo>> listByDept(@PathVariable @NotNull Long deptId) {
         return ApiResult.ok(sysUserService.selectUserListByDept(deptId));

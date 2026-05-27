@@ -1,26 +1,21 @@
 package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.SystemConstants;
-import cc.infoq.common.domain.dto.RoleDTO;
-import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
+import cc.infoq.common.security.auth.LoginUserContext;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.SpringUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.system.domain.bo.SysRoleBo;
 import cc.infoq.system.domain.entity.SysRole;
-import cc.infoq.system.domain.entity.SysRoleDept;
-import cc.infoq.system.domain.entity.SysRoleMenu;
 import cc.infoq.system.domain.entity.SysUserRole;
 import cc.infoq.system.domain.vo.SysRoleVo;
 import cc.infoq.system.mapper.SysRoleDeptMapper;
 import cc.infoq.system.mapper.SysRoleMapper;
 import cc.infoq.system.mapper.SysRoleMenuMapper;
 import cc.infoq.system.mapper.SysUserRoleMapper;
-import cn.dev33.satoken.stp.StpLogic;
-import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.linpeilie.Converter;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +23,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,22 +30,14 @@ import org.springframework.context.support.GenericApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -69,6 +55,9 @@ class SysRoleServiceImplTest {
     @Mock
     private SysRoleDeptMapper sysRoleDeptMapper;
 
+    @Mock
+    private SecurityTokenService securityTokenService;
+
     @BeforeEach
     void setUp() {
         GenericApplicationContext context = new GenericApplicationContext();
@@ -80,7 +69,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("selectRolePermissionByUserId: should split role keys into permission set")
     void selectRolePermissionByUserIdShouldSplitKeys() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleVo roleA = new SysRoleVo();
         roleA.setRoleKey("system:user:list,system:user:add");
         SysRoleVo roleB = new SysRoleVo();
@@ -95,7 +84,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("checkRoleAllowed: should reject reserved role keys for new role")
     void checkRoleAllowedShouldRejectReservedRoleKey() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(null);
         bo.setRoleKey("admin");
@@ -106,7 +95,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("checkRoleAllowed: should allow normal custom role key")
     void checkRoleAllowedShouldAllowNormalRoleKey() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(null);
         bo.setRoleKey("ops_manager");
@@ -117,7 +106,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("selectRolesAuthByUserId: should mark owned roles with flag=true")
     void selectRolesAuthByUserIdShouldMarkOwnedRoles() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleVo owned = new SysRoleVo();
         owned.setRoleId(1L);
         owned.setRoleName("管理员");
@@ -140,7 +129,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("selectPageRoleList/selectRoleListByUserId: should delegate and map ids")
     void selectPageRoleListAndRoleIdsShouldWork() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleName("系统");
         bo.setRoleKey("system");
@@ -166,7 +155,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("checkRoleNameUnique/checkRoleKeyUnique: should reflect mapper exists")
     void checkRoleUniqueShouldReflectMapperExists() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(8L);
         bo.setRoleName("测试角色");
@@ -181,10 +170,14 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("checkRoleDataScope: should throw when part of roles out of scope")
     void checkRoleDataScopeShouldThrowWhenPartOutOfScope() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         when(sysRoleMapper.selectRoleCount(List.of(1L, 2L))).thenReturn(1L);
 
-        ServiceException ex = assertThrows(ServiceException.class, () -> service.checkRoleDataScope(List.of(1L, 2L)));
+        ServiceException ex;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            ex = assertThrows(ServiceException.class, () -> service.checkRoleDataScope(List.of(1L, 2L)));
+        }
 
         assertTrue(ex.getMessage().contains("没有权限访问部分角色数据"));
     }
@@ -192,7 +185,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("deleteRoleById: should clear role-menu/role-dept then delete role")
     void deleteRoleByIdShouldDeleteRelationsAndRole() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         when(sysRoleMapper.deleteById(6L)).thenReturn(1);
 
         int rows = service.deleteRoleById(6L);
@@ -205,7 +198,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("deleteRoleByIds: should remove role relations then delete roles when unassigned")
     void deleteRoleByIdsShouldDeleteRelationsAndRolesWhenUnassigned() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRole role = new SysRole();
         role.setRoleId(9L);
         role.setRoleName("自定义角色");
@@ -216,7 +209,12 @@ class SysRoleServiceImplTest {
         when(sysUserRoleMapper.selectCount(any())).thenReturn(0L);
         when(sysRoleMapper.deleteByIds(List.of(9L))).thenReturn(1);
 
-        int rows = service.deleteRoleByIds(List.of(9L));
+        int rows;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(9L)).thenReturn(false);
+            rows = service.deleteRoleByIds(List.of(9L));
+        }
 
         assertEquals(1, rows);
         verify(sysRoleMenuMapper).delete(any());
@@ -226,7 +224,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("selectRoleByIds: should delegate and return rows")
     void selectRoleByIdsShouldDelegateAndReturnRows() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleVo vo = new SysRoleVo();
         vo.setRoleId(6L);
         vo.setRoleName("运维");
@@ -241,14 +239,14 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("selectRoleNamesByIds: should return empty map for empty input")
     void selectRoleNamesByIdsShouldReturnMappedResult() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         assertEquals(Collections.emptyMap(), service.selectRoleNamesByIds(List.of()));
     }
 
     @Test
     @DisplayName("updateRoleStatus: should throw when disabling assigned role")
     void updateRoleStatusShouldThrowWhenDisablingAssignedRole() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         when(sysUserRoleMapper.selectCount(any())).thenReturn(1L);
 
         ServiceException ex = assertThrows(ServiceException.class,
@@ -260,7 +258,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertRoleMenu(private): should insert menu relations and return inserted count")
     void insertRoleMenuShouldInsertMenuRelations() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(8L);
         bo.setMenuIds(new Long[]{10L, 11L});
@@ -275,7 +273,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertRoleMenu(private): should return one when menu ids empty")
     void insertRoleMenuShouldReturnOneWhenMenuIdsEmpty() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(8L);
         bo.setMenuIds(new Long[]{});
@@ -288,7 +286,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertRoleDept(private): should insert dept relations and return inserted count")
     void insertRoleDeptShouldInsertDeptRelations() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(8L);
         bo.setDeptIds(new Long[]{20L, 21L});
@@ -303,7 +301,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertRoleDept(private): should return one when dept ids empty")
     void insertRoleDeptShouldReturnOneWhenDeptIdsEmpty() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(8L);
         bo.setDeptIds(new Long[]{});
@@ -316,12 +314,12 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("deleteAuthUser: should throw when modifying current user role")
     void deleteAuthUserShouldThrowWhenModifyingCurrentUserRole() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysUserRole userRole = new SysUserRole();
         userRole.setRoleId(2L);
         userRole.setUserId(88L);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(88L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(88L);
             ServiceException ex = assertThrows(ServiceException.class, () -> service.deleteAuthUser(userRole));
             assertTrue(ex.getMessage().contains("不允许修改当前用户角色"));
         }
@@ -330,11 +328,11 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("deleteAuthUsers: should delete and cleanup when rows > 0")
     void deleteAuthUsersShouldDeleteAndCleanup() {
-        SysRoleServiceImpl service = spy(new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper));
+        SysRoleServiceImpl service = spy(newService());
         doNothing().when(service).cleanOnlineUser(anyList());
         when(sysUserRoleMapper.delete(any())).thenReturn(2);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(1L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(1L);
             int rows = service.deleteAuthUsers(9L, new Long[]{2L, 3L});
             assertEquals(2, rows);
             verify(service).cleanOnlineUser(List.of(2L, 3L));
@@ -344,11 +342,11 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertAuthUsers: should insert role users and cleanup online users")
     void insertAuthUsersShouldInsertAndCleanup() {
-        SysRoleServiceImpl service = spy(new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper));
+        SysRoleServiceImpl service = spy(newService());
         doNothing().when(service).cleanOnlineUser(anyList());
         when(sysUserRoleMapper.insertBatch(any())).thenReturn(true);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(1L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(1L);
             int rows = service.insertAuthUsers(8L, new Long[]{2L, 3L});
             assertEquals(2, rows);
             verify(sysUserRoleMapper).insertBatch(argThat(list -> list.size() == 2));
@@ -359,9 +357,9 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertAuthUsers: should throw when includes current user")
     void insertAuthUsersShouldThrowWhenContainsCurrentUser() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(3L);
+        SysRoleServiceImpl service = newService();
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(3L);
             ServiceException ex = assertThrows(ServiceException.class,
                 () -> service.insertAuthUsers(8L, new Long[]{2L, 3L}));
             assertTrue(ex.getMessage().contains("不允许修改当前用户角色"));
@@ -371,86 +369,52 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("cleanOnlineUserByRole: should return immediately when role has no users")
     void cleanOnlineUserByRoleShouldReturnWhenNoUserBinding() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         when(sysUserRoleMapper.selectCount(any())).thenReturn(0L);
 
         service.cleanOnlineUserByRole(6L);
 
         verify(sysUserRoleMapper, times(1)).selectCount(any());
+        verify(securityTokenService, never()).revokeByRoleId(6L);
     }
 
     @Test
-    @DisplayName("cleanOnlineUser: should return immediately when no online token exists")
-    void cleanOnlineUserShouldReturnWhenNoOnlineTokenExists() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
-        try (MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class)) {
-            stpUtil.when(() -> StpUtil.searchTokenValue("", 0, -1, false)).thenReturn(List.of());
+    @DisplayName("cleanOnlineUser: should return immediately when user id list is empty")
+    void cleanOnlineUserShouldReturnWhenUserIdListIsEmpty() {
+        SysRoleServiceImpl service = newService();
 
-            service.cleanOnlineUser(List.of(1L, 2L));
+        service.cleanOnlineUser(List.of());
 
-            stpUtil.verify(() -> StpUtil.searchTokenValue("", 0, -1, false));
-        }
+        verify(securityTokenService, never()).revokeByUserId(any());
     }
 
     @Test
-    @DisplayName("cleanOnlineUserByRole: should logout tokens when user has matched role")
-    void cleanOnlineUserByRoleShouldLogoutMatchedRoleUsers() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+    @DisplayName("cleanOnlineUserByRole: should revoke indexed tokens by role id")
+    void cleanOnlineUserByRoleShouldRevokeByRoleId() {
+        SysRoleServiceImpl service = newService();
         when(sysUserRoleMapper.selectCount(any())).thenReturn(1L);
 
-        StpLogic originalStpLogic = StpUtil.stpLogic;
-        StpLogic stpLogic = mock(StpLogic.class);
-        when(stpLogic.getTokenActiveTimeoutByToken("token-1")).thenReturn(120L);
-        StpUtil.setStpLogic(stpLogic);
+        service.cleanOnlineUserByRole(6L);
 
-        LoginUser loginUser = new LoginUser();
-        RoleDTO role = new RoleDTO();
-        role.setRoleId(6L);
-        loginUser.setRoles(List.of(role));
-        try (MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            stpUtil.when(() -> StpUtil.searchTokenValue("", 0, -1, false))
-                .thenReturn(List.of("satoken:token-1"));
-            loginHelper.when(() -> LoginHelper.getLoginUser("token-1")).thenReturn(loginUser);
-
-            service.cleanOnlineUserByRole(6L);
-
-            stpUtil.verify(() -> StpUtil.logoutByTokenValue("token-1"));
-        } finally {
-            StpUtil.setStpLogic(originalStpLogic);
-        }
+        verify(securityTokenService).revokeByRoleId(6L);
     }
 
     @Test
-    @DisplayName("cleanOnlineUser: should logout matched user token when token active")
-    void cleanOnlineUserShouldLogoutMatchedUserTokenWhenActive() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+    @DisplayName("cleanOnlineUser: should revoke each distinct non-null user id")
+    void cleanOnlineUserShouldRevokeEachDistinctUserId() {
+        SysRoleServiceImpl service = newService();
 
-        StpLogic originalStpLogic = StpUtil.stpLogic;
-        StpLogic stpLogic = mock(StpLogic.class);
-        when(stpLogic.getTokenActiveTimeoutByToken("token-2")).thenReturn(60L);
-        StpUtil.setStpLogic(stpLogic);
+        service.cleanOnlineUser(Arrays.asList(100L, 200L, 100L, null));
 
-        LoginUser loginUser = new LoginUser();
-        loginUser.setUserId(100L);
-        try (MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            stpUtil.when(() -> StpUtil.searchTokenValue("", 0, -1, false))
-                .thenReturn(List.of("satoken:token-2"));
-            loginHelper.when(() -> LoginHelper.getLoginUser("token-2")).thenReturn(loginUser);
-
-            service.cleanOnlineUser(List.of(100L, 200L));
-
-            stpUtil.verify(() -> StpUtil.logoutByTokenValue("token-2"));
-        } finally {
-            StpUtil.setStpLogic(originalStpLogic);
-        }
+        verify(securityTokenService, times(1)).revokeByUserId(100L);
+        verify(securityTokenService, times(1)).revokeByUserId(200L);
+        verify(securityTokenService, never()).revokeByUserId(null);
     }
 
     @Test
     @DisplayName("selectRoleById/selectRolesByUserId/checkRoleDataScope(Long): should delegate and validate")
     void selectRoleByIdAndRolesByUserIdAndCheckRoleDataScopeByLongShouldWork() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleVo vo = new SysRoleVo();
         vo.setRoleId(5L);
         vo.setRoleName("运营角色");
@@ -460,8 +424,11 @@ class SysRoleServiceImplTest {
 
         SysRoleVo byId = service.selectRoleById(5L);
         List<SysRoleVo> byUser = service.selectRolesByUserId(99L);
-        service.checkRoleDataScope(5L);
-        service.checkRoleDataScope((Long) null);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+            service.checkRoleDataScope(5L);
+            service.checkRoleDataScope((Long) null);
+        }
 
         assertEquals("运营角色", byId.getRoleName());
         assertEquals(1, byUser.size());
@@ -471,7 +438,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("insertRole: should convert role, persist and insert role menus")
     void insertRoleShouldConvertPersistAndInsertRoleMenus() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setMenuIds(new Long[]{10L, 11L});
         SysRole role = new SysRole();
@@ -495,7 +462,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("updateRole: should throw when disabling a role that has assigned users")
     void updateRoleShouldThrowWhenDisablingAssignedRole() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo bo = new SysRoleBo();
         bo.setRoleId(66L);
         bo.setStatus(SystemConstants.DISABLE);
@@ -517,7 +484,7 @@ class SysRoleServiceImplTest {
     @Test
     @DisplayName("updateRole/authDataScope: should update role and rebuild related mappings")
     void updateRoleAndAuthDataScopeShouldUpdateRoleAndRebuildMappings() {
-        SysRoleServiceImpl service = new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper);
+        SysRoleServiceImpl service = newService();
         SysRoleBo roleBo = new SysRoleBo();
         roleBo.setRoleId(66L);
         roleBo.setStatus(SystemConstants.NORMAL);
@@ -550,6 +517,10 @@ class SysRoleServiceImplTest {
             verify(sysRoleMenuMapper).insertBatch(any());
             verify(sysRoleDeptMapper).insertBatch(any());
         }
+    }
+
+    private SysRoleServiceImpl newService() {
+        return new SysRoleServiceImpl(sysRoleMapper, sysRoleMenuMapper, sysUserRoleMapper, sysRoleDeptMapper, securityTokenService);
     }
 
     private static int invokePrivateIntMethod(SysRoleServiceImpl service, String methodName, SysRoleBo bo) {

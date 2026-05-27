@@ -13,10 +13,10 @@ import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysLoginInfoBo;
 import cc.infoq.system.domain.vo.SysLoginInfoVo;
 import cc.infoq.system.service.SysLoginInfoService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.lock.annotation.Lock4j;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +38,7 @@ public class SysLoginInfoController extends BaseController {
     /**
      * 获取系统访问记录列表
      */
-    @SaCheckPermission("monitor:loginInfo:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:loginInfo:list')")
     @GetMapping("/list")
     public TableDataInfo<SysLoginInfoVo> list(SysLoginInfoBo loginInfo, PageQuery pageQuery) {
         return loginInfoService.selectPageLoginInfoList(loginInfo, pageQuery);
@@ -48,7 +48,7 @@ public class SysLoginInfoController extends BaseController {
      * 导出系统访问记录列表
      */
     @Log(title = "登录日志", businessType = BusinessType.EXPORT)
-    @SaCheckPermission("monitor:loginInfo:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:loginInfo:export')")
     @PostMapping("/export")
     public void export(SysLoginInfoBo loginInfo, HttpServletResponse response) {
         List<SysLoginInfoVo> list = loginInfoService.selectLoginInfoList(loginInfo);
@@ -59,7 +59,7 @@ public class SysLoginInfoController extends BaseController {
      * 批量删除登录日志
      * @param infoIds 日志ids
      */
-    @SaCheckPermission("monitor:loginInfo:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:loginInfo:remove')")
     @Log(title = "登录日志", businessType = BusinessType.DELETE)
     @DeleteMapping("/{infoIds}")
     public ApiResult<Void> remove(@PathVariable Long[] infoIds) {
@@ -69,7 +69,7 @@ public class SysLoginInfoController extends BaseController {
     /**
      * 清理系统访问记录
      */
-    @SaCheckPermission("monitor:loginInfo:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:loginInfo:remove')")
     @Log(title = "登录日志", businessType = BusinessType.CLEAN)
     @Lock4j
     @DeleteMapping("/clean")
@@ -78,7 +78,7 @@ public class SysLoginInfoController extends BaseController {
         return ApiResult.ok();
     }
 
-    @SaCheckPermission("monitor:loginInfo:unlock")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:loginInfo:unlock')")
     @Log(title = "账户解锁", businessType = BusinessType.OTHER)
     @RepeatSubmit()
     @GetMapping("/unlock/{userName}")

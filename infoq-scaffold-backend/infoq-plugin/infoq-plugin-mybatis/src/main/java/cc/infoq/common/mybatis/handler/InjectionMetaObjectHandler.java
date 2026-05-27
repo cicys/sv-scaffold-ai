@@ -3,7 +3,7 @@ package cc.infoq.common.mybatis.handler;
 import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.mybatis.core.domain.BaseEntity;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.ObjectUtils;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.http.HttpStatus;
@@ -80,7 +80,7 @@ public class InjectionMetaObjectHandler implements MetaObjectHandler {
                 baseEntity.setUpdateTime(current);
 
                 // 获取当前登录用户的ID，并填充更新人信息
-                Long userId = LoginHelper.getUserId();
+                Long userId = getUserId();
                 if (ObjectUtil.isNotNull(userId)) {
                     baseEntity.setUpdateBy(userId);
                 } else {
@@ -102,11 +102,24 @@ public class InjectionMetaObjectHandler implements MetaObjectHandler {
     private LoginUser getLoginUser() {
         LoginUser loginUser;
         try {
-            loginUser = LoginHelper.getLoginUser();
+            loginUser = LoginUserContext.getLoginUser();
         } catch (Exception e) {
             return null;
         }
         return loginUser;
+    }
+
+    /**
+     * 获取当前登录用户ID
+     *
+     * @return 当前用户ID，如果用户未登录则返回 null
+     */
+    private Long getUserId() {
+        try {
+            return LoginUserContext.getUserId();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

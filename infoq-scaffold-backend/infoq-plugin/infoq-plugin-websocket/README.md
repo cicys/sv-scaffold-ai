@@ -27,7 +27,7 @@
 
 ## 5. 下游依赖
 
-- 编译期依赖 `infoq-core-common`、`infoq-plugin-redis`、`infoq-plugin-satoken`
+- 编译期依赖 `infoq-core-common`、`infoq-plugin-redis`、`infoq-plugin-security`
 
 ## 6. 关键配置
 
@@ -37,7 +37,7 @@
 ## 7. 关键数据流
 
 1. `websocket.enabled=true` 时注册 WebSocket 端点和拦截器。
-2. 连接建立后会话进入 `WebSocketSessionHolder`。
+2. 握手阶段通过 header 或 query token 完成认证，连接建立后会话进入 `WebSocketSessionHolder`。
 3. 集群消息通过 Redis topic 与 cluster utils 扩散。
 
 ## 8. 扩展点

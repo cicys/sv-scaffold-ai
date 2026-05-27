@@ -4,7 +4,7 @@ import cc.infoq.common.constant.Constants;
 import cc.infoq.common.log.event.LoginInfoEvent;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.SecurityAuthNames;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.StringUtils;
@@ -62,7 +62,7 @@ public class SysLoginInfoServiceImpl implements SysLoginInfoService {
         final UserAgent userAgent = request != null ? UserAgentUtil.parse(request.getHeader("User-Agent")) : null;
         final String ip = request != null ? ServletUtils.getClientIP(request) : StringUtils.EMPTY;
         // 客户端信息
-        String clientId = request != null ? request.getHeader(LoginHelper.CLIENT_KEY) : StringUtils.EMPTY;
+        String clientId = request != null ? request.getHeader(SecurityAuthNames.CLIENT_ID) : StringUtils.EMPTY;
         String runtimeClientKey = request != null ? request.getHeader(CLIENT_KEY_HEADER) : StringUtils.EMPTY;
         String runtimeDeviceType = request != null ? request.getHeader(DEVICE_TYPE_HEADER) : StringUtils.EMPTY;
         SysClientVo client = null;

@@ -30,6 +30,7 @@ public class DataPermissionAdvice implements MethodInterceptor {
         } finally {
             // 清除权限注解
             DataPermissionHelper.removePermission();
+            DataPermissionHelper.clearContext();
         }
     }
 

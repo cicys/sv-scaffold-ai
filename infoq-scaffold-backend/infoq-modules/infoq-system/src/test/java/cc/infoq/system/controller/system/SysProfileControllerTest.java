@@ -1,7 +1,7 @@
 package cc.infoq.system.controller.system;
 
 import cc.infoq.common.domain.ApiResult;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.system.domain.bo.SysUserBo;
 import cc.infoq.system.domain.bo.SysUserPasswordBo;
 import cc.infoq.system.domain.bo.SysUserProfileBo;
@@ -20,9 +20,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -45,9 +43,9 @@ class SysProfileControllerTest {
         profile.setPhonenumber("13800138000");
         when(sysUserService.checkPhoneUnique(any(SysUserBo.class))).thenReturn(false);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(100L);
-            loginHelper.when(LoginHelper::getUsername).thenReturn("admin");
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(100L);
+            loginHelper.when(LoginUserContext::getUsername).thenReturn("admin");
 
             ApiResult<Void> result = controller.updateProfile(profile);
 
@@ -67,8 +65,8 @@ class SysProfileControllerTest {
         when(sysUserService.selectUserRoleGroup(10L)).thenReturn("管理员");
         when(sysUserService.selectUserPostGroup(10L)).thenReturn("产品经理");
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(10L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(10L);
 
             ApiResult<SysProfileController.ProfileVo> result = controller.profile();
 
@@ -90,9 +88,9 @@ class SysProfileControllerTest {
         when(sysUserService.checkEmailUnique(any(SysUserBo.class))).thenReturn(true);
         when(sysUserService.updateUserProfile(any(SysUserBo.class))).thenReturn(1);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(101L);
-            loginHelper.when(LoginHelper::getUsername).thenReturn("admin");
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(101L);
+            loginHelper.when(LoginUserContext::getUsername).thenReturn("admin");
 
             ApiResult<Void> result = controller.updateProfile(profile);
 
@@ -112,8 +110,8 @@ class SysProfileControllerTest {
         user.setPassword(BCrypt.hashpw("correct-pass"));
         when(sysUserService.selectUserById(8L)).thenReturn(user);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(8L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(8L);
 
             ApiResult<Void> result = controller.updatePwd(bo);
 
@@ -134,8 +132,8 @@ class SysProfileControllerTest {
         user.setPassword(BCrypt.hashpw("same-pass"));
         when(sysUserService.selectUserById(9L)).thenReturn(user);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(9L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(9L);
 
             ApiResult<Void> result = controller.updatePwd(bo);
 
@@ -157,8 +155,8 @@ class SysProfileControllerTest {
         when(sysUserService.selectUserById(7L)).thenReturn(user);
         when(sysUserService.resetUserPwd(eq(7L), any())).thenReturn(1);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(7L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(7L);
 
             ApiResult<Void> result = controller.updatePwd(bo);
 
@@ -193,8 +191,8 @@ class SysProfileControllerTest {
         when(sysOssService.upload(avatarFile)).thenReturn(ossVo);
         when(sysUserService.updateUserAvatar(3L, 66L)).thenReturn(true);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(3L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(3L);
 
             ApiResult<SysProfileController.AvatarVo> result = controller.avatar(avatarFile);
 

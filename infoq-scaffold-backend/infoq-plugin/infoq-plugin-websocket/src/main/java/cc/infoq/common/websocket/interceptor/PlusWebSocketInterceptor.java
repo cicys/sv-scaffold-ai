@@ -1,18 +1,18 @@
 package cc.infoq.common.websocket.interceptor;
 
 import cc.infoq.common.domain.model.LoginUser;
-import cc.infoq.common.satoken.utils.LoginHelper;
-import cc.infoq.common.utils.ServletUtils;
-import cc.infoq.common.utils.StringUtils;
-import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.stp.StpUtil;
+import cc.infoq.common.security.auth.*;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static cc.infoq.common.websocket.constant.WebSocketConstants.LOGIN_USER_KEY;
 
@@ -22,7 +22,12 @@ import static cc.infoq.common.websocket.constant.WebSocketConstants.LOGIN_USER_K
  * @author Pontus
  */
 @Slf4j
+@RequiredArgsConstructor
 public class PlusWebSocketInterceptor implements HandshakeInterceptor {
+
+    private final SecurityTokenResolver tokenResolver;
+
+    private final SecurityTokenService tokenService;
 
     /**
      * WebSocket握手之前执行的前置处理方法
@@ -35,32 +40,25 @@ public class PlusWebSocketInterceptor implements HandshakeInterceptor {
      */
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) {
+        Optional<SecurityResolvedToken> resolvedToken = Optional.empty();
+        Optional<SecurityResolvedClientId> resolvedClientId = Optional.empty();
         try {
-            // 检查是否登录 是否有token
-            LoginUser loginUser = LoginHelper.getLoginUser();
-
-            // 解决 ws 不走 mvc 拦截器问题(cloud 版本不受影响)
-            // 检查 header 与 param 里的 clientid 与 token 里的是否一致
-            String headerCid = ServletUtils.getRequest().getHeader(LoginHelper.CLIENT_KEY);
-            String paramCid = ServletUtils.getParameter(LoginHelper.CLIENT_KEY);
-            Object clientIdExtra = StpUtil.getExtra(LoginHelper.CLIENT_KEY);
-            if (clientIdExtra == null || StringUtils.isBlank(clientIdExtra.toString())) {
-                throw NotLoginException.newInstance(StpUtil.getLoginType(),
-                    "-100", "Token 缺少 clientId，请重新登录",
-                    StpUtil.getTokenValue());
-            }
-            String clientId = clientIdExtra.toString();
-            if (!StringUtils.equalsAny(clientId, headerCid, paramCid)) {
-                // token 无效
-                throw NotLoginException.newInstance(StpUtil.getLoginType(),
-                    "-100", "客户端ID与Token不匹配",
-                    StpUtil.getTokenValue());
-            }
-
-            attributes.put(LOGIN_USER_KEY, loginUser);
+            HttpServletRequest servletRequest = servletRequest(request);
+            resolvedToken = tokenResolver.resolve(servletRequest);
+            SecurityResolvedToken token = resolvedToken
+                .orElseThrow(() -> new SecurityAuthenticationException("access token is required"));
+            resolvedClientId = tokenResolver.resolveClientId(servletRequest);
+            SecurityResolvedClientId clientId = resolvedClientId
+                .orElseThrow(() -> new SecurityAuthenticationException("request clientId is required"));
+            SecurityTokenAuthentication authentication = tokenService.authenticate(token.token(), clientId.clientId());
+            attributes.put(LOGIN_USER_KEY, requireLoginUser(authentication));
             return true;
-        } catch (NotLoginException e) {
-            log.error("WebSocket 认证失败'{}',无法访问系统资源", e.getMessage());
+        } catch (SecurityAuthenticationException e) {
+            log.warn("WebSocket认证失败, path={}, tokenDigest={}, clientIdSource={}, reason={}",
+                request.getURI().getPath(),
+                resolvedToken.map(value -> tokenService.shortDigest(value.token())).orElse("none"),
+                resolvedClientId.map(value -> value.source().name()).orElse("none"),
+                e.getMessage());
             return false;
         }
     }
@@ -76,6 +74,21 @@ public class PlusWebSocketInterceptor implements HandshakeInterceptor {
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {
         // 在这个方法中可以执行一些握手成功后的后续处理逻辑，比如记录日志或者其他操作
+    }
+
+    private HttpServletRequest servletRequest(ServerHttpRequest request) {
+        if (request instanceof ServletServerHttpRequest servletServerHttpRequest) {
+            return servletServerHttpRequest.getServletRequest();
+        }
+        throw new SecurityAuthenticationException("WebSocket request is not a servlet request");
+    }
+
+    private LoginUser requireLoginUser(SecurityTokenAuthentication authentication) {
+        LoginUser loginUser = authentication.loginUser();
+        if (loginUser == null || loginUser.getUserId() == null) {
+            throw new SecurityAuthenticationException("LoginUser is missing from token session");
+        }
+        return loginUser;
     }
 
 }

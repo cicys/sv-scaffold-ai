@@ -2,14 +2,14 @@ package cc.infoq.common.mybatis.helper;
 
 import cc.infoq.common.mybatis.annotation.DataPermission;
 import cc.infoq.common.utils.reflect.ReflectUtils;
-import cn.dev33.satoken.context.SaHolder;
-import cn.dev33.satoken.context.model.SaStorage;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.plugins.IgnoreStrategy;
 import com.baomidou.mybatisplus.core.plugins.InterceptorIgnoreHelper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +29,8 @@ public class DataPermissionHelper {
     private static final ThreadLocal<Stack<Integer>> REENTRANT_IGNORE = ThreadLocal.withInitial(Stack::new);
 
     private static final ThreadLocal<DataPermission> PERMISSION_CACHE = new ThreadLocal<>();
+
+    private static final ThreadLocal<ContextMap> THREAD_LOCAL_CONTEXT = new ThreadLocal<>();
 
     /**
      * 防止外部 Map 污染
@@ -92,16 +94,34 @@ public class DataPermissionHelper {
     /**
      * 获取数据权限上下文
      *
-     * @return 存储在SaStorage中的Map对象，用于存储数据权限相关的上下文信息
+     * @return request scope 或非 Web 线程隔离上下文中的 Map 对象，用于存储数据权限相关的上下文信息
      * @throws NullPointerException 如果数据权限上下文类型异常，则抛出NullPointerException
      */
     public static Map<String, Object> getContext() {
-        SaStorage saStorage = SaHolder.getStorage();
-        Object attribute = saStorage.get(DATA_PERMISSION_KEY);
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes == null) {
+            return getThreadLocalContext();
+        }
+        Object attribute = requestAttributes.getAttribute(DATA_PERMISSION_KEY, RequestAttributes.SCOPE_REQUEST);
+        ContextMap context = toContextMap(attribute);
+        if (attribute != context) {
+            requestAttributes.setAttribute(DATA_PERMISSION_KEY, context, RequestAttributes.SCOPE_REQUEST);
+        }
+        return context;
+    }
+
+    private static ContextMap getThreadLocalContext() {
+        ContextMap context = THREAD_LOCAL_CONTEXT.get();
+        if (context == null) {
+            context = new ContextMap();
+            THREAD_LOCAL_CONTEXT.set(context);
+        }
+        return context;
+    }
+
+    private static ContextMap toContextMap(Object attribute) {
         if (ObjectUtil.isNull(attribute)) {
-            ContextMap context = new ContextMap();
-            saStorage.set(DATA_PERMISSION_KEY, context);
-            return context;
+            return new ContextMap();
         }
         if (attribute instanceof ContextMap context) {
             return context;
@@ -114,10 +134,17 @@ public class DataPermissionHelper {
                 }
                 context.put(key, entry.getValue());
             }
-            saStorage.set(DATA_PERMISSION_KEY, context);
             return context;
         }
         throw new NullPointerException("data permission context type exception");
+    }
+
+    public static void clearContext() {
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes != null) {
+            requestAttributes.removeAttribute(DATA_PERMISSION_KEY, RequestAttributes.SCOPE_REQUEST);
+        }
+        THREAD_LOCAL_CONTEXT.remove();
     }
 
     private static IgnoreStrategy getIgnoreStrategy() {

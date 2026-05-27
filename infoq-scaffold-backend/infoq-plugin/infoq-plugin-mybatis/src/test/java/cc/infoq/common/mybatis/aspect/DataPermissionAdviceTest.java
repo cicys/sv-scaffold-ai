@@ -38,6 +38,7 @@ class DataPermissionAdviceTest {
             assertEquals("ok", result);
             helper.verify(() -> DataPermissionHelper.setPermission(method.getAnnotation(DataPermission.class)));
             helper.verify(DataPermissionHelper::removePermission);
+            helper.verify(DataPermissionHelper::clearContext);
         }
     }
 
@@ -63,6 +64,7 @@ class DataPermissionAdviceTest {
             helper.verify(() -> DataPermissionHelper.setPermission(
                 ClassPermissionApi.class.getAnnotation(DataPermission.class)));
             helper.verify(DataPermissionHelper::removePermission);
+            helper.verify(DataPermissionHelper::clearContext);
         }
     }
 

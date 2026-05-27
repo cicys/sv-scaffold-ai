@@ -1,10 +1,10 @@
 package cc.infoq.common.log.aspect;
 
+import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.log.annotation.Log;
 import cc.infoq.common.log.enums.BusinessType;
 import cc.infoq.common.log.event.OperLogEvent;
-import cc.infoq.common.domain.model.LoginUser;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.SpringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,17 +12,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import org.springframework.validation.BindingResult;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -31,10 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Tag("dev")
 class LogAspectTest {
@@ -134,12 +127,12 @@ class LogAspectTest {
         Log log = DemoController.class.getDeclaredMethod("save").getAnnotation(Log.class);
 
         try (MockedStatic<ServletUtils> servletUtils = mockStatic(ServletUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class);
              MockedStatic<SpringUtils> springUtils = mockStatic(SpringUtils.class)) {
             servletUtils.when(ServletUtils::getClientIP).thenReturn("127.0.0.1");
             servletUtils.when(ServletUtils::getRequest).thenReturn(request);
             servletUtils.when(() -> ServletUtils.getParamMap(request)).thenReturn(Map.of());
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
+            loginHelper.when(LoginUserContext::getLoginUser).thenReturn(loginUser);
             springUtils.when(SpringUtils::context).thenReturn(applicationContext);
 
             logAspect.doBefore(joinPoint, log);
@@ -185,13 +178,13 @@ class LogAspectTest {
         Log log = DemoController.class.getDeclaredMethod("save").getAnnotation(Log.class);
 
         try (MockedStatic<ServletUtils> servletUtils = mockStatic(ServletUtils.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class);
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class);
              MockedStatic<SpringUtils> springUtils = mockStatic(SpringUtils.class)) {
             servletUtils.when(ServletUtils::getClientIP).thenReturn("127.0.0.1");
             servletUtils.when(ServletUtils::getRequest).thenReturn(request);
             servletUtils.when(() -> ServletUtils.getParamMap(request))
                 .thenReturn(new HashMap<>(Map.of("id", "1", "password", "123", "token", "t")));
-            loginHelper.when(LoginHelper::getLoginUser).thenReturn(loginUser);
+            loginHelper.when(LoginUserContext::getLoginUser).thenReturn(loginUser);
             springUtils.when(SpringUtils::context).thenReturn(applicationContext);
 
             logAspect.doBefore(joinPoint, log);

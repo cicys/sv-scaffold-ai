@@ -1,9 +1,10 @@
 package cc.infoq.system.service.impl;
 
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
+import cc.infoq.common.security.auth.SecurityAuthorizationService;
 import cc.infoq.common.sensitive.core.SensitiveService;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ArrayUtil;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,29 +15,32 @@ import org.springframework.stereotype.Service;
  * @author Pontus
  */
 @Service
+@AllArgsConstructor
 public class SysSensitiveServiceImpl implements SensitiveService {
+
+    private final SecurityAuthorizationService securityAuthorizationService;
 
     /**
      * 是否脱敏
      */
     @Override
     public boolean isSensitive(String[] roleKey, String[] perms) {
-        if (!LoginHelper.isLogin()) {
+        if (!LoginUserContext.isLogin()) {
             return true;
         }
         boolean roleExist = ArrayUtil.isNotEmpty(roleKey);
         boolean permsExist = ArrayUtil.isNotEmpty(perms);
         if (roleExist && permsExist) {
-            if (StpUtil.hasRoleOr(roleKey) && StpUtil.hasPermissionOr(perms)) {
+            if (securityAuthorizationService.hasAnyRole(roleKey) && securityAuthorizationService.hasAnyPermission(perms)) {
                 return false;
             }
-        } else if (roleExist && StpUtil.hasRoleOr(roleKey)) {
+        } else if (roleExist && securityAuthorizationService.hasAnyRole(roleKey)) {
             return false;
-        } else if (permsExist && StpUtil.hasPermissionOr(perms)) {
+        } else if (permsExist && securityAuthorizationService.hasAnyPermission(perms)) {
             return false;
         }
 
-        return !LoginHelper.isSuperAdmin();
+        return !LoginUserContext.isSuperAdmin();
     }
 
 }

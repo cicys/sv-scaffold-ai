@@ -10,10 +10,10 @@ import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysOperLogBo;
 import cc.infoq.system.domain.vo.SysOperLogVo;
 import cc.infoq.system.service.SysOperLogService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.baomidou.lock.annotation.Lock4j;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +35,7 @@ public class SysOperLogController extends BaseController {
     /**
      * 获取操作日志记录列表
      */
-    @SaCheckPermission("monitor:operLog:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:operLog:list')")
     @GetMapping("/list")
     public TableDataInfo<SysOperLogVo> list(SysOperLogBo operLog, PageQuery pageQuery) {
         return operLogService.selectPageOperLogList(operLog, pageQuery);
@@ -45,7 +45,7 @@ public class SysOperLogController extends BaseController {
      * 导出操作日志记录列表
      */
     @Log(title = "操作日志", businessType = BusinessType.EXPORT)
-    @SaCheckPermission("monitor:operLog:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:operLog:export')")
     @PostMapping("/export")
     public void export(SysOperLogBo operLog, HttpServletResponse response) {
         List<SysOperLogVo> list = operLogService.selectOperLogList(operLog);
@@ -57,7 +57,7 @@ public class SysOperLogController extends BaseController {
      * @param operIds 日志ids
      */
     @Log(title = "操作日志", businessType = BusinessType.DELETE)
-    @SaCheckPermission("monitor:operLog:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:operLog:remove')")
     @DeleteMapping("/{operIds}")
     public ApiResult<Void> remove(@PathVariable Long[] operIds) {
         return toAjax(operLogService.deleteOperLogByIds(operIds));
@@ -67,7 +67,7 @@ public class SysOperLogController extends BaseController {
      * 清理操作日志记录
      */
     @Log(title = "操作日志", businessType = BusinessType.CLEAN)
-    @SaCheckPermission("monitor:operLog:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:operLog:remove')")
     @Lock4j
     @DeleteMapping("/clean")
     public ApiResult<Void> clean() {

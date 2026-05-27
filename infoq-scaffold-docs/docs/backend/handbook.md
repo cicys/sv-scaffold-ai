@@ -29,7 +29,7 @@ outline: [2, 3]
 
 | 文件 | 用途 |
 | --- | --- |
-| `application.yml` | 全局基础配置：端口、日志、上传、Spring、Sa-Token、加密、Springdoc |
+| `application.yml` | 全局基础配置：端口、日志、上传、Spring、Spring Security token、加密、Springdoc |
 | `application-dev.yml` | 默认开发 profile 的数据库、Redis、邮件等 |
 | `application-local.yml` | 本地 profile 的数据库、Redis、邮件等 |
 | `application-prod.yml` | 生产部署使用的数据库、Redis、文件落盘等 |
@@ -37,11 +37,13 @@ outline: [2, 3]
 
 ### profile 约定
 
-- `dev`：默认启用。
-- `local`：显式执行 `-Plocal` 时启用。
+- `dev`：默认启用；未显式设置 `spring.profiles.active` 时生效。
+- `local`：运行 jar 时显式传 `--spring.profiles.active=local`。
 - `prod`：部署和打包时使用。
 
 `application-local.yml` 属于开发者本地配置，允许按个人调试环境指向本地或远端依赖；自动化脚本默认按 `application-local.yml -> application-dev.yml` 顺序解析配置。共享文档、示例命令和 skill 不得暴露个人测试环境的私有地址、账号或密码。
+
+共享真值端口保持为 `8080`。若开发者本地为了避开已有服务冲突，临时把 backend 改到 `8081` 或其他端口，应通过 `--server.port=<port>` 或 runtime skill `--backend-port <port>` 显式覆盖，而不是长期改写共享默认值。
 
 共享示例的推荐基线保持为本地可复现环境：
 
@@ -217,6 +219,7 @@ mvn clean install -DskipTests
 java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
 java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8081 --captcha.enable=false  # 本地临时避冲突 override
 mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
 mvn clean package -P prod -pl infoq-admin -am
 ```

@@ -5,118 +5,105 @@ import cc.infoq.common.domain.ApiResult;
 import cc.infoq.common.domain.dto.UserOnlineDTO;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.redis.utils.RedisUtils;
+import cc.infoq.common.security.auth.*;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.entity.SysUserOnline;
-import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.stp.StpLogic;
-import cn.dev33.satoken.stp.StpUtil;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.support.GenericApplicationContext;
-import org.mockito.MockedStatic;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.*;
 
 @Tag("dev")
 class SysUserOnlineControllerTest {
 
-    private GenericApplicationContext context;
-
-    private StpLogic originalStpLogic;
+    private final SecurityTokenService tokenService = mock(SecurityTokenService.class);
+    private final SecurityTokenStore tokenStore = mock(SecurityTokenStore.class);
+    private final CurrentUserService currentUserService = mock(CurrentUserService.class);
+    private final SysUserOnlineController controller = new SysUserOnlineController(tokenService, tokenStore, currentUserService);
 
     @BeforeEach
     void initSpringContext() {
-        originalStpLogic = StpUtil.stpLogic;
-        context = new GenericApplicationContext();
+        GenericApplicationContext context = new GenericApplicationContext();
         context.registerBean(RedissonClient.class, () -> mock(RedissonClient.class));
         context.refresh();
         new SpringUtils().setApplicationContext(context);
     }
 
-    @AfterEach
-    void tearDown() {
-        if (context != null) {
-            context.close();
-        }
-        StpUtil.setStpLogic(originalStpLogic);
+    @Test
+    @DisplayName("forceLogout: should revoke target token through security token service")
+    void forceLogoutShouldRevokeTargetToken() {
+        when(tokenService.revoke("token")).thenReturn(true);
+
+        ApiResult<Void> result = controller.forceLogout("token");
+
+        assertEquals(ApiResult.SUCCESS, result.getCode());
+        verify(tokenService).revoke("token");
     }
 
     @Test
-    @DisplayName("forceLogout: should swallow NotLoginException and still return success")
-    void forceLogoutShouldSwallowNotLoginException() {
-        SysUserOnlineController controller = new SysUserOnlineController();
+    @DisplayName("forceLogout: should treat already missing token as idempotent success")
+    void forceLogoutShouldTreatMissingTokenAsIdempotentSuccess() {
+        when(tokenService.revoke("token")).thenReturn(false);
 
-        try (MockedStatic<StpUtil> mocked = mockStatic(StpUtil.class)) {
-            mocked.when(() -> StpUtil.kickoutByTokenValue("token"))
-                .thenThrow(new NotLoginException("KICK_OUT", "default", "ignored"));
+        ApiResult<Void> result = controller.forceLogout("token");
 
-            ApiResult<Void> result = controller.forceLogout("token");
-
-            assertEquals(ApiResult.SUCCESS, result.getCode());
-        }
+        assertEquals(ApiResult.SUCCESS, result.getCode());
+        verify(tokenService).revoke("token");
     }
 
     @Test
-    @DisplayName("remove: should kick out token when token belongs to current login")
-    void removeShouldKickoutMatchedToken() {
-        SysUserOnlineController controller = new SysUserOnlineController();
+    @DisplayName("remove: should revoke token only when token belongs to current login")
+    void removeShouldRevokeTokenOnlyWhenTokenBelongsToCurrentLogin() {
+        SecurityTokenAuthentication authentication = authentication("sys_user:100");
+        SecurityTokenSession targetSession = session("token-target", "sys_user:100", "admin", "127.0.0.1", false);
+        when(currentUserService.getAuthentication()).thenReturn(authentication);
+        when(tokenService.digest("token-target")).thenReturn("digest-target");
+        when(tokenStore.findByDigest("digest-target")).thenReturn(Optional.of(targetSession));
 
-        try (MockedStatic<StpUtil> mocked = mockStatic(StpUtil.class)) {
-            mocked.when(StpUtil::getLoginIdAsString).thenReturn("100");
-            mocked.when(() -> StpUtil.getTokenValueListByLoginId("100")).thenReturn(List.of("ta", "tb"));
+        ApiResult<Void> result = controller.remove("token-target");
 
-            ApiResult<Void> result = controller.remove("tb");
-
-            assertEquals(ApiResult.SUCCESS, result.getCode());
-            mocked.verify(() -> StpUtil.kickoutByTokenValue("tb"));
-        }
+        assertEquals(ApiResult.SUCCESS, result.getCode());
+        verify(tokenService).revoke("token-target");
     }
 
     @Test
-    @DisplayName("remove: should swallow NotLoginException and still return success")
-    void removeShouldSwallowNotLoginException() {
-        SysUserOnlineController controller = new SysUserOnlineController();
+    @DisplayName("remove: should not revoke token when token belongs to another login")
+    void removeShouldNotRevokeTokenWhenTokenBelongsToAnotherLogin() {
+        SecurityTokenAuthentication authentication = authentication("sys_user:100");
+        SecurityTokenSession targetSession = session("token-target", "sys_user:200", "other", "10.0.0.5", false);
+        when(currentUserService.getAuthentication()).thenReturn(authentication);
+        when(tokenService.digest("token-target")).thenReturn("digest-target");
+        when(tokenStore.findByDigest("digest-target")).thenReturn(Optional.of(targetSession));
 
-        try (MockedStatic<StpUtil> mocked = mockStatic(StpUtil.class)) {
-            mocked.when(StpUtil::getLoginIdAsString)
-                .thenThrow(new NotLoginException("NOT_LOGIN", "default", "ignored"));
+        ApiResult<Void> result = controller.remove("token-target");
 
-            ApiResult<Void> result = controller.remove("any");
-
-            assertEquals(ApiResult.SUCCESS, result.getCode());
-        }
+        assertEquals(ApiResult.SUCCESS, result.getCode());
+        verify(tokenService, never()).revoke("token-target");
     }
 
     @Test
-    @DisplayName("list: should include only active tokens and apply ip+username filter")
-    void listShouldIncludeActiveTokensAndApplyFilters() {
-        SysUserOnlineController controller = new SysUserOnlineController();
-
-        StpLogic stpLogic = mock(StpLogic.class);
-        when(stpLogic.getTokenActiveTimeoutByToken("t1")).thenReturn(120L);
-        when(stpLogic.getTokenActiveTimeoutByToken("t2")).thenReturn(-2L);
-        StpUtil.setStpLogic(stpLogic);
-
-        UserOnlineDTO dto = new UserOnlineDTO();
-        dto.setTokenId("t1");
-        dto.setUserName("admin");
-        dto.setIpaddr("127.0.0.1");
+    @DisplayName("list: should include only active token-store sessions and apply ip+username filter")
+    void listShouldIncludeActiveTokenStoreSessionsAndApplyFilters() {
+        SecurityTokenSession active = session("t1", "sys_user:100", "admin", "127.0.0.1", false);
+        SecurityTokenSession expired = session("t2", "sys_user:200", "guest", "10.0.0.5", true);
+        when(tokenService.digest("t1")).thenReturn("d1");
+        when(tokenService.digest("t2")).thenReturn("d2");
+        when(tokenStore.findByDigest("d1")).thenReturn(Optional.of(active));
+        when(tokenStore.findByDigest("d2")).thenReturn(Optional.of(expired));
 
         try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
             redisUtils.when(() -> RedisUtils.keys(CacheConstants.ONLINE_TOKEN_KEY + "*"))
                 .thenReturn(List.of(CacheConstants.ONLINE_TOKEN_KEY + "t1", CacheConstants.ONLINE_TOKEN_KEY + "t2"));
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t1")).thenReturn(dto);
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t2")).thenReturn(null);
 
             TableDataInfo<SysUserOnline> result = controller.list("127.0.0.1", "admin");
 
@@ -126,61 +113,16 @@ class SysUserOnlineControllerTest {
     }
 
     @Test
-    @DisplayName("list: should filter by ip only when username is empty")
-    void listShouldFilterByIpOnly() {
-        SysUserOnlineController controller = new SysUserOnlineController();
-
-        StpLogic stpLogic = mock(StpLogic.class);
-        when(stpLogic.getTokenActiveTimeoutByToken("t1")).thenReturn(120L);
-        when(stpLogic.getTokenActiveTimeoutByToken("t2")).thenReturn(120L);
-        StpUtil.setStpLogic(stpLogic);
-
-        UserOnlineDTO dto1 = new UserOnlineDTO();
-        dto1.setTokenId("t1");
-        dto1.setUserName("admin");
-        dto1.setIpaddr("127.0.0.1");
-        UserOnlineDTO dto2 = new UserOnlineDTO();
-        dto2.setTokenId("t2");
-        dto2.setUserName("guest");
-        dto2.setIpaddr("10.0.0.5");
-
-        try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
-            redisUtils.when(() -> RedisUtils.keys(CacheConstants.ONLINE_TOKEN_KEY + "*"))
-                .thenReturn(List.of(CacheConstants.ONLINE_TOKEN_KEY + "t1", CacheConstants.ONLINE_TOKEN_KEY + "t2"));
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t1")).thenReturn(dto1);
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t2")).thenReturn(dto2);
-
-            TableDataInfo<SysUserOnline> result = controller.list("127.0.0.1", null);
-
-            assertEquals(1, result.getRows().size());
-            assertEquals("admin", result.getRows().get(0).getUserName());
-        }
-    }
-
-    @Test
     @DisplayName("list: should filter by username only when ip is empty")
     void listShouldFilterByUsernameOnly() {
-        SysUserOnlineController controller = new SysUserOnlineController();
-
-        StpLogic stpLogic = mock(StpLogic.class);
-        when(stpLogic.getTokenActiveTimeoutByToken("t1")).thenReturn(120L);
-        when(stpLogic.getTokenActiveTimeoutByToken("t2")).thenReturn(120L);
-        StpUtil.setStpLogic(stpLogic);
-
-        UserOnlineDTO dto1 = new UserOnlineDTO();
-        dto1.setTokenId("t1");
-        dto1.setUserName("admin");
-        dto1.setIpaddr("127.0.0.1");
-        UserOnlineDTO dto2 = new UserOnlineDTO();
-        dto2.setTokenId("t2");
-        dto2.setUserName("guest");
-        dto2.setIpaddr("10.0.0.5");
+        when(tokenService.digest("t1")).thenReturn("d1");
+        when(tokenService.digest("t2")).thenReturn("d2");
+        when(tokenStore.findByDigest("d1")).thenReturn(Optional.of(session("t1", "sys_user:100", "admin", "127.0.0.1", false)));
+        when(tokenStore.findByDigest("d2")).thenReturn(Optional.of(session("t2", "sys_user:200", "guest", "10.0.0.5", false)));
 
         try (MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
             redisUtils.when(() -> RedisUtils.keys(CacheConstants.ONLINE_TOKEN_KEY + "*"))
                 .thenReturn(List.of(CacheConstants.ONLINE_TOKEN_KEY + "t1", CacheConstants.ONLINE_TOKEN_KEY + "t2"));
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t1")).thenReturn(dto1);
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t2")).thenReturn(dto2);
 
             TableDataInfo<SysUserOnline> result = controller.list(null, "guest");
 
@@ -190,33 +132,44 @@ class SysUserOnlineControllerTest {
     }
 
     @Test
-    @DisplayName("getInfo: should keep active tokens only and ignore null cache values")
-    void getInfoShouldKeepActiveTokensOnlyAndIgnoreNullCacheValues() {
-        SysUserOnlineController controller = new SysUserOnlineController();
+    @DisplayName("getInfo: should return active sessions for current login only")
+    void getInfoShouldReturnActiveSessionsForCurrentLoginOnly() {
+        when(currentUserService.getAuthentication()).thenReturn(authentication("sys_user:100"));
+        when(tokenStore.findTokenDigestsByLoginId("sys_user:100")).thenReturn(new LinkedHashSet<>(List.of("d1", "d2", "d3")));
+        when(tokenStore.findByDigest("d1")).thenReturn(Optional.of(session("t1", "sys_user:100", "admin", "127.0.0.1", false)));
+        when(tokenStore.findByDigest("d2")).thenReturn(Optional.of(session("t2", "sys_user:100", "admin", "127.0.0.1", true)));
+        when(tokenStore.findByDigest("d3")).thenReturn(Optional.empty());
 
-        StpLogic stpLogic = mock(StpLogic.class);
-        when(stpLogic.getTokenActiveTimeoutByToken("t1")).thenReturn(120L);
-        when(stpLogic.getTokenActiveTimeoutByToken("t2")).thenReturn(-2L);
-        when(stpLogic.getTokenActiveTimeoutByToken("t3")).thenReturn(60L);
-        StpUtil.setStpLogic(stpLogic);
+        TableDataInfo<SysUserOnline> result = controller.getInfo();
 
-        UserOnlineDTO dto = new UserOnlineDTO();
-        dto.setTokenId("t1");
-        dto.setUserName("admin");
-        dto.setIpaddr("127.0.0.1");
+        assertEquals(1, result.getRows().size());
+        assertEquals("t1", result.getRows().get(0).getTokenId());
+        assertEquals("admin", result.getRows().get(0).getUserName());
+    }
 
-        try (MockedStatic<StpUtil> stpUtil = mockStatic(StpUtil.class);
-             MockedStatic<RedisUtils> redisUtils = mockStatic(RedisUtils.class)) {
-            stpUtil.when(StpUtil::getLoginIdAsString).thenReturn("100");
-            stpUtil.when(() -> StpUtil.getTokenValueListByLoginId("100")).thenReturn(List.of("t1", "t2", "t3"));
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t1")).thenReturn(dto);
-            redisUtils.when(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t3")).thenReturn(null);
+    private SecurityTokenAuthentication authentication(String loginId) {
+        SecurityTokenSession session = new SecurityTokenSession();
+        session.setLoginId(loginId);
+        return new SecurityTokenAuthentication("current-token", "current-digest", null, session);
+    }
 
-            TableDataInfo<SysUserOnline> result = controller.getInfo();
-
-            assertEquals(1, result.getRows().size());
-            assertEquals("admin", result.getRows().get(0).getUserName());
-            redisUtils.verify(() -> RedisUtils.getCacheObject(CacheConstants.ONLINE_TOKEN_KEY + "t2"), never());
-        }
+    private SecurityTokenSession session(String token, String loginId, String username, String ipaddr, boolean expired) {
+        UserOnlineDTO online = new UserOnlineDTO();
+        online.setTokenId(token);
+        online.setUserName(username);
+        online.setIpaddr(ipaddr);
+        online.setLoginTime(System.currentTimeMillis());
+        SecurityTokenSession session = new SecurityTokenSession();
+        session.setAccessToken(token);
+        session.setTokenDigest("digest-" + token);
+        session.setLoginId(loginId);
+        session.setUserId(Long.valueOf(loginId.substring(loginId.indexOf(':') + 1)));
+        session.setUserType("sys_user");
+        session.setClientId("client-1");
+        session.setDeviceType("pc");
+        session.setLoginTime(online.getLoginTime());
+        session.setExpireTime(expired ? System.currentTimeMillis() - 1000L : System.currentTimeMillis() + 60_000L);
+        session.setOnlineUser(online);
+        return session;
     }
 }
