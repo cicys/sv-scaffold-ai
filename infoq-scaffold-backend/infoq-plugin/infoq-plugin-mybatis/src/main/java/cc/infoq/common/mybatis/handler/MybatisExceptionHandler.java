@@ -1,6 +1,7 @@
 package cc.infoq.common.mybatis.handler;
 
 import cc.infoq.common.domain.ApiResult;
+import cc.infoq.common.security.auth.SecurityAuthenticationException;
 import cc.infoq.common.utils.StringUtils;
 import cn.hutool.http.HttpStatus;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,16 +37,37 @@ public class MybatisExceptionHandler {
     public ApiResult<Void> handleCannotFindDataSourceException(MyBatisSystemException e, HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         String message = e.getMessage();
+        if (containsCause(e, SecurityAuthenticationException.class)) {
+            log.error("请求地址'{}',认证失败'{}',无法访问系统资源", requestURI, e.getMessage());
+            return ApiResult.fail(HttpStatus.HTTP_UNAUTHORIZED, "认证失败，无法访问系统资源");
+        }
         if (StringUtils.contains(message, "CannotFindDataSourceException")) {
             log.error("请求地址'{}', 未找到数据源", requestURI);
             return ApiResult.fail(HttpStatus.HTTP_INTERNAL_ERROR, "未找到数据源，请联系管理员确认");
         }
-        if (StringUtils.contains(message, "NotLoginException")) {
-            log.error("请求地址'{}',认证失败'{}',无法访问系统资源", requestURI, e.getMessage());
-            return ApiResult.fail(HttpStatus.HTTP_UNAUTHORIZED, "认证失败，无法访问系统资源");
-        }
         log.error("请求地址'{}', Mybatis系统异常", requestURI, e);
         return ApiResult.fail(HttpStatus.HTTP_INTERNAL_ERROR, message);
+    }
+
+    /**
+     * 认证上下文异常 通用处理
+     */
+    @ExceptionHandler(SecurityAuthenticationException.class)
+    public ApiResult<Void> handleSecurityAuthenticationException(SecurityAuthenticationException e, HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        log.error("请求地址'{}',认证失败'{}',无法访问系统资源", requestURI, e.getMessage());
+        return ApiResult.fail(HttpStatus.HTTP_UNAUTHORIZED, "认证失败，无法访问系统资源");
+    }
+
+    private boolean containsCause(Throwable throwable, Class<? extends Throwable> targetType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (targetType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
 }

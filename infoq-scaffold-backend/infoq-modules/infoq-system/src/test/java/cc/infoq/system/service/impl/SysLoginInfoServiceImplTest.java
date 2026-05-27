@@ -4,7 +4,7 @@ import cc.infoq.common.constant.Constants;
 import cc.infoq.common.log.event.LoginInfoEvent;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.SecurityAuthNames;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.ip.AddressUtils;
@@ -25,22 +25,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.mockStatic;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -169,7 +159,7 @@ class SysLoginInfoServiceImplTest {
         request.setRequestURI("/auth/login");
         request.setRemoteAddr("127.0.0.1");
         request.addHeader("User-Agent", "Mozilla/5.0");
-        request.addHeader(LoginHelper.CLIENT_KEY, "client-1");
+        request.addHeader(SecurityAuthNames.CLIENT_ID, "client-1");
 
         LoginInfoEvent event = new LoginInfoEvent();
         event.setRequest(request);
@@ -237,7 +227,7 @@ class SysLoginInfoServiceImplTest {
         request.setRequestURI("/auth/login");
         request.setRemoteAddr("127.0.0.1");
         request.addHeader("User-Agent", "Mozilla/5.0");
-        request.addHeader(LoginHelper.CLIENT_KEY, "client-1");
+        request.addHeader(SecurityAuthNames.CLIENT_ID, "client-1");
         request.addHeader("x-client-key", "weapp");
         request.addHeader("x-device-type", "weapp");
 

@@ -20,10 +20,10 @@ import cc.infoq.system.domain.vo.SysUserVo;
 import cc.infoq.system.service.SysDeptService;
 import cc.infoq.system.service.SysRoleService;
 import cc.infoq.system.service.SysUserService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.lang.tree.Tree;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,7 +47,7 @@ public class SysRoleController extends BaseController {
     /**
      * 获取角色信息列表
      */
-    @SaCheckPermission("system:role:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:list')")
     @GetMapping("/list")
     public TableDataInfo<SysRoleVo> list(SysRoleBo role, PageQuery pageQuery) {
         return sysRoleService.selectPageRoleList(role, pageQuery);
@@ -57,7 +57,7 @@ public class SysRoleController extends BaseController {
      * 导出角色信息列表
      */
     @Log(title = "角色管理", businessType = BusinessType.EXPORT)
-    @SaCheckPermission("system:role:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:export')")
     @PostMapping("/export")
     public void export(SysRoleBo role, HttpServletResponse response) {
         List<SysRoleVo> list = sysRoleService.selectRoleList(role);
@@ -69,7 +69,7 @@ public class SysRoleController extends BaseController {
      *
      * @param roleId 角色ID
      */
-    @SaCheckPermission("system:role:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:query')")
     @GetMapping(value = "/{roleId}")
     public ApiResult<SysRoleVo> getInfo(@PathVariable Long roleId) {
         sysRoleService.checkRoleDataScope(roleId);
@@ -79,7 +79,7 @@ public class SysRoleController extends BaseController {
     /**
      * 新增角色
      */
-    @SaCheckPermission("system:role:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:add')")
     @Log(title = "角色管理", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -97,7 +97,7 @@ public class SysRoleController extends BaseController {
     /**
      * 修改保存角色
      */
-    @SaCheckPermission("system:role:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:edit')")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -120,7 +120,7 @@ public class SysRoleController extends BaseController {
     /**
      * 修改保存数据权限
      */
-    @SaCheckPermission("system:role:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:edit')")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping("/dataScope")
@@ -133,7 +133,7 @@ public class SysRoleController extends BaseController {
     /**
      * 状态修改
      */
-    @SaCheckPermission("system:role:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:edit')")
     @Log(title = "角色管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping("/changeStatus")
@@ -148,7 +148,7 @@ public class SysRoleController extends BaseController {
      *
      * @param roleIds 角色ID串
      */
-    @SaCheckPermission("system:role:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:remove')")
     @Log(title = "角色管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{roleIds}")
     public ApiResult<Void> remove(@PathVariable Long[] roleIds) {
@@ -160,7 +160,7 @@ public class SysRoleController extends BaseController {
      *
      * @param roleIds 角色ID串
      */
-    @SaCheckPermission("system:role:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:query')")
     @GetMapping("/optionselect")
     public ApiResult<List<SysRoleVo>> optionselect(@RequestParam(required = false) Long[] roleIds) {
         return ApiResult.ok(sysRoleService.selectRoleByIds(roleIds == null ? null : List.of(roleIds)));
@@ -169,7 +169,7 @@ public class SysRoleController extends BaseController {
     /**
      * 查询已分配用户角色列表
      */
-    @SaCheckPermission("system:role:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:list')")
     @GetMapping("/authUser/allocatedList")
     public TableDataInfo<SysUserVo> allocatedList(SysUserBo user, PageQuery pageQuery) {
         return sysUserService.selectAllocatedList(user, pageQuery);
@@ -178,7 +178,7 @@ public class SysRoleController extends BaseController {
     /**
      * 查询未分配用户角色列表
      */
-    @SaCheckPermission("system:role:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:list')")
     @GetMapping("/authUser/unallocatedList")
     public TableDataInfo<SysUserVo> unallocatedList(SysUserBo user, PageQuery pageQuery) {
         return sysUserService.selectUnallocatedList(user, pageQuery);
@@ -187,7 +187,7 @@ public class SysRoleController extends BaseController {
     /**
      * 取消授权用户
      */
-    @SaCheckPermission("system:role:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:edit')")
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
     @PutMapping("/authUser/cancel")
@@ -201,7 +201,7 @@ public class SysRoleController extends BaseController {
      * @param roleId  角色ID
      * @param userIds 用户ID串
      */
-    @SaCheckPermission("system:role:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:edit')")
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
     @PutMapping("/authUser/cancelAll")
@@ -215,7 +215,7 @@ public class SysRoleController extends BaseController {
      * @param roleId  角色ID
      * @param userIds 用户ID串
      */
-    @SaCheckPermission("system:role:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:edit')")
     @Log(title = "角色管理", businessType = BusinessType.GRANT)
     @RepeatSubmit()
     @PutMapping("/authUser/selectAll")
@@ -229,7 +229,7 @@ public class SysRoleController extends BaseController {
      *
      * @param roleId 角色ID
      */
-    @SaCheckPermission("system:role:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:role:list')")
     @GetMapping(value = "/deptTree/{roleId}")
     public ApiResult<DeptTreeSelectVo> roleDeptTreeselect(@PathVariable("roleId") Long roleId) {
         DeptTreeSelectVo selectVo = new DeptTreeSelectVo(

@@ -2,11 +2,11 @@ package cc.infoq.system.controller.monitor;
 
 import cc.infoq.common.domain.ApiResult;
 import cc.infoq.common.utils.StringUtils;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import lombok.AllArgsConstructor;
 import org.redisson.spring.data.connection.RedissonConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisConnectionUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,7 +28,7 @@ public class CacheController {
     /**
      * 获取缓存监控列表
      */
-    @SaCheckPermission("monitor:cache:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:cache:list')")
     @GetMapping()
     public ApiResult<CacheListInfoVo> getInfo() throws Exception {
         RedisConnection connection = connectionFactory.getConnection();

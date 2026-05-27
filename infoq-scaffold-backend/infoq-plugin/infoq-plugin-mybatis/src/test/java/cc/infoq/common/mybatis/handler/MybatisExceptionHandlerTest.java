@@ -1,13 +1,13 @@
 package cc.infoq.common.mybatis.handler;
 
 import cc.infoq.common.domain.ApiResult;
+import cc.infoq.common.security.auth.SecurityAuthenticationException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mybatis.spring.MyBatisSystemException;
 import org.springframework.dao.DuplicateKeyException;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -46,14 +46,42 @@ class MybatisExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleCannotFindDataSourceException: should map login failure message")
-    void handleCannotFindDataSourceExceptionShouldMapLoginFailureMessage() {
+    @DisplayName("handleCannotFindDataSourceException: should map security authentication cause")
+    void handleCannotFindDataSourceExceptionShouldMapSecurityAuthenticationCause() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/sys/menu/list");
 
         ApiResult<Void> result = handler.handleCannotFindDataSourceException(
-            new MyBatisSystemException("NotLoginException: token invalid", new RuntimeException("token invalid")),
+            new MyBatisSystemException("data permission auth failure",
+                new SecurityAuthenticationException("Spring Security authentication is missing")),
             request);
+
+        assertEquals(401, result.getCode());
+        assertEquals("认证失败，无法访问系统资源", result.getMsg());
+    }
+
+    @Test
+    @DisplayName("handleCannotFindDataSourceException: should not map legacy auth text")
+    void handleCannotFindDataSourceExceptionShouldNotMapLegacyAuthText() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/sys/menu/list");
+
+        ApiResult<Void> result = handler.handleCannotFindDataSourceException(
+            new MyBatisSystemException("LegacyAuthException: token invalid", new RuntimeException("token invalid")),
+            request);
+
+        assertEquals(ApiResult.FAIL, result.getCode());
+        assertEquals("LegacyAuthException: token invalid", result.getMsg());
+    }
+
+    @Test
+    @DisplayName("handleSecurityAuthenticationException: should map direct security exception")
+    void handleSecurityAuthenticationExceptionShouldMapDirectSecurityException() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/sys/menu/list");
+
+        ApiResult<Void> result = handler.handleSecurityAuthenticationException(
+            new SecurityAuthenticationException("Spring Security authentication is missing"), request);
 
         assertEquals(401, result.getCode());
         assertEquals("认证失败，无法访问系统资源", result.getMsg());

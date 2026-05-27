@@ -2,7 +2,6 @@ package cc.infoq.system.controller.login;
 
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.StringUtils;
-import cn.dev33.satoken.annotation.SaIgnore;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author Pontus
  */
-@SaIgnore
 @AllArgsConstructor
 @RestController
 public class IndexController {

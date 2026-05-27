@@ -30,7 +30,7 @@
 - 启动、profile、打包：[`../infoq-admin/README.md`](../infoq-admin/README.md)
 - 公共类型、Entity、BO/VO、Mapper、XML：[`../infoq-core/README.md`](../infoq-core/README.md)
 - 登录、系统管理、监控、runner、listener：[`../infoq-modules/README.md`](../infoq-modules/README.md)
-- Web、安全、Redis、Sa-Token、MyBatis、日志、SSE、WebSocket、Quartz、OSS、Excel：[`../infoq-plugin/README.md`](../infoq-plugin/README.md)
+- Web、安全、Redis、Spring Security、MyBatis、日志、SSE、WebSocket、Quartz、OSS、Excel：[`../infoq-plugin/README.md`](../infoq-plugin/README.md)
 
 ## 同步规则摘要
 

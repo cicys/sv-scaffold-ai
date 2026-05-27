@@ -72,6 +72,7 @@ services:
       SERVER_PORT: 9090
       SPRING_PROFILES_ACTIVE: prod
       SPRING_CONFIG_ADDITIONAL_LOCATION: file:/infoq/server/config/
+      SECURITY_TOKEN_SECRET: ${SECURITY_TOKEN_SECRET:?Set SECURITY_TOKEN_SECRET before starting infoq-admin}
       JAVA_OPTS: -Xms512m -Xmx1024m
     ports:
       - "9090:9090"

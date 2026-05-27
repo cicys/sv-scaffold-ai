@@ -19,7 +19,7 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `application.yml` | 全局基础配置：端口、日志、上传、Spring、Sa-Token、加密、Springdoc |
+| `application.yml` | 全局基础配置：端口、日志、上传、Spring、Spring Security token、加密、Springdoc |
 | `application-dev.yml` | 默认开发 profile 的数据库、Redis、邮件等 |
 | `application-local.yml` | 本地 profile 的数据库、Redis、邮件等 |
 | `application-prod.yml` | 生产部署使用的数据库、Redis、文件落盘等 |

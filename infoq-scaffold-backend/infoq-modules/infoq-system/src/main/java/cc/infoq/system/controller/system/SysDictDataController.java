@@ -12,10 +12,10 @@ import cc.infoq.system.domain.bo.SysDictDataBo;
 import cc.infoq.system.domain.vo.SysDictDataVo;
 import cc.infoq.system.service.SysDictDataService;
 import cc.infoq.system.service.SysDictTypeService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.hutool.core.util.ObjectUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,7 +40,7 @@ public class SysDictDataController extends BaseController {
     /**
      * 查询字典数据列表
      */
-    @SaCheckPermission("system:dict:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dict:list')")
     @GetMapping("/list")
     public TableDataInfo<SysDictDataVo> list(SysDictDataBo dictData, PageQuery pageQuery) {
         return sysDictDataService.selectPageDictDataList(dictData, pageQuery);
@@ -50,7 +50,7 @@ public class SysDictDataController extends BaseController {
      * 导出字典数据列表
      */
     @Log(title = "字典数据", businessType = BusinessType.EXPORT)
-    @SaCheckPermission("system:dict:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dict:export')")
     @PostMapping("/export")
     public void export(SysDictDataBo dictData, HttpServletResponse response) {
         List<SysDictDataVo> list = sysDictDataService.selectDictDataList(dictData);
@@ -62,7 +62,7 @@ public class SysDictDataController extends BaseController {
      *
      * @param dictCode 字典code
      */
-    @SaCheckPermission("system:dict:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dict:query')")
     @GetMapping(value = "/{dictCode}")
     public ApiResult<SysDictDataVo> getInfo(@PathVariable Long dictCode) {
         return ApiResult.ok(sysDictDataService.selectDictDataById(dictCode));
@@ -85,7 +85,7 @@ public class SysDictDataController extends BaseController {
     /**
      * 新增字典类型
      */
-    @SaCheckPermission("system:dict:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dict:add')")
     @Log(title = "字典数据", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -100,7 +100,7 @@ public class SysDictDataController extends BaseController {
     /**
      * 修改保存字典类型
      */
-    @SaCheckPermission("system:dict:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dict:edit')")
     @Log(title = "字典数据", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -117,7 +117,7 @@ public class SysDictDataController extends BaseController {
      *
      * @param dictCodes 字典code串
      */
-    @SaCheckPermission("system:dict:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:dict:remove')")
     @Log(title = "字典类型", businessType = BusinessType.DELETE)
     @DeleteMapping("/{dictCodes}")
     public ApiResult<Void> remove(@PathVariable Long[] dictCodes) {

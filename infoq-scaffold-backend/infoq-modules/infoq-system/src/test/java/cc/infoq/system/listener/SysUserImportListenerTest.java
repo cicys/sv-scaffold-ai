@@ -1,6 +1,7 @@
 package cc.infoq.system.listener;
 
 import cc.infoq.common.exception.ServiceException;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.bo.SysUserBo;
 import cc.infoq.system.domain.vo.SysUserImportVo;
@@ -16,16 +17,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.GenericApplicationContext;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -64,8 +61,12 @@ class SysUserImportListenerTest {
         exists.setUserName("dup_user");
         when(userService.selectUserByUserName("dup_user")).thenReturn(exists);
 
-        SysUserImportListener listener = new SysUserImportListener(false);
-        listener.invoke(userVo, null);
+        SysUserImportListener listener;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(1L);
+            listener = new SysUserImportListener(false);
+            listener.invoke(userVo, null);
+        }
 
         ServiceException ex = assertThrows(ServiceException.class, () -> listener.getExcelResult().getAnalysis());
         assertTrue(ex.getMessage().contains("已存在"));
@@ -87,8 +88,12 @@ class SysUserImportListenerTest {
         SysUserImportVo userVo = new SysUserImportVo();
         userVo.setUserName("new_user");
         userVo.setNickName("新用户");
-        SysUserImportListener listener = new SysUserImportListener(false);
-        listener.invoke(userVo, null);
+        SysUserImportListener listener;
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(1L);
+            listener = new SysUserImportListener(false);
+            listener.invoke(userVo, null);
+        }
 
         assertDoesNotThrow(() -> listener.doAfterAllAnalysed(org.mockito.Mockito.mock(AnalysisContext.class)));
         assertNull(listener.getExcelResult().getList());

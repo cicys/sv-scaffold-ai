@@ -1,7 +1,7 @@
 package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.SystemConstants;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.system.service.SysMenuService;
 import cc.infoq.system.service.SysRoleService;
 import org.junit.jupiter.api.DisplayName;
@@ -31,8 +31,8 @@ class SysPermissionServiceImplTest {
     @DisplayName("getRolePermission: should return super-admin role directly")
     void getRolePermissionShouldReturnSuperAdminRole() {
         SysPermissionServiceImpl service = new SysPermissionServiceImpl(sysRoleService, sysMenuService);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(1L)).thenReturn(true);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(1L)).thenReturn(true);
 
             Set<String> roles = service.getRolePermission(1L);
 
@@ -46,8 +46,8 @@ class SysPermissionServiceImplTest {
     void getRolePermissionShouldDelegateForNormalUser() {
         SysPermissionServiceImpl service = new SysPermissionServiceImpl(sysRoleService, sysMenuService);
         when(sysRoleService.selectRolePermissionByUserId(2L)).thenReturn(Set.of("system:user:list"));
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(2L)).thenReturn(false);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(2L)).thenReturn(false);
 
             Set<String> roles = service.getRolePermission(2L);
 
@@ -60,8 +60,8 @@ class SysPermissionServiceImplTest {
     @DisplayName("getMenuPermission: should return wildcard for super-admin")
     void getMenuPermissionShouldReturnWildcardForSuperAdmin() {
         SysPermissionServiceImpl service = new SysPermissionServiceImpl(sysRoleService, sysMenuService);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(1L)).thenReturn(true);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(1L)).thenReturn(true);
 
             Set<String> perms = service.getMenuPermission(1L);
 

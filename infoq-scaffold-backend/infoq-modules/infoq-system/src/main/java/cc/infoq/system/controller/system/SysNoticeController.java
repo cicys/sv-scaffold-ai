@@ -12,8 +12,8 @@ import cc.infoq.system.domain.bo.SysNoticeBo;
 import cc.infoq.system.domain.vo.SysNoticeVo;
 import cc.infoq.system.service.SysNoticeService;
 import cc.infoq.system.support.plugin.OptionalSseHelper;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +34,7 @@ public class SysNoticeController extends BaseController {
     /**
      * 获取通知公告列表
      */
-    @SaCheckPermission("system:notice:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:notice:list')")
     @GetMapping("/list")
     public TableDataInfo<SysNoticeVo> list(SysNoticeBo notice, PageQuery pageQuery) {
         return sysNoticeService.selectPageNoticeList(notice, pageQuery);
@@ -45,7 +45,7 @@ public class SysNoticeController extends BaseController {
      *
      * @param noticeId 公告ID
      */
-    @SaCheckPermission("system:notice:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:notice:query')")
     @GetMapping(value = "/{noticeId}")
     public ApiResult<SysNoticeVo> getInfo(@PathVariable Long noticeId) {
         return ApiResult.ok(sysNoticeService.selectNoticeById(noticeId));
@@ -54,7 +54,7 @@ public class SysNoticeController extends BaseController {
     /**
      * 新增通知公告
      */
-    @SaCheckPermission("system:notice:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:notice:add')")
     @Log(title = "通知公告", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping
@@ -71,7 +71,7 @@ public class SysNoticeController extends BaseController {
     /**
      * 修改通知公告
      */
-    @SaCheckPermission("system:notice:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:notice:edit')")
     @Log(title = "通知公告", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping
@@ -84,7 +84,7 @@ public class SysNoticeController extends BaseController {
      *
      * @param noticeIds 公告ID串
      */
-    @SaCheckPermission("system:notice:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:notice:remove')")
     @Log(title = "通知公告", businessType = BusinessType.DELETE)
     @DeleteMapping("/{noticeIds}")
     public ApiResult<Void> remove(@PathVariable Long[] noticeIds) {

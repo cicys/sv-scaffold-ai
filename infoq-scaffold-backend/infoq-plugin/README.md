@@ -9,8 +9,7 @@
 | 子模块 | 形态 | 主要职责 |
 | --- | --- | --- |
 | [`infoq-plugin-web`](./infoq-plugin-web/README.md) | 自动装配 | Web 基础配置、异常处理、XSS、验证码、静态资源、Undertow |
-| [`infoq-plugin-security`](./infoq-plugin-security/README.md) | 自动装配 | Sa-Token 路由拦截、全路径鉴权、健康检查路径放行 |
-| [`infoq-plugin-satoken`](./infoq-plugin-satoken/README.md) | 自动装配 | Sa-Token 存储、权限实现、登录辅助 |
+| [`infoq-plugin-security`](./infoq-plugin-security/README.md) | 自动装配 | Spring Security 鉴权、JWT token、在线会话与健康检查路径放行 |
 | [`infoq-plugin-redis`](./infoq-plugin-redis/README.md) | 自动装配 | Redisson、缓存、防重、限流、序列号 |
 | [`infoq-plugin-mybatis`](./infoq-plugin-mybatis/README.md) | 自动装配 | MyBatis-Plus、多数据源、分页、数据权限、审计元字段 |
 | [`infoq-plugin-doc`](./infoq-plugin-doc/README.md) | 自动装配 | Springdoc OpenAPI |
@@ -33,7 +32,7 @@
 
 ## 4. 依赖方向
 
-- 基础依赖层常见组合是 `core-common -> jackson -> redis/satoken/security/web/mybatis`。
+- 基础依赖层常见组合是 `core-common -> jackson -> redis/security/web/mybatis`。
 - `infoq-system` 按业务需要依赖 `oss`、`security`、`web`、`doc`、`encrypt`、`sse`、`quartz`、`mail`、`websocket`。
 - `infoq-core-data` 则在数据层直接接入 `mybatis`、`log`、`sensitive`、`translation`、`excel`、`jackson`。
 

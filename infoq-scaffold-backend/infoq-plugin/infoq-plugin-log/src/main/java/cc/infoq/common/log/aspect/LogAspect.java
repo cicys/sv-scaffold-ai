@@ -6,7 +6,7 @@ import cc.infoq.common.json.utils.JsonUtils;
 import cc.infoq.common.log.annotation.Log;
 import cc.infoq.common.log.enums.BusinessStatus;
 import cc.infoq.common.log.event.OperLogEvent;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.StringUtils;
@@ -86,7 +86,7 @@ public class LogAspect {
             String ip = ServletUtils.getClientIP();
             operLog.setOperIp(ip);
             operLog.setOperUrl(StringUtils.substring(Objects.requireNonNull(ServletUtils.getRequest()).getRequestURI(), 0, 255));
-            LoginUser loginUser = Objects.requireNonNull(LoginHelper.getLoginUser());
+            LoginUser loginUser = Objects.requireNonNull(LoginUserContext.getLoginUser());
             operLog.setOperName(loginUser.getUsername());
             operLog.setDeptName(loginUser.getDeptName());
 

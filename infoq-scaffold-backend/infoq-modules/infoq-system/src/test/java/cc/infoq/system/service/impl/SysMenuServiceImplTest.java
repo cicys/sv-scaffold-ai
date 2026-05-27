@@ -2,7 +2,7 @@ package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.Constants;
 import cc.infoq.common.constant.SystemConstants;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.bo.SysMenuBo;
 import cc.infoq.system.domain.entity.SysMenu;
@@ -29,9 +29,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -168,8 +166,8 @@ class SysMenuServiceImplTest {
     @DisplayName("selectMenuList: should return empty when non-admin has no authorized menus")
     void selectMenuListShouldReturnEmptyWhenNoAuthorizedMenu() {
         SysMenuServiceImpl service = new SysMenuServiceImpl(sysMenuMapper, sysRoleMapper, sysRoleMenuMapper);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(2L)).thenReturn(false);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(2L)).thenReturn(false);
             when(sysMenuMapper.selectMenuIdsByUserId(2L)).thenReturn(List.of());
 
             List<SysMenuVo> list = service.selectMenuList(new SysMenuBo(), 2L);
@@ -184,8 +182,8 @@ class SysMenuServiceImplTest {
         SysMenuServiceImpl service = new SysMenuServiceImpl(sysMenuMapper, sysRoleMapper, sysRoleMenuMapper);
         SysMenuVo vo = new SysMenuVo();
         vo.setMenuId(10L);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(3L)).thenReturn(false);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(3L)).thenReturn(false);
             when(sysMenuMapper.selectMenuIdsByUserId(3L)).thenReturn(List.of(10L, 11L));
             when(sysMenuMapper.selectVoList(any())).thenReturn(List.of(vo));
 
@@ -212,8 +210,8 @@ class SysMenuServiceImplTest {
         child.setMenuType(SystemConstants.TYPE_MENU);
         child.setStatus(SystemConstants.NORMAL);
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(1L)).thenReturn(true);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(1L)).thenReturn(true);
             when(sysMenuMapper.selectMenuTreeAll()).thenReturn(List.of(parent, child));
 
             List<SysMenu> tree = service.selectMenuTreeByUserId(1L);
@@ -257,8 +255,8 @@ class SysMenuServiceImplTest {
         SysMenuServiceImpl service = new SysMenuServiceImpl(sysMenuMapper, sysRoleMapper, sysRoleMenuMapper);
         SysMenuVo vo = new SysMenuVo();
         vo.setMenuId(12L);
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(() -> LoginHelper.isSuperAdmin(7L)).thenReturn(false);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(7L)).thenReturn(false);
             when(sysMenuMapper.selectMenuIdsByUserId(7L)).thenReturn(List.of(12L));
             when(sysMenuMapper.selectVoList(any())).thenReturn(List.of(vo));
 

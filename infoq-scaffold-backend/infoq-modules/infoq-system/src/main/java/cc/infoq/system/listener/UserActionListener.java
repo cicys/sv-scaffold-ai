@@ -1,19 +1,16 @@
 package cc.infoq.system.listener;
 
-import cc.infoq.common.constant.CacheConstants;
 import cc.infoq.common.constant.Constants;
 import cc.infoq.common.domain.dto.UserOnlineDTO;
+import cc.infoq.common.domain.model.LoginUser;
 import cc.infoq.common.log.event.LoginInfoEvent;
-import cc.infoq.common.redis.utils.RedisUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.SecurityTokenSession;
 import cc.infoq.common.utils.MessageUtils;
 import cc.infoq.common.utils.ServletUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.StringUtils;
 import cc.infoq.common.utils.ip.AddressUtils;
 import cc.infoq.system.service.SysLoginService;
-import cn.dev33.satoken.listener.SaTokenListener;
-import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,17 +18,15 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-
 /**
- * 用户行为 侦听器的实现
+ * 用户认证行为辅助组件。
  *
  * @author Pontus
  */
 @AllArgsConstructor
 @Component
 @Slf4j
-public class UserActionListener implements SaTokenListener {
+public class UserActionListener {
 
     private static final String CLIENT_KEY_HEADER = "x-client-key";
     private static final String DEVICE_TYPE_HEADER = "x-device-type";
@@ -39,41 +34,77 @@ public class UserActionListener implements SaTokenListener {
     private final SysLoginService loginService;
 
     /**
-     * 每次登录时触发
+     * 构建 token store 可直接写入的在线用户 metadata。
      */
-    @Override
-    public void doLogin(String loginType, Object loginId, String tokenValue, SaLoginParameter loginParameter) {
+    public UserOnlineDTO buildOnlineUser(LoginUser loginUser, String clientId, String deviceType) {
+        LoginUser requiredLoginUser = requireLoginUser(loginUser);
         HttpServletRequest request = resolveCurrentRequest();
         UserAgent userAgent = request != null ? UserAgentUtil.parse(request.getHeader("User-Agent")) : null;
         String ip = request != null ? ServletUtils.getClientIP() : StringUtils.EMPTY;
+        String loginLocation = AddressUtils.getRealAddressByIP(ip);
+        String browser = userAgent != null && userAgent.getBrowser() != null ? userAgent.getBrowser().getName() : StringUtils.EMPTY;
+        String os = userAgent != null && userAgent.getOs() != null ? userAgent.getOs().getName() : StringUtils.EMPTY;
+        String resolvedClientId = resolveHeaderOrDefault(request, CLIENT_KEY_HEADER,
+            StringUtils.blankToDefault(clientId, requiredLoginUser.getClientKey()));
+        String resolvedDeviceType = resolveHeaderOrDefault(request, DEVICE_TYPE_HEADER,
+            StringUtils.blankToDefault(deviceType, requiredLoginUser.getDeviceType()));
+
+        requiredLoginUser.setIpaddr(ip);
+        requiredLoginUser.setLoginLocation(loginLocation);
+        requiredLoginUser.setBrowser(browser);
+        requiredLoginUser.setOs(os);
+        requiredLoginUser.setClientKey(resolvedClientId);
+        requiredLoginUser.setDeviceType(resolvedDeviceType);
+
         UserOnlineDTO dto = new UserOnlineDTO();
         dto.setIpaddr(ip);
-        dto.setLoginLocation(AddressUtils.getRealAddressByIP(ip));
-        dto.setBrowser(userAgent != null && userAgent.getBrowser() != null ? userAgent.getBrowser().getName() : StringUtils.EMPTY);
-        dto.setOs(userAgent != null && userAgent.getOs() != null ? userAgent.getOs().getName() : StringUtils.EMPTY);
+        dto.setLoginLocation(loginLocation);
+        dto.setBrowser(browser);
+        dto.setOs(os);
         dto.setLoginTime(System.currentTimeMillis());
-        dto.setTokenId(tokenValue);
-        String username = (String) loginParameter.getExtra(LoginHelper.USER_NAME_KEY);
-        dto.setUserName(username);
-        dto.setClientKey(resolveHeaderOrDefault(request, CLIENT_KEY_HEADER, (String) loginParameter.getExtra(LoginHelper.CLIENT_KEY)));
-        dto.setDeviceType(resolveHeaderOrDefault(request, DEVICE_TYPE_HEADER, loginParameter.getDeviceType()));
-        dto.setDeptName((String) loginParameter.getExtra(LoginHelper.DEPT_NAME_KEY));
-        long timeout = loginParameter.getTimeout();
-        if (timeout == -1L) {
-            RedisUtils.setCacheObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue, dto);
-        } else {
-            RedisUtils.setCacheObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue, dto, Duration.ofSeconds(timeout));
+        dto.setTokenId(requiredLoginUser.getToken());
+        dto.setUserName(requiredLoginUser.getUsername());
+        dto.setClientKey(resolvedClientId);
+        dto.setDeviceType(resolvedDeviceType);
+        dto.setDeptName(requiredLoginUser.getDeptName());
+        return dto;
+    }
+
+    /**
+     * token 签发成功后记录登录审计和最近登录信息。
+     */
+    public void recordLoginSuccess(SecurityTokenSession session) {
+        if (session == null) {
+            throw new IllegalArgumentException("token session is required");
         }
+        LoginUser loginUser = requireLoginUser(session.getLoginUser());
+        if (session.getOnlineUser() == null) {
+            session.setOnlineUser(buildOnlineUser(loginUser, session.getClientId(), session.getDeviceType()));
+        }
+        if (StringUtils.isNotBlank(session.getAccessToken())) {
+            session.getOnlineUser().setTokenId(session.getAccessToken());
+        }
+        recordLoginSuccess(loginUser);
+    }
+
+    /**
+     * token 签发成功后记录登录审计和最近登录信息。
+     */
+    public void recordLoginSuccess(LoginUser loginUser) {
+        LoginUser requiredLoginUser = requireLoginUser(loginUser);
+        HttpServletRequest request = resolveCurrentRequest();
+        String ip = StringUtils.blankToDefault(requiredLoginUser.getIpaddr(),
+            request != null ? ServletUtils.getClientIP() : StringUtils.EMPTY);
         // 记录登录日志
         LoginInfoEvent loginInfoEvent = new LoginInfoEvent();
-        loginInfoEvent.setUsername(username);
+        loginInfoEvent.setUsername(requiredLoginUser.getUsername());
         loginInfoEvent.setStatus(Constants.LOGIN_SUCCESS);
         loginInfoEvent.setMessage(MessageUtils.message("user.login.success"));
         loginInfoEvent.setRequest(request);
         SpringUtils.context().publishEvent(loginInfoEvent);
         // 更新登录信息
-        loginService.recordLoginInfo((Long) loginParameter.getExtra(LoginHelper.USER_KEY), ip);
-        log.info("user doLogin, userId:{}", loginId);
+        loginService.recordLoginInfo(requiredLoginUser.getUserId(), ip);
+        log.info("user login success, userId:{}", requiredLoginUser.getUserId());
     }
 
     private HttpServletRequest resolveCurrentRequest() {
@@ -91,79 +122,13 @@ public class UserActionListener implements SaTokenListener {
         return StringUtils.blankToDefault(request.getHeader(headerName), defaultValue);
     }
 
-    /**
-     * 每次注销时触发
-     */
-    @Override
-    public void doLogout(String loginType, Object loginId, String tokenValue) {
-        RedisUtils.deleteObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue);
-        log.info("user doLogout, userId:{}", loginId);
-    }
-
-    /**
-     * 每次被踢下线时触发
-     */
-    @Override
-    public void doKickout(String loginType, Object loginId, String tokenValue) {
-        RedisUtils.deleteObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue);
-        log.info("user doKickout, userId:{}", loginId);
-    }
-
-    /**
-     * 每次被顶下线时触发
-     */
-    @Override
-    public void doReplaced(String loginType, Object loginId, String tokenValue) {
-        RedisUtils.deleteObject(CacheConstants.ONLINE_TOKEN_KEY + tokenValue);
-        log.info("user doReplaced, userId:{}", loginId);
-    }
-
-    /**
-     * 每次被封禁时触发
-     */
-    @Override
-    public void doDisable(String loginType, Object loginId, String service, int level, long disableTime) {
-    }
-
-    /**
-     * 每次被解封时触发
-     */
-    @Override
-    public void doUntieDisable(String loginType, Object loginId, String service) {
-    }
-
-    /**
-     * 每次打开二级认证时触发
-     */
-    @Override
-    public void doOpenSafe(String loginType, String tokenValue, String service, long safeTime) {
-    }
-
-    /**
-     * 每次创建Session时触发
-     */
-    @Override
-    public void doCloseSafe(String loginType, String tokenValue, String service) {
-    }
-
-    /**
-     * 每次创建Session时触发
-     */
-    @Override
-    public void doCreateSession(String id) {
-    }
-
-    /**
-     * 每次注销Session时触发
-     */
-    @Override
-    public void doLogoutSession(String id) {
-    }
-
-    /**
-     * 每次Token续期时触发
-     */
-    @Override
-    public void doRenewTimeout(String loginType, Object loginId, String tokenValue, long timeout) {
+    private LoginUser requireLoginUser(LoginUser loginUser) {
+        if (loginUser == null) {
+            throw new IllegalArgumentException("loginUser is required");
+        }
+        if (loginUser.getUserId() == null) {
+            throw new IllegalArgumentException("loginUser.userId is required");
+        }
+        return loginUser;
     }
 }

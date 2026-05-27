@@ -111,7 +111,7 @@ cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
 - MySQL 地址、账号、密码
 - Redis 地址、端口、密码
 - `spring.servlet.multipart.location`
-- `sa-token.jwt-secret-key`
+- `security.token.secret`，推荐通过 `SECURITY_TOKEN_SECRET` 环境变量或外部配置文件提供
 - `api-decrypt` 的示例密钥
 - 如启用邮件、OSS、SSE、WebSocket，对应配置也要同步确认
 - `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`

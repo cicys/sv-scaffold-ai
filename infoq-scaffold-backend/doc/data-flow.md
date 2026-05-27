@@ -16,7 +16,7 @@
 
 - 登录、系统管理、监控链路：[`../infoq-modules/infoq-system/README.md`](../infoq-modules/infoq-system/README.md)
 - 公共模型、Entity、BO/VO、Mapper、XML：[`../infoq-core/infoq-core-common/README.md`](../infoq-core/infoq-core-common/README.md)、[`../infoq-core/infoq-core-data/README.md`](../infoq-core/infoq-core-data/README.md)
-- 加解密、安全、Redis、Sa-Token、SSE、Quartz、WebSocket：[`../infoq-plugin/README.md`](../infoq-plugin/README.md)
+- 加解密、安全、Redis、SSE、Quartz、WebSocket：[`../infoq-plugin/README.md`](../infoq-plugin/README.md)
 
 ## 1. 关键状态载体
 
@@ -90,7 +90,7 @@ sequenceDiagram
     participant Redis as Redis
     participant UserMapper as SysUserMapper
     participant LoginSvc as SysLoginServiceImpl
-    participant SaToken as LoginHelper/StpUtil
+    participant Security as SecurityTokenService
     participant Listener as UserActionListener
     participant LoginInfo as SysLoginInfoServiceImpl
 
@@ -108,8 +108,8 @@ sequenceDiagram
     LoginSvc->>Redis: GET/SET/DEL pwd_err_cnt:{username}
     Strategy->>LoginSvc: buildLoginUser(user)
     LoginSvc-->>Strategy: LoginUser(roles/perms/posts/dept)
-    Strategy->>SaToken: login(loginUser, SaLoginParameter)
-    SaToken-->>Listener: doLogin(...)
+    Strategy->>Listener: buildOnlineUser(loginUser, clientId, deviceType)
+    Strategy->>Security: issue(loginUser, onlineUser, clientId, deviceType)
     Listener->>Redis: SET online_tokens:{token}
     Listener->>LoginInfo: publish LoginInfoEvent
     Listener->>UserMapper: update sys_user.login_ip/login_date
@@ -125,15 +125,14 @@ sequenceDiagram
 - `PasswordAuthStrategy` 校验验证码时会删除 Redis 验证码 key，因此同一验证码不会重复使用。
 - `SysLoginServiceImpl.checkLogin` 使用 `pwd_err_cnt:{username}` 记录错误次数，达到阈值后直接抛出 `UserException`。
 - `buildLoginUser` 会同步聚合部门、角色、岗位、菜单权限和角色权限，因此 token 建立前就已经拿到大部分鉴权上下文。
-- `SaLoginParameter` 会把 `clientId` 写入 extra，并单独设置设备类型、超时时间、活跃超时；后续每个请求都会再经过客户端一致性校验。
+- token session 会保存 `clientId`、设备类型、超时时间、活跃超时和完整 `LoginUser`；后续每个请求都会再经过客户端一致性校验。
 
 这条链路的模块下钻顺序通常是：
 
 1. [`../infoq-modules/infoq-system/README.md`](../infoq-modules/infoq-system/README.md)
 2. [`../infoq-plugin/infoq-plugin-encrypt/README.md`](../infoq-plugin/infoq-plugin-encrypt/README.md)
 3. [`../infoq-plugin/infoq-plugin-security/README.md`](../infoq-plugin/infoq-plugin-security/README.md)
-4. [`../infoq-plugin/infoq-plugin-satoken/README.md`](../infoq-plugin/infoq-plugin-satoken/README.md)
-5. [`../infoq-plugin/infoq-plugin-redis/README.md`](../infoq-plugin/infoq-plugin-redis/README.md)
+4. [`../infoq-plugin/infoq-plugin-redis/README.md`](../infoq-plugin/infoq-plugin-redis/README.md)
 
 ## 3. 邮箱验证码、邮箱登录与公开注册
 
@@ -187,12 +186,12 @@ sequenceDiagram
 
 ### 4.1 受保护请求先过安全过滤器
 
-所有非排除路径请求，都会进入安全链路；其中带 `@ApiEncrypt` 的 `POST/PUT` 还会先经过 `CryptoFilter`，再进入 [SecurityConfig](../infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/config/SecurityConfig.java)：
+所有非排除路径请求，都会进入安全链路；其中带 `@ApiEncrypt` 的 `POST/PUT` 还会先经过 `CryptoFilter`，再进入 Spring Security token filter：
 
-1. `StpUtil.checkLogin()` 校验 token 是否存在且有效。
-2. 从请求头或参数读取 `clientId`。
-3. 从 token extra 取出登录时写入的 `clientId`。
-4. 两边不一致则抛 `NotLoginException`。
+1. 从 `Authorization: Bearer <token>` 读取 access token。
+2. 校验 JWT 签名、Redis session、revocation marker、过期时间与活跃时间。
+3. 从请求头或 query 读取 `clientId`。
+4. 与 token session 中登录时写入的 `clientId` 比对；缺失或不一致返回 401。
 
 这条链路保证了当前 token 不只是“某用户已登录”，还是“该用户以哪个客户端身份登录”。
 
@@ -202,7 +201,7 @@ sequenceDiagram
 
 ```text
 GET /system/user/getInfo
--> LoginHelper.getLoginUser()
+-> LoginUserContext.getLoginUser()
 -> DataPermissionHelper.ignore(() -> SysUserService.selectUserById(userId))
 -> SysUserMapper.selectVoById + SysRoleMapper.selectRolesByUserId
 -> 返回 user + permissions + roles
@@ -257,7 +256,7 @@ sequenceDiagram
 
 入口是 [SysUserController#add](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/controller/system/SysUserController.java)：
 
-1. `@SaCheckPermission("system:user:add")` 先做权限校验。
+1. `@PreAuthorize("@securityAuthorizationService.hasPermission('system:user:add')")` 先做权限校验。
 2. 控制器检查部门数据范围、用户名/手机号/邮箱唯一性。
 3. 控制器层先用 `BCrypt.hashpw(...)` 处理密码。
 4. `SysUserServiceImpl.insertUser(...)` 在事务里完成：
@@ -289,7 +288,7 @@ sequenceDiagram
 
 ### 6.1 登录成功后的副作用
 
-[UserActionListener](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/listener/UserActionListener.java) 是 Sa-Token 监听器，登录成功后会同步触发三件事：
+[UserActionListener](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/listener/UserActionListener.java) 是认证行为辅助组件，token 签发成功后会触发三件事：
 
 1. 组装 `UserOnlineDTO` 并写入 `online_tokens:{token}`。
 2. 发布 `LoginInfoEvent`。
@@ -354,7 +353,7 @@ LoginInfoEvent
 ### 7.3 `/monitor/health`
 
 `HealthController` 提供轻量级健康检查接口 `/monitor/health`，当前直接返回 `"ok"`。
-`SecurityConfig` 在 Sa-Token 拦截器里显式排除了这个路径，因此它不依赖登录态，单独作为公开健康检查入口使用。
+Spring Security public matcher 显式放行这个路径，因此它不依赖登录态，单独作为公开健康检查入口使用。
 
 ## 8. 当前可确认的可选通知链路
 

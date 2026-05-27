@@ -22,7 +22,7 @@
 
 ## 5. 下游依赖
 
-- 编译期依赖 `infoq-plugin-satoken` 与 `infoq-plugin-jackson`。
+- 编译期依赖 `infoq-plugin-security` 与 `infoq-plugin-jackson`。
 
 ## 6. 关键配置
 

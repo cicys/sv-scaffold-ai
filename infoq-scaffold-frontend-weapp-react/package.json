@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build:weapp": "taro build --type weapp",
-    "build:weapp:dev": "NODE_ENV=development taro build --type weapp --mode development",
+    "build:weapp:dev": "node ../script/run-env.mjs NODE_ENV=development -- taro build --type weapp --mode development",
     "build-open:weapp": "node ../script/build-open-wechat-devtools.mjs",
     "build-open:weapp:dev": "node ../script/build-open-wechat-devtools.mjs --mode development",
     "build:h5": "taro build --type h5",
@@ -26,7 +26,7 @@
     "test:coverage": "vitest --run --coverage --config vitest.config.ts",
     "test:e2e:weapp": "pnpm run test:e2e:weapp:smoke",
     "test:e2e:weapp:smoke": "node ./tests/e2e/weapp/runner.mjs --suite smoke",
-    "test:e2e:weapp:core": "WEAPP_E2E_AUTO_LOGIN=false node ./tests/e2e/weapp/runner.mjs --suite core",
+    "test:e2e:weapp:core": "node ../script/run-env.mjs WEAPP_E2E_AUTO_LOGIN=false -- node ./tests/e2e/weapp/runner.mjs --suite core",
     "test:e2e:weapp:core:backend": "node ./tests/e2e/weapp/runner.mjs --suite core",
     "test:e2e:weapp:full": "node ./tests/e2e/weapp/runner.mjs --suite full --report",
     "verify:local": "pnpm run test && pnpm run build:weapp:dev && pnpm run test:e2e:weapp:core && pnpm run build:weapp"

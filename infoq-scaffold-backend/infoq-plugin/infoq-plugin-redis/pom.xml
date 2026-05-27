@@ -32,11 +32,6 @@
             <artifactId>hutool-crypto</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-core</artifactId>
-        </dependency>
-
         <!--redisson-->
         <dependency>
             <groupId>org.redisson</groupId>

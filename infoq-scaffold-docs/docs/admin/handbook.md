@@ -48,6 +48,7 @@ outline: [2, 3]
 
 - `.env.development` 中 `VITE_APP_BASE_API` 默认是 `/dev-api`
 - `vite.config.ts` 里会把它代理到 `VITE_APP_PROXY_TARGET` 或默认的 `http://localhost:8080`
+- 共享默认后端端口是真值 `8080`；如果开发者本地为了避冲突临时改成 `8081`，必须同步显式覆盖 `VITE_APP_PROXY_TARGET`，不要把 `8081` 固化进共享配置
 
 如果代理目标没配对，页面能打开，但所有接口都会失败。
 

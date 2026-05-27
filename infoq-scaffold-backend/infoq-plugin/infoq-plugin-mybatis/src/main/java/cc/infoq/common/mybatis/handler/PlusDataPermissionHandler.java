@@ -7,7 +7,7 @@ import cc.infoq.common.mybatis.annotation.DataColumn;
 import cc.infoq.common.mybatis.annotation.DataPermission;
 import cc.infoq.common.mybatis.enums.DataScopeType;
 import cc.infoq.common.mybatis.helper.DataPermissionHelper;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.common.utils.StreamUtils;
 import cc.infoq.common.utils.StringUtils;
@@ -61,11 +61,11 @@ public class PlusDataPermissionHandler {
             // 获取当前登录用户信息
             LoginUser currentUser = DataPermissionHelper.getVariable("user", LoginUser.class);
             if (ObjectUtil.isNull(currentUser)) {
-                currentUser = LoginHelper.getLoginUser();
+                currentUser = LoginUserContext.getLoginUser();
                 DataPermissionHelper.setVariable("user", currentUser);
             }
             // 超级管理员不过滤数据
-            if (LoginHelper.isSuperAdmin()) {
+            if (LoginUserContext.isSuperAdmin(currentUser.getUserId())) {
                 return where;
             }
             // 构造数据过滤条件的 SQL 片段

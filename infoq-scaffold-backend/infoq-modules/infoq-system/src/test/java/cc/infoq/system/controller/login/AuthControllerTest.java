@@ -4,7 +4,6 @@ import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.ApiResult;
 import cc.infoq.common.domain.model.ForgotPasswordBody;
 import cc.infoq.common.domain.model.RegisterBody;
-import cc.infoq.common.satoken.utils.LoginHelper;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
@@ -197,10 +196,9 @@ class AuthControllerTest {
         loginVo.setAccessToken("token-1");
         loginVo.setExpireIn(3600L);
         loginVo.setClientId("pc");
-        try (MockedStatic<AuthStrategy> authStrategy = mockStatic(AuthStrategy.class);
-             MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            authStrategy.when(() -> AuthStrategy.login(any(String.class), org.mockito.ArgumentMatchers.eq(client), org.mockito.ArgumentMatchers.eq("password"))).thenReturn(loginVo);
-            loginHelper.when(LoginHelper::getUserId).thenReturn(100L);
+        try (MockedStatic<AuthStrategy> authStrategy = mockStatic(AuthStrategy.class)) {
+            authStrategy.when(() -> AuthStrategy.loginForResult(any(String.class), org.mockito.ArgumentMatchers.eq(client), org.mockito.ArgumentMatchers.eq("password")))
+                .thenReturn(new AuthStrategy.LoginResult(loginVo, 100L));
 
             ApiResult<LoginVo> result = controller.login("{\"clientId\":\"pc\",\"grantType\":\"password\",\"rememberMe\":true}");
 

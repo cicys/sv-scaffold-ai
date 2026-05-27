@@ -31,13 +31,24 @@ outline: [2, 3]
 
 - `VITE_APP_BASE_API` 是否仍是 `/dev-api`
 - `VITE_APP_PROXY_TARGET` 是否指向了正确的后端地址
-- 后端是否真的运行在 `8080`
+- 后端是否真的运行在共享默认端口 `8080`
+- 如果你本地为了避开冲突临时把 backend 改到 `8081` 或其他端口，前端代理是否也一起显式改掉了
 
 这类问题通常不是页面逻辑 bug，而是代理目标没对齐。
 
 ## 4. 我改了 `application-local.yml`，为什么启动时没生效
 
-因为默认 profile 是 `dev`。如果你只是执行：
+因为默认 profile 是 `dev`。如果你没有显式传 `--spring.profiles.active=local`，运行时不会自动切到 `local`。
+
+错误示例：
+
+```bash
+cd infoq-scaffold-backend
+mvn clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar
+```
+
+正确示例：
 
 ```bash
 cd infoq-scaffold-backend
@@ -45,11 +56,13 @@ mvn clean install -DskipTests
 java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
 
-实际加载的是 `application-dev.yml`。要启用 `local`，必须显式：
+若你本地还临时避开了 `8080` 端口冲突，再继续显式传端口，并同步前端代理：
 
 ```bash
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8081 --captcha.enable=false
 ```
+
+这类 `8081` 只是本地 override，不是共享真值。提交前要恢复共享默认 `8080`，并让运行态脚本通过 `--backend-port` 之类的显式参数处理本地差异。
 
 ## 5. 小程序端为什么报缺少 `TARO_APP_API_ORIGIN`
 

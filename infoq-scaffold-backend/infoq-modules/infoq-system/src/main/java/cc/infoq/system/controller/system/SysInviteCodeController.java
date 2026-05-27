@@ -1,6 +1,5 @@
 package cc.infoq.system.controller.system;
 
-import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.ApiResult;
 import cc.infoq.common.excel.utils.ExcelUtil;
 import cc.infoq.common.log.annotation.Log;
@@ -14,11 +13,10 @@ import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysInviteCodeBo;
 import cc.infoq.system.domain.vo.SysInviteCodeVo;
 import cc.infoq.system.service.SysInviteCodeService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
-import cn.dev33.satoken.annotation.SaCheckRole;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,8 +38,7 @@ public class SysInviteCodeController extends BaseController {
     /**
      * 查询邀请码列表
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:invite:list")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:invite:list')")
     @GetMapping("/list")
     public TableDataInfo<SysInviteCodeVo> list(SysInviteCodeBo bo, PageQuery pageQuery) {
         return sysInviteCodeService.queryPageList(bo, pageQuery);
@@ -50,8 +47,7 @@ public class SysInviteCodeController extends BaseController {
     /**
      * 导出邀请码列表
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:invite:export")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:invite:export')")
     @Log(title = "邀请码管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(SysInviteCodeBo bo, HttpServletResponse response) {
@@ -62,8 +58,7 @@ public class SysInviteCodeController extends BaseController {
     /**
      * 生成邀请码
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:invite:add")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:invite:add')")
     @Log(title = "邀请码管理", businessType = BusinessType.INSERT)
     @RepeatSubmit
     @PostMapping("/generate")
@@ -74,8 +69,7 @@ public class SysInviteCodeController extends BaseController {
     /**
      * 作废邀请码
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:invite:edit")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:invite:edit')")
     @Log(title = "邀请码管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit
     @PutMapping("/cancel")
@@ -88,8 +82,7 @@ public class SysInviteCodeController extends BaseController {
      *
      * @param inviteIds 邀请码ID串
      */
-    @SaCheckRole(SystemConstants.SUPER_ADMIN_ROLE_KEY)
-    @SaCheckPermission("system:invite:remove")
+    @PreAuthorize("@securityAuthorizationService.hasRole(T(cc.infoq.common.constant.SystemConstants).SUPER_ADMIN_ROLE_KEY) and @securityAuthorizationService.hasPermission('system:invite:remove')")
     @Log(title = "邀请码管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{inviteIds}")
     public ApiResult<Void> remove(@NotEmpty(message = "邀请码ID不能为空") @PathVariable Long[] inviteIds) {

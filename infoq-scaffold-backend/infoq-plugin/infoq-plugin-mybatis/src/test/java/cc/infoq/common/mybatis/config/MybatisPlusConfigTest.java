@@ -5,6 +5,7 @@ import cc.infoq.common.mybatis.handler.InjectionMetaObjectHandler;
 import cc.infoq.common.mybatis.handler.MybatisExceptionHandler;
 import cc.infoq.common.mybatis.handler.PlusPostInitTableInfoHandler;
 import cc.infoq.common.mybatis.interceptor.PlusDataPermissionInterceptor;
+import cc.infoq.common.utils.SpringUtils;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.core.handlers.PostInitTableInfoHandler;
 import com.baomidou.mybatisplus.core.incrementer.DefaultIdentifierGenerator;
@@ -12,17 +13,24 @@ import com.baomidou.mybatisplus.core.incrementer.IdentifierGenerator;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.GenericApplicationContext;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("dev")
 class MybatisPlusConfigTest {
 
     private final MybatisPlusConfig config = new MybatisPlusConfig();
+
+    @BeforeAll
+    static void initSpringContext() {
+        GenericApplicationContext context = new GenericApplicationContext();
+        context.refresh();
+        new SpringUtils().setApplicationContext(context);
+    }
 
     @Test
     void interceptorBeansShouldContainExpectedInnerInterceptors() {

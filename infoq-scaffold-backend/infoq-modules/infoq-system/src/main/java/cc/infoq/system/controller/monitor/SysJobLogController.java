@@ -10,12 +10,12 @@ import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysJobLogBo;
 import cc.infoq.system.domain.vo.SysJobLogVo;
 import cc.infoq.system.service.SysJobLogService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,13 +35,13 @@ public class SysJobLogController extends BaseController {
 
     private final SysJobLogService sysJobLogService;
 
-    @SaCheckPermission("monitor:jobLog:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:jobLog:list')")
     @GetMapping("/list")
     public TableDataInfo<SysJobLogVo> list(SysJobLogBo bo, PageQuery pageQuery) {
         return sysJobLogService.queryPageList(bo, pageQuery);
     }
 
-    @SaCheckPermission("monitor:jobLog:export")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:jobLog:export')")
     @Log(title = "定时任务日志", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(SysJobLogBo bo, HttpServletResponse response) {
@@ -49,20 +49,20 @@ public class SysJobLogController extends BaseController {
         ExcelUtil.exportExcel(list, "定时任务日志", SysJobLogVo.class, response);
     }
 
-    @SaCheckPermission("monitor:jobLog:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:jobLog:query')")
     @GetMapping("/{jobLogId}")
     public ApiResult<SysJobLogVo> getInfo(@NotNull(message = "日志ID不能为空") @PathVariable Long jobLogId) {
         return ApiResult.ok(sysJobLogService.queryById(jobLogId));
     }
 
-    @SaCheckPermission("monitor:jobLog:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:jobLog:remove')")
     @Log(title = "定时任务日志", businessType = BusinessType.DELETE)
     @DeleteMapping("/{jobLogIds}")
     public ApiResult<Void> remove(@NotEmpty(message = "日志ID不能为空") @PathVariable Long[] jobLogIds) {
         return toAjax(sysJobLogService.deleteByIds(jobLogIds));
     }
 
-    @SaCheckPermission("monitor:jobLog:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('monitor:jobLog:remove')")
     @Log(title = "定时任务日志", businessType = BusinessType.CLEAN)
     @DeleteMapping("/clean")
     public ApiResult<Void> clean() {

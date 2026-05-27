@@ -21,7 +21,6 @@
 
 - `infoq-plugin-web`
 - `infoq-plugin-security`
-- `infoq-plugin-satoken`
 - `infoq-plugin-mybatis`
 - `infoq-plugin-redis`
 - `infoq-plugin-jackson`

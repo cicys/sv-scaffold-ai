@@ -14,10 +14,10 @@ import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysOssConfigBo;
 import cc.infoq.system.domain.vo.SysOssConfigVo;
 import cc.infoq.system.service.SysOssConfigService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +39,7 @@ public class SysOssConfigController extends BaseController {
     /**
      * 查询对象存储配置列表
      */
-    @SaCheckPermission("system:ossConfig:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:ossConfig:list')")
     @GetMapping("/list")
     public TableDataInfo<SysOssConfigVo> list(@Validated(QueryGroup.class) SysOssConfigBo bo, PageQuery pageQuery) {
         return sysOssConfigService.queryPageList(bo, pageQuery);
@@ -50,7 +50,7 @@ public class SysOssConfigController extends BaseController {
      *
      * @param ossConfigId OSS配置ID
      */
-    @SaCheckPermission("system:ossConfig:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:ossConfig:list')")
     @GetMapping("/{ossConfigId}")
     public ApiResult<SysOssConfigVo> getInfo(@NotNull(message = "主键不能为空")
                                      @PathVariable Long ossConfigId) {
@@ -60,7 +60,7 @@ public class SysOssConfigController extends BaseController {
     /**
      * 新增对象存储配置
      */
-    @SaCheckPermission("system:ossConfig:add")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:ossConfig:add')")
     @Log(title = "对象存储配置", businessType = BusinessType.INSERT)
     @RepeatSubmit()
     @PostMapping()
@@ -71,7 +71,7 @@ public class SysOssConfigController extends BaseController {
     /**
      * 修改对象存储配置
      */
-    @SaCheckPermission("system:ossConfig:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:ossConfig:edit')")
     @Log(title = "对象存储配置", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping()
@@ -84,7 +84,7 @@ public class SysOssConfigController extends BaseController {
      *
      * @param ossConfigIds OSS配置ID串
      */
-    @SaCheckPermission("system:ossConfig:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:ossConfig:remove')")
     @Log(title = "对象存储配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ossConfigIds}")
     public ApiResult<Void> remove(@NotEmpty(message = "主键不能为空")
@@ -95,7 +95,7 @@ public class SysOssConfigController extends BaseController {
     /**
      * 状态修改
      */
-    @SaCheckPermission("system:ossConfig:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:ossConfig:edit')")
     @Log(title = "对象存储状态修改", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping("/changeStatus")

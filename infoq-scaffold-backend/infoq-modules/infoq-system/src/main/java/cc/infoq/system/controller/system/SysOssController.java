@@ -12,11 +12,11 @@ import cc.infoq.system.domain.bo.SysOssBo;
 import cc.infoq.system.domain.vo.SysOssUploadVo;
 import cc.infoq.system.domain.vo.SysOssVo;
 import cc.infoq.system.service.SysOssService;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,7 +41,7 @@ public class SysOssController extends BaseController {
     /**
      * 查询OSS对象存储列表
      */
-    @SaCheckPermission("system:oss:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:oss:list')")
     @GetMapping("/list")
     public TableDataInfo<SysOssVo> list(@Validated(QueryGroup.class) SysOssBo bo, PageQuery pageQuery) {
         return sysOssService.queryPageList(bo, pageQuery);
@@ -52,7 +52,7 @@ public class SysOssController extends BaseController {
      *
      * @param ossIds OSS对象ID串
      */
-    @SaCheckPermission("system:oss:query")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:oss:query')")
     @GetMapping("/listByIds/{ossIds}")
     public ApiResult<List<SysOssVo>> listByIds(@NotEmpty(message = "主键不能为空")
                                        @PathVariable Long[] ossIds) {
@@ -65,7 +65,7 @@ public class SysOssController extends BaseController {
      *
      * @param file 文件
      */
-    @SaCheckPermission("system:oss:upload")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:oss:upload')")
     @Log(title = "OSS对象存储", businessType = BusinessType.INSERT)
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResult<SysOssUploadVo> upload(@RequestPart("file") MultipartFile file) {
@@ -82,7 +82,7 @@ public class SysOssController extends BaseController {
      *
      * @param ossId OSS对象ID
      */
-    @SaCheckPermission("system:oss:download")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:oss:download')")
     @GetMapping("/download/{ossId}")
     public void download(@PathVariable Long ossId, HttpServletResponse response) throws IOException {
         sysOssService.download(ossId, response);
@@ -93,7 +93,7 @@ public class SysOssController extends BaseController {
      *
      * @param ossIds OSS对象ID串
      */
-    @SaCheckPermission("system:oss:remove")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:oss:remove')")
     @Log(title = "OSS对象存储", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ossIds}")
     public ApiResult<Void> remove(@NotEmpty(message = "主键不能为空")

@@ -26,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>cc.infoq</groupId>
-            <artifactId>infoq-plugin-satoken</artifactId>
+            <artifactId>infoq-plugin-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -18,7 +18,6 @@
         <module>infoq-plugin-mybatis</module>
         <module>infoq-plugin-oss</module>
         <module>infoq-plugin-redis</module>
-        <module>infoq-plugin-satoken</module>
         <module>infoq-plugin-security</module>
         <module>infoq-plugin-sensitive</module>
         <module>infoq-plugin-sse</module>

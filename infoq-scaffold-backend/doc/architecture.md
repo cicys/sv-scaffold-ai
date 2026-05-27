@@ -13,7 +13,7 @@
 - 启动、profile、打包入口：[`../infoq-admin/README.md`](../infoq-admin/README.md)
 - 公共类型、实体、BO/VO、Mapper、XML：[`../infoq-core/README.md`](../infoq-core/README.md)
 - 系统业务接口、runner、listener、monitor：[`../infoq-modules/README.md`](../infoq-modules/README.md)
-- Web、安全、Redis、Sa-Token、MyBatis、日志、SSE、WebSocket、Quartz、OSS、Excel：[`../infoq-plugin/README.md`](../infoq-plugin/README.md)
+- Web、安全、Redis、MyBatis、日志、SSE、WebSocket、Quartz、OSS、Excel：[`../infoq-plugin/README.md`](../infoq-plugin/README.md)
 
 这份文档负责“关系梳理”，更贴近代码的真值说明在各父模块和叶子模块的 `README.md` 中。
 
@@ -34,7 +34,6 @@ flowchart TB
     jacksonPlugin[plugin-jackson]
 
     securityPlugin[plugin-security]
-    saTokenPlugin[plugin-satoken]
     redisPlugin[plugin-redis]
     webPlugin[plugin-web]
     ossPlugin[plugin-oss]
@@ -58,13 +57,12 @@ flowchart TB
     system --> mailPlugin
     system --> websocketPlugin
 
-    securityPlugin --> saTokenPlugin
-    saTokenPlugin --> redisPlugin
+    securityPlugin --> redisPlugin
     ossPlugin --> redisPlugin
     ssePlugin --> redisPlugin
     websocketPlugin --> redisPlugin
-    ssePlugin --> saTokenPlugin
-    websocketPlugin --> saTokenPlugin
+    ssePlugin --> securityPlugin
+    websocketPlugin --> securityPlugin
 
     data --> mybatisPlugin
     data --> logPlugin
@@ -78,7 +76,7 @@ flowchart TB
 
 补充一个当前实现上的重要区别：
 
-- `plugin-web`、`plugin-security`、`plugin-satoken`、`plugin-redis`、`plugin-mybatis`、`plugin-doc`、`plugin-encrypt`、`plugin-log`、`plugin-mail`、`plugin-quartz`、`plugin-sse`、`plugin-websocket`、`plugin-jackson`、`plugin-translation` 主要通过 `AutoConfiguration.imports` 进入运行时。
+- `plugin-web`、`plugin-security`、`plugin-redis`、`plugin-mybatis`、`plugin-doc`、`plugin-encrypt`、`plugin-log`、`plugin-mail`、`plugin-quartz`、`plugin-sse`、`plugin-websocket`、`plugin-jackson`、`plugin-translation` 主要通过 `AutoConfiguration.imports` 进入运行时。
 - `plugin-oss`、`plugin-excel`、`plugin-sensitive` 当前更像库模块，由业务层或数据层直接调用，而不是单独靠自动装配开放端点。
 
 ## 2. 各模块当前职责
@@ -90,8 +88,7 @@ flowchart TB
 | `infoq-core-common` | 常量、通用 DTO、异常、工具、线程池/校验/应用配置 | `common/constant/*`、`common/config/*` |
 | `infoq-core-data` | 系统实体、BO/VO、Mapper 接口、Mapper XML | `system/domain/*`、`system/mapper/*`、`resources/mapper/system/*` |
 | `plugin-jackson` | Jackson 序列化、时间反序列化、JSON 工具与校验注解 | `JacksonConfig`、`JsonUtils`、`JsonPatternValidator` |
-| `plugin-security` | Sa-Token 拦截、统一 URL 收集、免鉴权路径排除 | `SecurityConfig`、`AllUrlHandler` |
-| `plugin-satoken` | 登录态、JWT、`LoginHelper`、Sa-Token 异常处理 | `SaTokenConfig`、`SaTokenExceptionHandler` |
+| `plugin-security` | Spring Security 过滤链、JWT access token、Redis session / revocation / online index、当前用户上下文、401/403 处理 | `SpringSecurityAutoConfiguration`、`SecurityTokenService`、`CurrentUserService` |
 | `plugin-web` | Web 基础自动配置与全局异常处理 | `FilterConfig`、`ResourcesConfig`、`CaptchaConfig`、`GlobalExceptionHandler` |
 | `plugin-mybatis` | Mapper 扫描、分页、数据权限、乐观锁、填充策略 | `MybatisPlusConfig` |
 | `plugin-redis` | Redisson 编解码、缓存、限流、防重提交异常处理 | `RedisConfig`、`CacheConfig`、`RateLimiterConfig`、`IdempotentConfig` |
@@ -130,7 +127,7 @@ flowchart TB
 - 默认开启验证码校验（`captcha.enable=true`）。
 - `spring.profiles.active=@profiles.active@`，实际激活值由 Maven profile 注入。
 - `spring.jackson.deserialization.fail_on_unknown_properties=true`，请求字段不匹配时显式失败。
-- Sa-Token：`token-name=Authorization`，启用 JWT（`jwt-secret-key`）。
+- Spring Security token：`Authorization: Bearer <token>`，通过 `security.token.secret` 外部化配置签名密钥。
 - `api-decrypt.enabled=true`，请求解密头标识是 `encrypt-key`。
 - `springdoc.api-docs.enabled=true`。
 - `sse.enabled=true`，`websocket.enabled=false`。
@@ -159,8 +156,7 @@ flowchart TB
 
 当前后端不是在 `infoq-system` 里手写所有配置，而是由插件模块把基础设施装进容器：
 
-- `plugin-security` 注入 Sa-Token 拦截，并排除 `/monitor/health` 与 SSE 路径。
-- `plugin-satoken` 提供 `LoginHelper`、JWT 集成与 Sa-Token 异常处理。
+- `plugin-security` 注入 Spring Security 过滤链、token 解析/校验、当前用户上下文和 401/403 异常出口。
 - `plugin-encrypt` 在 `api-decrypt.enabled=true` 时注册 `CryptoFilter`，并在 `mybatis-encryptor.enable=true` 时装配 MyBatis 字段加解密拦截器。
 - `plugin-mybatis` 负责 `@MapperScan("${mybatis-plus.mapperPackage}")`、分页、数据权限、乐观锁。
 - `plugin-redis` 负责 Redisson codec、线程、key prefix 和 Redis 异常处理。
@@ -169,12 +165,12 @@ flowchart TB
 - `plugin-log` 把 `@Log` 注解变成 `OperLogEvent`。
 - `plugin-doc`、`plugin-encrypt`、`plugin-sse`、`plugin-quartz`、`plugin-websocket` 分别装配文档、加密、SSE、定时任务、WebSocket 能力。
 
-其中 `plugin-redis` 与 `plugin-satoken` 对 `infoq-system` 来说主要是传递依赖：
+其中 `plugin-redis` 对 `infoq-system` 来说主要是传递依赖：
 
-- `plugin-security -> plugin-satoken -> plugin-redis`
+- `plugin-security -> plugin-redis`
 - `plugin-oss -> plugin-redis`
-- `plugin-sse -> plugin-satoken + plugin-redis`
-- `plugin-websocket -> plugin-satoken + plugin-redis`
+- `plugin-sse -> plugin-security + plugin-redis`
+- `plugin-websocket -> plugin-security + plugin-redis`
 
 ## 4. 请求处理主干
 
@@ -185,7 +181,7 @@ flowchart TB
 ```text
 HTTP Request
 -> CryptoFilter(当 api-decrypt.enabled=true 时先经过；带 @ApiEncrypt 的 POST/PUT 会在这里校验 encrypt-key)
--> SecurityConfig / Sa-Token 拦截
+-> Spring Security token filter
 -> Controller
 -> Service
 -> Mapper(MyBatis-Plus / XML)
@@ -212,19 +208,17 @@ HTTP Request
 
 ## 5. 安全、权限与数据权限
 
-### 5.1 URL 收集与拦截
+### 5.1 URL 匹配与拦截
 
-[AllUrlHandler](../infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/handler/AllUrlHandler.java) 会在初始化阶段遍历 Spring MVC 的全部 `RequestMapping`，把路径变量替换成 `*` 后缓存起来。
+[SpringSecurityAutoConfiguration](../infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/config/SpringSecurityAutoConfiguration.java) 注册统一安全过滤链：
 
-[SecurityConfig](../infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/config/SecurityConfig.java) 再基于这份 URL 列表做统一拦截：
-
-- 除 `security.excludes` 和 SSE path 外，其余路径默认都进入 Sa-Token 校验。
-- 先检查是否已登录。
-- 再校验请求头或参数里的 `clientId` 是否与 token extra 中保存的客户端标识一致。
+- `security.excludes` 与默认 public matcher 共同决定公开路径。
+- 受保护路径默认要求 `Authorization: Bearer <token>`。
+- token filter 校验 JWT、Redis session、revocation marker、active timeout 和请求头或 query 里的 `clientId`。
 
 这意味着当前系统不是单纯“带 token 就能访问”，而是显式把“token 属于哪个 clientId”也纳入运行时约束。
 
-需要注意的是，控制器级 Sa-Token 校验之前，请求已经先经过 Servlet Filter。当前默认配置里，带 `@ApiEncrypt` 的 `POST/PUT` 会先由 `CryptoFilter` 判断是否携带 `encrypt-key` 头，再决定是否放行到控制器。
+需要注意的是，方法级权限校验之前，请求已经先经过 Servlet Filter。当前默认配置里，带 `@ApiEncrypt` 的 `POST/PUT` 会先由 `CryptoFilter` 判断是否携带 `encrypt-key` 头，再决定是否放行到控制器。
 
 ### 5.2 权限来源
 
@@ -234,7 +228,7 @@ HTTP Request
 - 菜单权限来自 `SysMenuService`。
 - 超级管理员走硬编码兜底：角色 `superadmin`、菜单权限 `*:*:*`。
 
-控制器侧再通过 `@SaCheckPermission`、`@SaCheckRole` 落地校验。
+控制器侧通过 Spring Security method security 与 `SecurityAuthorizationService` 落地校验。
 
 ### 5.3 数据权限
 
@@ -274,7 +268,7 @@ MyBatis 层由 `MybatisPlusConfig` 注入 `PlusDataPermissionInterceptor` 和 `D
 当前后端不是通过静默 fallback 吞错，而是尽量把错误转成明确的响应：
 
 - `GlobalExceptionHandler` 统一处理 `ServiceException`、校验异常、JSON 解析异常、请求体不可读异常、SpEL 异常等。
-- `SaTokenExceptionHandler` 统一把未登录、无权限、无角色转换成 `401/403` 语义的 `ApiResult`。
+- Spring Security 的 `SecurityAuthenticationEntryPoint` 与 `SecurityAccessDeniedHandler` 统一把未登录和无权限转换成 `401/403` 语义的 `ApiResult`。
 - `application.yml` 显式开启 `fail_on_unknown_properties`，避免前端传错字段时被静默忽略。
 
 唯一明显的例外是 SSE 连接断开：
@@ -313,7 +307,7 @@ MyBatis 层由 `MybatisPlusConfig` 注入 `PlusDataPermissionInterceptor` 和 `D
 - `/monitor/job`
 - `/monitor/jobLog`
 
-此外 `HealthController` 暴露了轻量级 `/monitor/health` 健康检查接口，并由 `SecurityConfig` 显式放行。
+此外 `HealthController` 暴露了轻量级 `/monitor/health` 健康检查接口，并由 Spring Security public matcher 显式放行。
 
 ## 9. 当前可确认的可选链路
 

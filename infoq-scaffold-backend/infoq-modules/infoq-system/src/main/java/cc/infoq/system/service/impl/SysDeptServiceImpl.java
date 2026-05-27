@@ -8,7 +8,7 @@ import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.mybatis.helper.DataBaseHelper;
 import cc.infoq.common.redis.utils.CacheUtils;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.service.DeptService;
 import cc.infoq.common.utils.*;
 import cc.infoq.system.domain.bo.SysDeptBo;
@@ -282,7 +282,7 @@ public class SysDeptServiceImpl implements SysDeptService, DeptService {
         if (ObjectUtil.isNull(deptId)) {
             return;
         }
-        if (LoginHelper.isSuperAdmin()) {
+        if (LoginUserContext.isSuperAdmin()) {
             return;
         }
         if (sysDeptMapper.countDeptById(deptId) == 0) {

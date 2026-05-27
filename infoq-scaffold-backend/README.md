@@ -13,10 +13,10 @@
 - 启动入口是 [SysAdminApplication](./infoq-admin/src/main/java/cc/infoq/admin/SysAdminApplication.java)，`scanBasePackages = "cc.infoq"` 会把 admin、system、core、plugin 全部纳入同一个 Spring 容器。
 - 对外控制器集中在 `infoq-system`，按目录分成 `controller/login`、`controller/system`、`controller/monitor` 三组。
 - 持久化主干是 MyBatis-Plus + Mapper XML，实体、VO、Mapper 与 XML 主要在 `infoq-core-data`。
-- 认证主干是 Sa-Token JWT，登录时会把 `clientId` 放入 token extra，后续请求再由安全过滤器做一致性校验。
+- 认证主干是 Spring Security + JWT access token + Redis session / revocation / online index，登录时会把 `clientId` 写入 token session，后续请求再由安全过滤器做一致性校验。
 - Redis 参与验证码、登录失败计数、在线用户、限流、防重提交和若干缓存组。
 - 配置按 `application.yml + application-{dev,prod,local}.yml` 叠加：
-  - `application.yml` 承载通用运行时行为配置，包括 Undertow、captcha、Sa-Token、`api-decrypt`、SpringDoc、SSE、WebSocket、`infoq.quartz`、MyBatis-Plus、Jackson、XSS、lock4j、security excludes 等。
+  - `application.yml` 承载通用运行时行为配置，包括 Undertow、captcha、Spring Security token、`api-decrypt`、SpringDoc、SSE、WebSocket、`infoq.quartz`、MyBatis-Plus、Jackson、XSS、lock4j、security excludes 等。
   - `application-dev.yml` 是默认激活 profile，主要补充/覆写 datasource、Redis、Redisson、Quartz 开发环境差异、`infoq.quartz.bootstrap` 和 mail。
   - `application-prod.yml` 补充/覆写 datasource、Redis、Redisson、Quartz 生产环境差异、`infoq.quartz.bootstrap` 和 mail；`application-local.yml` 补充/覆写 datasource、Redis、Redisson、mail，但不重写 Quartz。
 
@@ -65,7 +65,8 @@
   [CryptoFilter](./infoq-plugin/infoq-plugin-encrypt/src/main/java/cc/infoq/common/encrypt/filter/CryptoFilter.java)
 - 权限与菜单：
   [SecurityConfig](./infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/config/SecurityConfig.java)
-  [AllUrlHandler](./infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/handler/AllUrlHandler.java)
+  [SpringSecurityAutoConfiguration](./infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/config/SpringSecurityAutoConfiguration.java)
+  [SecurityTokenService](./infoq-plugin/infoq-plugin-security/src/main/java/cc/infoq/common/security/auth/SecurityTokenService.java)
   [SysMenuController](./infoq-modules/infoq-system/src/main/java/cc/infoq/system/controller/system/SysMenuController.java)
   [SysMenuServiceImpl](./infoq-modules/infoq-system/src/main/java/cc/infoq/system/service/impl/SysMenuServiceImpl.java)
 - 用户与审计：

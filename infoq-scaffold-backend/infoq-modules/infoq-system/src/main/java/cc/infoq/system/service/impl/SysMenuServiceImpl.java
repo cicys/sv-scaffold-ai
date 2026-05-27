@@ -2,7 +2,7 @@ package cc.infoq.system.service.impl;
 
 import cc.infoq.common.constant.Constants;
 import cc.infoq.common.constant.SystemConstants;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.StreamUtils;
 import cc.infoq.common.utils.StringUtils;
@@ -68,7 +68,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         List<SysMenuVo> menuList;
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         // 管理员显示所有菜单信息 不是管理员 按用户id过滤菜单
-        if (!LoginHelper.isSuperAdmin(userId)) {
+        if (!LoginUserContext.isSuperAdmin(userId)) {
             List<Long> menuIds = sysMenuMapper.selectMenuIdsByUserId(userId);
             if (CollUtil.isEmpty(menuIds)) {
                 return List.of();
@@ -117,7 +117,7 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Override
     public List<SysMenu> selectMenuTreeByUserId(Long userId) {
         List<SysMenu> menus;
-        if (LoginHelper.isSuperAdmin(userId)) {
+        if (LoginUserContext.isSuperAdmin(userId)) {
             menus = sysMenuMapper.selectMenuTreeAll();
         } else {
             List<Long> menuIds = sysMenuMapper.selectMenuIdsByUserId(userId);

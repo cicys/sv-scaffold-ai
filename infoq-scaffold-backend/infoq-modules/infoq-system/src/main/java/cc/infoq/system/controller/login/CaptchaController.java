@@ -24,7 +24,6 @@ import cc.infoq.system.service.AuthEmailCodeService;
 import cc.infoq.system.service.SysConfigService;
 import cc.infoq.system.service.SysInviteCodeService;
 import cc.infoq.system.support.plugin.OptionalMailHelper;
-import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.captcha.AbstractCaptcha;
 import cn.hutool.captcha.generator.CodeGenerator;
 import cn.hutool.core.util.IdUtil;
@@ -47,7 +46,6 @@ import java.time.Duration;
  *
  * @author Pontus
  */
-@SaIgnore
 @Slf4j
 @Validated
 @AllArgsConstructor

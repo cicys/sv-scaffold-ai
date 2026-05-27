@@ -1,9 +1,9 @@
 package cc.infoq.system.controller.system;
 
-import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.constant.HttpStatus;
+import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.domain.ApiResult;
-import cc.infoq.common.satoken.utils.LoginHelper;
+import cc.infoq.common.security.auth.LoginUserContext;
 import cc.infoq.system.domain.bo.SysMenuBo;
 import cc.infoq.system.domain.entity.SysMenu;
 import cc.infoq.system.domain.vo.RouterVo;
@@ -23,9 +23,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Tag("dev")
@@ -47,8 +45,8 @@ class SysMenuControllerTest {
         when(sysMenuService.selectMenuTreeByUserId(99L)).thenReturn(List.of(menu));
         when(sysMenuService.buildMenus(List.of(menu))).thenReturn(List.of(router));
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(99L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(99L);
 
             ApiResult<List<RouterVo>> result = controller.getRouters();
 
@@ -66,8 +64,8 @@ class SysMenuControllerTest {
         menuVo.setMenuId(88L);
         when(sysMenuService.selectMenuList(bo, 66L)).thenReturn(List.of(menuVo));
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(66L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(66L);
 
             ApiResult<List<SysMenuVo>> result = controller.list(bo);
 
@@ -101,8 +99,8 @@ class SysMenuControllerTest {
         when(sysMenuService.selectMenuList(bo, 12L)).thenReturn(List.of(menuVo));
         when(sysMenuService.buildMenuTreeSelect(List.of(menuVo))).thenReturn(List.of(tree));
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(12L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(12L);
 
             ApiResult<List<Tree<Long>>> result = controller.treeselect(bo);
 
@@ -283,8 +281,8 @@ class SysMenuControllerTest {
         when(sysMenuService.selectMenuListByRoleId(8L)).thenReturn(List.of(100L));
         when(sysMenuService.buildMenuTreeSelect(List.of(menuVo))).thenReturn(List.of(tree));
 
-        try (MockedStatic<LoginHelper> loginHelper = mockStatic(LoginHelper.class)) {
-            loginHelper.when(LoginHelper::getUserId).thenReturn(99L);
+        try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            loginHelper.when(LoginUserContext::getUserId).thenReturn(99L);
             ApiResult<SysMenuController.MenuTreeSelectVo> result = controller.roleMenuTreeselect(8L);
 
             assertEquals(ApiResult.SUCCESS, result.getCode());

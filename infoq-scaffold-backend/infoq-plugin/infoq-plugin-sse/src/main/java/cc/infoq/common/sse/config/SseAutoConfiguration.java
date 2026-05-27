@@ -1,5 +1,8 @@
 package cc.infoq.common.sse.config;
 
+import cc.infoq.common.security.auth.CurrentUserService;
+import cc.infoq.common.security.auth.SecurityTokenResolver;
+import cc.infoq.common.security.auth.SecurityTokenService;
 import cc.infoq.common.sse.controller.SseController;
 import cc.infoq.common.sse.core.SseEmitterManager;
 import cc.infoq.common.sse.listener.SseTopicListener;
@@ -29,8 +32,11 @@ public class SseAutoConfiguration {
     }
 
     @Bean
-    public SseController sseController(SseEmitterManager sseEmitterManager) {
-        return new SseController(sseEmitterManager);
+    public SseController sseController(SseEmitterManager sseEmitterManager,
+                                       SecurityTokenResolver tokenResolver,
+                                       SecurityTokenService tokenService,
+                                       CurrentUserService currentUserService) {
+        return new SseController(sseEmitterManager, tokenResolver, tokenService, currentUserService);
     }
 
 }
