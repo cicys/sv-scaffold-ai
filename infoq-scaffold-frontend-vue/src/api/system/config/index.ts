@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import { ConfigForm, ConfigQuery, ConfigVO } from './types';
+import { ConfigForm, ConfigPanel, ConfigQuery, ConfigReorderForm, ConfigVO } from './types';
 import type { ApiResponse, TableResponse } from '@/api/types';
 
 // 查询参数列表
@@ -8,6 +8,14 @@ export function listConfig(query: ConfigQuery): Promise<TableResponse<ConfigVO>>
     url: '/system/config/list',
     method: 'get',
     params: query
+  });
+}
+
+// 查询参数配置面板
+export function getConfigPanel(): Promise<ApiResponse<ConfigPanel>> {
+  return request({
+    url: '/system/config/panel',
+    method: 'get'
   });
 }
 
@@ -54,6 +62,26 @@ export function updateConfigByKey(key: string, value: unknown) {
       configKey: key,
       configValue: value
     }
+  });
+}
+
+// 根据参数键名恢复默认值
+export function resetConfigByKey(key: string): Promise<ApiResponse<string>> {
+  return request({
+    url: '/system/config/resetByKey',
+    method: 'post',
+    data: {
+      configKey: key
+    }
+  });
+}
+
+// 批量调整参数显示顺序
+export function reorderConfig(data: ConfigReorderForm[]) {
+  return request({
+    url: '/system/config/reorder',
+    method: 'put',
+    data
   });
 }
 

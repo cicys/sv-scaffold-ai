@@ -3,6 +3,8 @@ package cc.infoq.system.service;
 import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.system.domain.bo.SysConfigBo;
+import cc.infoq.system.domain.bo.SysConfigReorderBo;
+import cc.infoq.system.domain.vo.SysConfigPanelVo;
 import cc.infoq.system.domain.vo.SysConfigVo;
 
 import java.util.List;
@@ -68,6 +70,13 @@ public interface SysConfigService {
     List<SysConfigVo> selectConfigList(SysConfigBo config);
 
     /**
+     * 查询参数配置面板
+     *
+     * @return 分组后的配置面板
+     */
+    SysConfigPanelVo selectConfigPanel();
+
+    /**
      * 新增参数配置
      *
      * @param bo 参数配置信息
@@ -82,6 +91,21 @@ public interface SysConfigService {
      * @return 结果
      */
     String updateConfig(SysConfigBo bo);
+
+    /**
+     * 根据参数 key 恢复默认值
+     *
+     * @param configKey 参数 key
+     * @return 恢复后的参数值
+     */
+    String resetConfigByKey(String configKey);
+
+    /**
+     * 批量调整配置分组与顺序
+     *
+     * @param rows 排序请求
+     */
+    void reorderConfigs(List<SysConfigReorderBo> rows);
 
     /**
      * 批量删除参数信息

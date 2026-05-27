@@ -1,10 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { DeleteOutlined, EyeInvisibleOutlined, EyeOutlined, SettingOutlined, UploadOutlined, DownloadOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+  SettingOutlined,
+  UploadOutlined
+} from '@ant-design/icons';
 import { Button, Card, Col, DatePicker, Form, Image, Input, Modal, Row, Space, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import { delOss, listOss } from '@/api/system/oss';
+import { getConfigKey, updateConfigByKey } from '@/api/system/config';
 import type { OssForm, OssQuery, OssVO } from '@/api/system/oss/types';
 import FileUpload from '@/components/FileUpload';
 import ImageUpload from '@/components/ImageUpload';
@@ -25,8 +35,7 @@ const initialQuery: OssQuery = {
   isAsc: 'ascending'
 };
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 const isImage = (suffix?: string) => ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes((suffix || '').toLowerCase());
 
@@ -36,6 +45,7 @@ export default function OssPage() {
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(true);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [previewListResource, setPreviewListResource] = useState(true);
   const [list, setList] = useState<OssVO[]>([]);
   const [total, setTotal] = useState(0);
@@ -43,6 +53,16 @@ export default function OssPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadType, setUploadType] = useState<'file' | 'image'>('file');
   const [form] = Form.useForm<OssForm>();
+
+  const loadPreviewSetting = useCallback(async () => {
+    setPreviewLoading(true);
+    try {
+      const response = await getConfigKey('sys.oss.previewListResource');
+      setPreviewListResource(response.data === undefined ? true : response.data === 'true');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, []);
 
   const loadList = useCallback(async (nextQuery: OssQuery, nextRange: [Dayjs, Dayjs] | null) => {
     setLoading(true);
@@ -56,8 +76,9 @@ export default function OssPage() {
   }, []);
 
   useEffect(() => {
+    loadPreviewSetting();
     loadList(initialQuery, null);
-  }, [loadList]);
+  }, [loadList, loadPreviewSetting]);
 
   const columns: ColumnsType<OssVO> = [
     {
@@ -80,7 +101,11 @@ export default function OssPage() {
       title: '文件展示',
       dataIndex: 'url',
       render: (value: string, record) =>
-        previewListResource && isImage(record.fileSuffix) ? <Image src={value} width={88} height={88} style={{ objectFit: 'cover' }} /> : <span>{value}</span>
+        previewListResource && isImage(record.fileSuffix) ? (
+          <Image src={value} width={88} height={88} style={{ objectFit: 'cover' }} />
+        ) : (
+          <span>{value}</span>
+        )
     },
     {
       title: '创建时间',
@@ -132,6 +157,22 @@ export default function OssPage() {
     modal.msgSuccess('删除成功');
     setSelectedIds([]);
     loadList(query, dateRange);
+  };
+
+  const handlePreviewListResource = async () => {
+    const nextValue = !previewListResource;
+    const previousValue = previewListResource;
+    setPreviewListResource(nextValue);
+    setPreviewLoading(true);
+    try {
+      await updateConfigByKey('sys.oss.previewListResource', nextValue);
+      await loadPreviewSetting();
+      modal.msgSuccess(nextValue ? '启用成功' : '停用成功');
+    } catch {
+      setPreviewListResource(previousValue);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   return (
@@ -187,7 +228,12 @@ export default function OssPage() {
               </Col>
               <Col xs={24} md={12} xl={6}>
                 <Form.Item label="创建时间" style={{ width: '100%', marginBottom: 12 }}>
-                  <DatePicker.RangePicker showTime style={{ width: '100%' }} value={dateRange} onChange={(value) => setDateRange((value as [Dayjs, Dayjs]) || null)} />
+                  <DatePicker.RangePicker
+                    showTime
+                    style={{ width: '100%' }}
+                    value={dateRange}
+                    onChange={(value) => setDateRange((value as [Dayjs, Dayjs]) || null)}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12} xl={6}>
@@ -262,13 +308,20 @@ export default function OssPage() {
             >
               上传图片
             </Button>
-            <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0} style={{ borderColor: '#ffccc7' }}>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete()}
+              disabled={selectedIds.length === 0}
+              style={{ borderColor: '#ffccc7' }}
+            >
               删除
             </Button>
             <Button
               icon={previewListResource ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+              loading={previewLoading}
               style={{ color: previewListResource ? '#ff4d4f' : '#e6a23c', borderColor: previewListResource ? '#ffccc7' : '#ffd591' }}
-              onClick={() => setPreviewListResource((value) => !value)}
+              onClick={handlePreviewListResource}
             >
               预览开关 : {previewListResource ? '禁用' : '启用'}
             </Button>
@@ -276,7 +329,7 @@ export default function OssPage() {
               配置管理
             </Button>
           </Space>
-            <RightToolbar showSearch={showSearch} onShowSearchChange={setShowSearch} onQueryTable={() => loadList(query, dateRange)} />
+          <RightToolbar showSearch={showSearch} onShowSearchChange={setShowSearch} onQueryTable={() => loadList(query, dateRange)} />
         </div>
 
         <Table<OssVO>

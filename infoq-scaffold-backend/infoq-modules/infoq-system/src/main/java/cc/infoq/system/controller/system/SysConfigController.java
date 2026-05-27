@@ -10,10 +10,14 @@ import cc.infoq.common.redis.annotation.RepeatSubmit;
 import cc.infoq.common.validate.UpdateByKeyGroup;
 import cc.infoq.common.web.core.BaseController;
 import cc.infoq.system.domain.bo.SysConfigBo;
+import cc.infoq.system.domain.bo.SysConfigKeyBo;
+import cc.infoq.system.domain.bo.SysConfigReorderBo;
+import cc.infoq.system.domain.vo.SysConfigPanelVo;
 import cc.infoq.system.domain.vo.SysConfigVo;
 import cc.infoq.system.service.SysConfigService;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +45,15 @@ public class SysConfigController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo<SysConfigVo> list(SysConfigBo config, PageQuery pageQuery) {
         return sysConfigService.selectPageConfigList(config, pageQuery);
+    }
+
+    /**
+     * 获取参数配置面板
+     */
+    @SaCheckPermission("system:config:list")
+    @GetMapping("/panel")
+    public ApiResult<SysConfigPanelVo> panel() {
+        return ApiResult.ok(sysConfigService.selectConfigPanel());
     }
 
     /**
@@ -114,6 +127,29 @@ public class SysConfigController extends BaseController {
     @PutMapping("/updateByKey")
     public ApiResult<Void> updateByKey(@Validated(UpdateByKeyGroup.class) @RequestBody SysConfigBo config) {
         sysConfigService.updateConfig(config);
+        return ApiResult.ok();
+    }
+
+    /**
+     * 根据参数键名恢复默认值
+     */
+    @SaCheckPermission("system:config:edit")
+    @Log(title = "参数管理", businessType = BusinessType.UPDATE)
+    @RepeatSubmit()
+    @PostMapping("/resetByKey")
+    public ApiResult<String> resetByKey(@Validated @RequestBody SysConfigKeyBo config) {
+        return ApiResult.ok("操作成功", sysConfigService.resetConfigByKey(config.getConfigKey()));
+    }
+
+    /**
+     * 批量调整参数配置显示顺序
+     */
+    @SaCheckPermission("system:config:edit")
+    @Log(title = "参数管理", businessType = BusinessType.UPDATE)
+    @RepeatSubmit()
+    @PutMapping("/reorder")
+    public ApiResult<Void> reorder(@RequestBody List<@Valid SysConfigReorderBo> rows) {
+        sysConfigService.reorderConfigs(rows);
         return ApiResult.ok();
     }
 

@@ -48,6 +48,38 @@ public class SysConfigBo extends BaseEntity {
     private String configValue;
 
     /**
+     * 参数值类型
+     */
+    @Size(min = 0, max = 20, message = "参数值类型不能超过{max}个字符")
+    private String valueType;
+
+    /**
+     * 默认值，null 表示无默认值
+     */
+    private String defaultValue;
+
+    /**
+     * 配置分组
+     */
+    @Size(min = 0, max = 50, message = "配置分组不能超过{max}个字符")
+    private String groupKey;
+
+    /**
+     * 显示顺序
+     */
+    private Integer displayOrder;
+
+    /**
+     * 下拉选项 JSON
+     */
+    private String optionsJson;
+
+    /**
+     * UI 属性 JSON
+     */
+    private String uiPropsJson;
+
+    /**
      * 系统内置（Y是 N否）
      */
     private String configType;
