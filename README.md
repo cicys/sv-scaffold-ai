@@ -196,12 +196,11 @@ node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id
 
 ### 1. 后端
 
-运行前先确认 `java -version` 与 `mvn -version` 都指向 JDK 17；若当前终端落在旧版 JDK，先覆盖 `JAVA_HOME` / `PATH` 后再执行：
+本地和 agent 环境优先使用仓库后端 Maven 入口。该入口会优先读取 `.idea` 的项目配置，要求 JDK 17 与 Maven 3.9.x；如果 `.idea` 配置不可用，再搜索本机候选环境：
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean install -DskipTests
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
 如需继续执行 React / Vue admin 的受保护路由浏览器探测，临时追加 `--captcha.enable=false`。
 
@@ -263,9 +262,8 @@ pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
 ### 后端
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean package -P dev
-mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
+node .codex/scripts/backend_mvn.mjs -- clean package -P dev
+node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test
 ```
 
 ### Vue 管理端

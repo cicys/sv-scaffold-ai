@@ -141,19 +141,19 @@ function renderFrontendNote() {
 function renderValidationCommands() {
   switch (needsFrontend) {
     case 'none':
-      return 'cd infoq-scaffold-backend && mvn clean package -P dev -pl infoq-modules/infoq-system -am';
+      return 'node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-modules/infoq-system -am';
     case 'vue':
-      return `cd infoq-scaffold-backend && mvn clean package -P dev -pl infoq-modules/infoq-system -am
+      return `node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-modules/infoq-system -am
 cd infoq-scaffold-frontend-vue && pnpm run build:prod`;
     case 'react':
-      return `cd infoq-scaffold-backend && mvn clean package -P dev -pl infoq-modules/infoq-system -am
+      return `node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-modules/infoq-system -am
 cd infoq-scaffold-frontend-react && pnpm run build:prod`;
     case 'both':
-      return `cd infoq-scaffold-backend && mvn clean package -P dev -pl infoq-modules/infoq-system -am
+      return `node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-modules/infoq-system -am
 cd infoq-scaffold-frontend-vue && pnpm run build:prod
 cd infoq-scaffold-frontend-react && pnpm run build:prod`;
     default:
-      return `cd infoq-scaffold-backend && mvn clean package -P dev -pl infoq-modules/infoq-system -am
+      return `node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-modules/infoq-system -am
 # If frontend impact is confirmed, run the affected frontend build(s); if impact is ambiguous, run both.
 cd infoq-scaffold-frontend-vue && pnpm run build:prod
 cd infoq-scaffold-frontend-react && pnpm run build:prod`;

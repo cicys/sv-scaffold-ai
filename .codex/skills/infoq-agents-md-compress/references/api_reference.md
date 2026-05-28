@@ -31,7 +31,7 @@
 |Backend Config:backend/module/src/main/resources:{application.yml,application-dev.yml,application-prod.yml}
 |Database:sql:{schema.sql}
 |Architecture:Controller→Service→Mapper→Entity
-|Build Commands:mvn clean package -P dev|mvn spring-boot:run -pl modules/system
+|Build Commands:node .codex/scripts/backend_mvn.mjs -- clean package -P dev|java -jar backend/admin/target/admin.jar
 |Frontend Commands:npm install|npm run dev|npm run build:prod
 |Commit Convention:feat|fix|refactor|docs
 |PR Checklist:changed modules|verification commands|config/sql impact

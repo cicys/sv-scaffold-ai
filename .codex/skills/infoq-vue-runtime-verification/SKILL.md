@@ -22,7 +22,7 @@ description: 执行本项目 Vue 家族的仓库专用运行态验证，覆盖 `
 
 1. 默认使用 `scripts/start_admin_dev_stack.mjs` 启动或重启 backend + Vue admin 栈。
 2. 共享默认后端端口是真值 `8080`。若开发者本地为避免冲突临时改到 `8081` 或其他端口，必须显式传 `--backend-port <port>`；该端口只作为本地 override，不应回写成共享默认值。
-3. 若改用手动启动，启动前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
+3. 若改用手动启动，backend 构建优先使用 `node .codex/scripts/backend_mvn.mjs -- ...`；直接用 `mvn` 时先确认 JDK 17 与 Maven 3.9.x。
 4. 通过 `scripts/print_admin_login_inject_snippet.mjs` 或 `scripts/fetch_admin_routes_with_token.mjs` 获取辅助信息时，不要猜测真实路由。
 5. 默认使用 `infoq-browser-automation` 的跨平台 CLI 对 `http://127.0.0.1:5173` 执行受保护路由探测、截图与 console 检查：
 

@@ -218,8 +218,7 @@
 后端编译：
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean package -P dev -pl infoq-admin -am
+node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-admin -am
 ```
 
 后端运行（示例）：

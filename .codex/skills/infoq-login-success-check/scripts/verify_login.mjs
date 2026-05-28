@@ -4,6 +4,7 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {
+    backendMavenLaunchSpec,
     fetchJson,
     normalizeForwardedArgs,
     resolveDocTmpPath,
@@ -184,8 +185,9 @@ async function startTempBackend() {
 
   if (buildBackend || !fs.existsSync(jarPath)) {
     console.log('[login-check] building backend jar...');
-    await runCommand('mvn', ['-pl', 'infoq-admin', '-am', '-DskipTests', 'package'], {
-      cwd: backendDir
+    const spec = backendMavenLaunchSpec(repoRoot, ['-pl', 'infoq-admin', '-am', '-DskipTests', 'package']);
+    await runCommand(spec.command, spec.args, {
+      cwd: spec.cwd
     });
   }
 

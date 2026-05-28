@@ -236,6 +236,30 @@ export async function runCommandChecked(command, args = [], options = {}) {
   return result;
 }
 
+export function backendMavenLaunchSpec(repoRoot, args = []) {
+  return {
+    command: process.execPath,
+    args: [path.join(repoRoot, '.codex', 'scripts', 'backend_mvn.mjs'), '--', ...args],
+    cwd: repoRoot
+  };
+}
+
+export function runBackendMaven(repoRoot, args = [], options = {}) {
+  const spec = backendMavenLaunchSpec(repoRoot, args);
+  return runCommand(spec.command, spec.args, {
+    ...options,
+    cwd: options.cwd ?? spec.cwd
+  });
+}
+
+export function runBackendMavenChecked(repoRoot, args = [], options = {}) {
+  const spec = backendMavenLaunchSpec(repoRoot, args);
+  return runCommandChecked(spec.command, spec.args, {
+    ...options,
+    cwd: options.cwd ?? spec.cwd
+  });
+}
+
 export function runCommandStreaming(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
     const logFile = options.logFile;
