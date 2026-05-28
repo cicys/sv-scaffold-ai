@@ -50,7 +50,7 @@ vi.mock('@/utils/jsencrypt', () => ({
 }));
 
 import service, { download, globalHeaders, isRelogin } from '@/utils/request';
-import { setToken, removeToken } from '@/utils/auth';
+import { removeToken, setToken } from '@/utils/auth';
 import { HttpStatus } from '@/enums/RespEnum';
 import FileSaver from 'file-saver';
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus/es';
@@ -240,13 +240,13 @@ describe('utils/request', () => {
     expect(responseHandler(response)).toEqual(response.data);
   });
 
-  it('uses default success code and returns binary responses directly', async () => {
+  it('rejects missing response code and returns binary responses directly', async () => {
     const noCodeResp = {
       data: { data: { id: 2 } },
       request: { responseType: '' },
       headers: {}
     } as ResponsePayload;
-    expect(responseHandler(noCodeResp)).toEqual(noCodeResp.data);
+    await expect(responseHandler(noCodeResp)).rejects.toThrow('缺少状态码 code');
 
     const blobData = { blob: true };
     const blobResp = {
@@ -255,6 +255,24 @@ describe('utils/request', () => {
       headers: {}
     } as ResponsePayload;
     expect(await responseHandler(blobResp)).toBe(blobData);
+  });
+
+  it('rejects invalid code and malformed pagination payloads', async () => {
+    const invalidCodeResp = {
+      data: { code: '200', data: { id: 2 } },
+      request: { responseType: '' },
+      headers: {}
+    } as ResponsePayload;
+
+    await expect(responseHandler(invalidCodeResp)).rejects.toThrow('状态码 code 必须是有限数字');
+
+    const missingTotalResp = {
+      data: { code: HttpStatus.SUCCESS, rows: [] },
+      request: { responseType: '' },
+      headers: {}
+    } as ResponsePayload;
+
+    await expect(responseHandler(missingTotalResp)).rejects.toThrow('分页响应 total 必须是有限数字');
   });
 
   it('handles 401 relogin flow for confirm and cancel branches', async () => {

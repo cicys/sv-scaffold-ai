@@ -1,17 +1,13 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
-import {
-  listType,
-  type DictTypeQuery,
-  type DictTypeVO
-} from '@/api';
-import { useState } from 'react';
-import { AtInput, AtButton } from 'taro-ui';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
+import {type DictTypeQuery, type DictTypeVO, listType} from '@/api';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard } from '../../components/taro-ui-kit';
-import { routes } from '../../utils/navigation';
-import { handlePageError } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, KeyValueList, PaginationBar, RecordCard} from '../../components/taro-ui-kit';
+import {routes} from '../../utils/navigation';
+import {handlePageError} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): DictTypeQuery => ({
@@ -38,8 +34,8 @@ export default function SystemDictsPage() {
         return;
       }
       const listResponse = await (canList ? listType(nextQuery) : Promise.resolve({ rows: [] as DictTypeVO[], total: 0 }));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '字典列表加载失败');
     }
@@ -137,7 +133,7 @@ export default function SystemDictsPage() {
           />
         )}
       </View>
-      
+
       <BottomNav active="admin" />
     </View>
   );

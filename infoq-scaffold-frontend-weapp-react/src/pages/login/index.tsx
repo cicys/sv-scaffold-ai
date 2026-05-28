@@ -1,11 +1,11 @@
-import { Image, View, Text } from '@tarojs/components';
-import Taro, { useLoad } from '@tarojs/taro';
-import { useState } from 'react';
-import { AtButton, AtInput, AtSwitch } from 'taro-ui';
-import { asCaptchaImage, getCodeImg, getRememberedLogin, mobileEnv, setRememberedLogin } from '@/api';
-import { routes } from '../../utils/navigation';
-import { handlePageError } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {Image, Text, View} from '@tarojs/components';
+import Taro, {useLoad} from '@tarojs/taro';
+import {useState} from 'react';
+import {AtButton, AtInput, AtSwitch} from 'taro-ui';
+import {asCaptchaImage, getCodeImg, getRememberedLogin, mobileEnv, setRememberedLogin} from '@/api';
+import {routes} from '../../utils/navigation';
+import {handlePageError} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 export default function LoginPage() {
@@ -38,7 +38,6 @@ export default function LoginPage() {
         setCodeUrl('');
       }
     } catch (error) {
-      setCaptchaEnabled(false);
       setCodeUrl('');
       await handlePageError(error, '验证码获取失败。');
     }

@@ -28,18 +28,18 @@
             <text class="text">性别设置</text>
           </view>
           <view class="sex-selector">
-            <view 
-              class="sex-btn" 
+            <view
+              class="sex-btn"
               :class="{ active: form.sex === '0' }"
               @click="form.sex = '0'"
             >男</view>
-            <view 
-              class="sex-btn" 
+            <view
+              class="sex-btn"
               :class="{ active: form.sex === '1' }"
               @click="form.sex = '1'"
             >女</view>
-            <view 
-              class="sex-btn" 
+            <view
+              class="sex-btn"
               :class="{ active: form.sex === '2' }"
               @click="form.sex = '2'"
             >保密</view>
@@ -72,15 +72,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { getUserProfile, updateUserProfile } from '@/api';
+import {computed, reactive, ref, watch} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {assertObjectData, getUserProfile, updateUserProfile} from '@/api';
 import defaultAvatar from '@/assets/images/profile.jpg';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { resolveAvatarUrl } from '@/utils/avatar';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {resolveAvatarUrl} from '@/utils/avatar';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const form = reactive({
@@ -116,7 +116,7 @@ const loadProfile = async () => {
   try {
     await sessionStore.loadSession();
     const response = await getUserProfile();
-    const user = response.data.user || {};
+    const user = assertObjectData(response.data.user, '用户资料响应 data.user');
     form.nickName = user.nickName || '';
     form.email = user.email || '';
     form.phonenumber = user.phonenumber || '';

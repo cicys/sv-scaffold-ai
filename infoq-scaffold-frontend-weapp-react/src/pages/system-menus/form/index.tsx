@@ -1,24 +1,25 @@
-import { View, Text, Picker } from '@tarojs/components';
-import Taro, { useDidShow, useRouter } from '@tarojs/taro';
+import {Picker, Text, View} from '@tarojs/components';
+import Taro, {useDidShow, useRouter} from '@tarojs/taro';
 import {
   addMenu,
+  assertArrayData,
+  type DeptTreeVO,
+  type DictOption,
+  flattenTree,
+  type FlatTreeItem,
   getDicts,
   getMenu,
-  menuTreeSelect,
-  flattenTree,
-  toDictOptions,
-  updateMenu,
-  type DictOption,
   type MenuForm,
+  menuTreeSelect,
   type MenuType,
-  type DeptTreeVO,
-  type FlatTreeItem
+  toDictOptions,
+  updateMenu
 } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput, AtTextarea } from 'taro-ui';
-import { handlePageError, showSuccess } from '../../../utils/ui';
-import { useSessionStore } from '../../../store/session';
-import { routes } from '../../../utils/navigation';
+import {useState} from 'react';
+import {AtButton, AtInput, AtTextarea} from 'taro-ui';
+import {handlePageError, showSuccess} from '../../../utils/ui';
+import {useSessionStore} from '../../../store/session';
+import {routes} from '../../../utils/navigation';
 import './index.scss';
 
 const menuTypeOptions = [
@@ -70,7 +71,7 @@ export default function MenuFormPage() {
         menuTreeSelect()
       ]);
       setStatusOptions(toDictOptions(statusRes.data));
-      setTreeOptions(flattenTree(treeRes.data || []));
+      setTreeOptions(flattenTree(assertArrayData(treeRes.data, '菜单树响应 data')));
 
       if (menuId) {
         const response = await getMenu(menuId);
@@ -127,7 +128,7 @@ export default function MenuFormPage() {
     { label: '顶级菜单', id: 0, _depth: 0 },
     ...treeOptions.filter(m => String(m.id) !== String(menuId))
   ];
-  
+
   const selectedParent = parentMenuOptions.find(m => String(m.id) === String(form.parentId));
   const selectedParentLabel = selectedParent ? `${'· '.repeat(selectedParent._depth)}${selectedParent.label}` : '请选择上级菜单';
 

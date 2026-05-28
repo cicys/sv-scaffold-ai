@@ -1,17 +1,13 @@
-import { View, Text } from '@tarojs/components';
-import Taro, { useDidShow, useRouter } from '@tarojs/taro';
-import {
-  listData,
-  type DictDataQuery,
-  type DictDataVO
-} from '@/api';
-import { useState } from 'react';
-import { AtInput, AtButton } from 'taro-ui';
+import {Text, View} from '@tarojs/components';
+import Taro, {useDidShow, useRouter} from '@tarojs/taro';
+import {type DictDataQuery, type DictDataVO, listData} from '@/api';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard } from '../../../components/taro-ui-kit';
-import { routes } from '../../../utils/navigation';
-import { handlePageError } from '../../../utils/ui';
-import { useSessionStore } from '../../../store/session';
+import {EmptyNotice, KeyValueList, PaginationBar, RecordCard} from '../../../components/taro-ui-kit';
+import {routes} from '../../../utils/navigation';
+import {handlePageError} from '../../../utils/ui';
+import {useSessionStore} from '../../../store/session';
 import './index.scss';
 
 const createQuery = (dictType = '', pageNum = 1): DictDataQuery => ({
@@ -40,8 +36,8 @@ export default function SystemDictDataPage() {
         return;
       }
       const listResponse = await (canList ? listData(nextQuery) : Promise.resolve({ rows: [] as DictDataVO[], total: 0 }));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '字典数据加载失败');
     }
@@ -126,7 +122,7 @@ export default function SystemDictDataPage() {
           />
         )}
       </View>
-      
+
       <BottomNav active="admin" />
     </View>
   );

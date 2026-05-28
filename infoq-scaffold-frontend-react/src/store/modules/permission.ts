@@ -6,8 +6,8 @@ import {
   assertNoRouteConflicts,
   buildRouteComponentMap,
   filterAsyncRouter,
-  withAbsoluteRoutePaths,
-  type RouteComponentMapItem
+  type RouteComponentMapItem,
+  withAbsoluteRoutePaths
 } from '@/router/route-transform';
 
 const HOME_ROUTE: AppRoute = {
@@ -38,7 +38,14 @@ const PROFILE_ROUTE: AppRoute = {
   ]
 };
 
-const cloneRoute = <T,>(route: T): T => JSON.parse(JSON.stringify(route));
+const cloneRoute = <T>(route: T): T => JSON.parse(JSON.stringify(route));
+
+const cloneRouteList = (routes: AppRoute[]) => {
+  if (!Array.isArray(routes)) {
+    throw new Error('路由响应 data 必须是数组');
+  }
+  return JSON.parse(JSON.stringify(routes)) as AppRoute[];
+};
 
 const hasRoutePath = (routes: AppRoute[], targetPath: string): boolean => {
   return routes.some((route) => route.path === targetPath || (route.children ? hasRoutePath(route.children, targetPath) : false));
@@ -143,7 +150,7 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
   setSidebarRouters: (routes) => set({ sidebarRouters: routes }),
   generateRoutes: async () => {
     const res = await getRouters();
-    const data: AppRoute[] = JSON.parse(JSON.stringify(res.data || []));
+    const data = cloneRouteList(res.data);
     const sdata: AppRoute[] = JSON.parse(JSON.stringify(data));
     const rdata: AppRoute[] = JSON.parse(JSON.stringify(data));
     const defaultData: AppRoute[] = JSON.parse(JSON.stringify(data));

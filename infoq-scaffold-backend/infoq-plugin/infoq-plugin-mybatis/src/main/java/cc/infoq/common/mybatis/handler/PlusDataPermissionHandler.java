@@ -13,7 +13,6 @@ import cc.infoq.common.utils.StreamUtils;
 import cc.infoq.common.utils.StringUtils;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
@@ -21,7 +20,9 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.relational.ParenthesedExpressionList;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.springframework.context.expression.BeanFactoryResolver;
-import org.springframework.expression.*;
+import org.springframework.expression.BeanResolver;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.ParserContext;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -64,6 +65,9 @@ public class PlusDataPermissionHandler {
                 currentUser = LoginUserContext.getLoginUser();
                 DataPermissionHelper.setVariable("user", currentUser);
             }
+            if (ObjectUtil.isNull(currentUser)) {
+                throw new ServiceException("数据权限解析异常 => 当前登录用户缺失");
+            }
             // 超级管理员不过滤数据
             if (LoginUserContext.isSuperAdmin(currentUser.getUserId())) {
                 return where;
@@ -103,9 +107,7 @@ public class PlusDataPermissionHandler {
             joinStr = " " + dataPermission.joinStr() + " ";
         }
         LoginUser user = DataPermissionHelper.getVariable("user", LoginUser.class);
-        Object defaultValue = "-1";
-        NullSafeStandardEvaluationContext context = new NullSafeStandardEvaluationContext(defaultValue);
-        context.addPropertyAccessor(new NullSafePropertyAccessor(context.getPropertyAccessors().get(0), defaultValue));
+        StandardEvaluationContext context = new StandardEvaluationContext();
         context.setBeanResolver(beanResolver);
         DataPermissionHelper.getContext().forEach(context::setVariable);
         Set<String> conditions = new HashSet<>();
@@ -124,6 +126,9 @@ public class PlusDataPermissionHandler {
             }
             // 设置注解变量 key 为表达式变量 value 为变量值
             for (int i = 0; i < dataColumn.key().length; i++) {
+                if (StringUtils.isBlank(dataColumn.value()[i])) {
+                    throw new ServiceException("角色数据范围异常 => 数据列不能为空");
+                }
                 context.setVariable(dataColumn.key()[i], dataColumn.value()[i]);
             }
             keys.addAll(Arrays.stream(dataColumn.key()).map(key -> "#" + key).toList());
@@ -140,6 +145,7 @@ public class PlusDataPermissionHandler {
             if (type == DataScopeType.ALL) {
                 return StringUtils.EMPTY;
             }
+            validateRequiredScopeVariables(type, user, role);
             boolean isSuccess = false;
             for (DataColumn dataColumn : dataPermission.value()) {
                 // 包含权限标识符 这直接跳过
@@ -178,6 +184,20 @@ public class PlusDataPermissionHandler {
         return StringUtils.EMPTY;
     }
 
+    private void validateRequiredScopeVariables(DataScopeType type, LoginUser user, RoleDTO role) {
+        if (type == DataScopeType.CUSTOM && ObjectUtil.isNull(role.getRoleId())) {
+            throw new ServiceException("角色数据范围异常 => 角色ID缺失");
+        }
+        if ((type == DataScopeType.DEPT || type == DataScopeType.DEPT_AND_CHILD || type == DataScopeType.DEPT_AND_CHILD_OR_SELF)
+            && ObjectUtil.isNull(user.getDeptId())) {
+            throw new ServiceException("角色数据范围异常 => 用户部门ID缺失");
+        }
+        if ((type == DataScopeType.SELF || type == DataScopeType.DEPT_AND_CHILD_OR_SELF)
+            && ObjectUtil.isNull(user.getUserId())) {
+            throw new ServiceException("角色数据范围异常 => 用户ID缺失");
+        }
+    }
+
     /**
      * 根据映射语句 ID 或类名获取对应的 DataPermission 注解对象
      *
@@ -194,66 +214,6 @@ public class PlusDataPermissionHandler {
      */
     public boolean invalid() {
         return getDataPermission() == null;
-    }
-
-    /**
-     * 对所有null变量找不到的变量返回默认值
-     */
-    @AllArgsConstructor
-    private static class NullSafeStandardEvaluationContext extends StandardEvaluationContext {
-
-        private final Object defaultValue;
-
-        @Override
-        public Object lookupVariable(String name) {
-            Object obj = super.lookupVariable(name);
-            // 如果读取到的值是 null，则返回默认值
-            if (obj == null) {
-                return defaultValue;
-            }
-            return obj;
-        }
-
-    }
-
-    /**
-     * 对所有null变量找不到的变量返回默认值 委托模式 将不需要处理的方法委托给原处理器
-     */
-    @AllArgsConstructor
-    private static class NullSafePropertyAccessor implements PropertyAccessor {
-
-        private final PropertyAccessor delegate;
-        private final Object defaultValue;
-
-        @Override
-        public Class<?>[] getSpecificTargetClasses() {
-            return delegate.getSpecificTargetClasses();
-        }
-
-        @Override
-        public boolean canRead(EvaluationContext context, Object target, String name) throws AccessException {
-            return delegate.canRead(context, target, name);
-        }
-
-        @Override
-        public TypedValue read(EvaluationContext context, Object target, String name) throws AccessException {
-            TypedValue value = delegate.read(context, target, name);
-            // 如果读取到的值是 null，则返回默认值
-            if (value.getValue() == null) {
-                return new TypedValue(defaultValue);
-            }
-            return value;
-        }
-
-        @Override
-        public boolean canWrite(EvaluationContext context, Object target, String name) throws AccessException {
-            return delegate.canWrite(context, target, name);
-        }
-
-        @Override
-        public void write(EvaluationContext context, Object target, String name, Object newValue) throws AccessException {
-            delegate.write(context, target, name, newValue);
-        }
     }
 
 }

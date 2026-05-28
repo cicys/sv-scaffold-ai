@@ -26,8 +26,7 @@ const initialForm: DictTypeForm = {
   remark: ''
 };
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 export default function DictTypePage() {
   const navigate = useNavigate();
@@ -48,7 +47,7 @@ export default function DictTypePage() {
     try {
       const response = await listType(addDateRange({ ...nextQuery }, formatRange(nextRange)));
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -195,7 +194,12 @@ export default function DictTypePage() {
               </Col>
               <Col xs={24} md={12} xl={6}>
                 <Form.Item label="创建时间" style={{ width: '100%', marginBottom: 12 }}>
-                  <DatePicker.RangePicker showTime style={{ width: '100%' }} value={dateRange} onChange={(value) => setDateRange((value as [Dayjs, Dayjs]) || null)} />
+                  <DatePicker.RangePicker
+                    showTime
+                    style={{ width: '100%' }}
+                    value={dateRange}
+                    onChange={(value) => setDateRange((value as [Dayjs, Dayjs]) || null)}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24}>
@@ -221,7 +225,12 @@ export default function DictTypePage() {
             <Button className="btn-plain-primary" icon={<PlusOutlined />} onClick={handleAdd}>
               新增
             </Button>
-            <Button className="btn-plain-success" icon={<EditOutlined />} onClick={() => handleEdit(selectedIds[0])} disabled={selectedIds.length !== 1}>
+            <Button
+              className="btn-plain-success"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(selectedIds[0])}
+              disabled={selectedIds.length !== 1}
+            >
               修改
             </Button>
             <Button className="btn-plain-danger" icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0}>
@@ -230,13 +239,7 @@ export default function DictTypePage() {
             <Button
               className="btn-plain-warning"
               icon={<DownloadOutlined />}
-              onClick={() =>
-                download(
-                  '/system/dict/type/export',
-                  addDateRange({ ...query }, formatRange(dateRange)),
-                  `dict_${Date.now()}.xlsx`
-                )
-              }
+              onClick={() => download('/system/dict/type/export', addDateRange({ ...query }, formatRange(dateRange)), `dict_${Date.now()}.xlsx`)}
             >
               导出
             </Button>

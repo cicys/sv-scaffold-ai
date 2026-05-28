@@ -10,7 +10,7 @@
             <text class="form-label">公告标题</text>
             <input class="form-input-plain" v-model="form.noticeTitle" placeholder="请输入公告标题" placeholder-style="color: #94a3b8" />
           </view>
-          
+
           <picker
             mode="selector"
             :range="typeOptions.map(o => o.label)"
@@ -38,7 +38,7 @@
             <text class="item-label">详细内容</text>
             <textarea class="form-textarea" v-model="form.noticeContent" placeholder="请输入公告详细内容" placeholder-style="color: #94a3b8" />
           </view>
-          
+
           <view class="form-item-vertical" style="margin-top: 32rpx">
             <text class="item-label">备注说明</text>
             <input class="form-input" v-model="form.remark" placeholder="请输入备注" placeholder-style="color: #94a3b8" />
@@ -73,13 +73,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { addNotice, getNotice, updateNotice, getDicts, toDictOptions, type NoticeForm, type DictOption } from '@/api';
-import { ensureAuthenticated, ensurePermission } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
+import {
+  addNotice,
+  assertObjectData,
+  type DictOption,
+  getDicts,
+  getNotice,
+  type NoticeForm,
+  toDictOptions,
+  updateNotice
+} from '@/api';
+import {ensureAuthenticated, ensurePermission} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const noticeId = ref('');
@@ -124,7 +133,7 @@ const loadData = async () => {
 
     if (noticeId.value) {
       const response = await getNotice(noticeId.value);
-      Object.assign(form, response.data || {});
+      Object.assign(form, assertObjectData(response.data, '公告详情响应 data'));
     }
   } catch (error) {
     await handlePageError(error, '公告加载失败');
@@ -190,18 +199,18 @@ onLoad((query) => {
   align-items: center;
   padding: 24rpx 32rpx;
   border-bottom: 1rpx solid #f2f2f2;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   .form-label {
     width: 156rpx;
     font-size: 28rpx;
     color: #475569;
     font-weight: 600;
   }
-  
+
   .form-input-plain {
     flex: 1;
     font-size: 28rpx;

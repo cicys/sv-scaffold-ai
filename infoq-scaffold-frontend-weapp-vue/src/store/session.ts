@@ -1,16 +1,16 @@
-import { defineStore } from 'pinia';
+import {defineStore} from 'pinia';
 import {
-  getInfo,
-  getToken,
-  hasPermission as hasGrantedPermission,
-  type LoginData,
-  login,
-  normalizePermissions,
-  logout,
-  removeToken,
-  setToken,
-  type UserInfo,
-  type UserVO
+    getInfo,
+    getToken,
+    hasPermission as hasGrantedPermission,
+    login,
+    type LoginData,
+    logout,
+    normalizePermissions,
+    removeToken,
+    setToken,
+    type UserInfo,
+    type UserVO
 } from '@/api';
 
 export type SessionState = {
@@ -25,6 +25,13 @@ const clearSessionState: SessionState = {
   user: null,
   permissions: [],
   initialized: true
+};
+
+const resolvePermissions = (value: unknown) => {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error('用户权限必须是字符串数组');
+  }
+  return normalizePermissions(value);
 };
 
 export const useSessionStore = defineStore('infoq-weapp-vue-session', {
@@ -52,7 +59,7 @@ export const useSessionStore = defineStore('infoq-weapp-vue-session', {
       const info = response.data;
       this.token = currentToken;
       this.user = info.user;
-      this.permissions = normalizePermissions(info.permissions || []);
+      this.permissions = resolvePermissions(info.permissions);
       this.initialized = true;
       return info;
     },
@@ -64,7 +71,7 @@ export const useSessionStore = defineStore('infoq-weapp-vue-session', {
       const infoResponse = await getInfo();
       const info = infoResponse.data;
       this.user = info.user;
-      this.permissions = normalizePermissions(info.permissions || []);
+      this.permissions = resolvePermissions(info.permissions);
       this.initialized = true;
     },
     async signOut() {

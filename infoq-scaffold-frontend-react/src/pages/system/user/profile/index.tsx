@@ -4,6 +4,7 @@ import type { UserVO } from '@/api/system/user/types';
 import type { OnlineVO } from '@/api/monitor/online/types';
 import { getOnline } from '@/api/monitor/online';
 import { getUserProfile } from '@/api/system/user';
+import { assertUserProfileData } from '@/api/system/user/guards';
 import UserAvatar from '@/pages/system/user/profile/userAvatar';
 import UserInfo from '@/pages/system/user/profile/userInfo';
 import ResetPwd from '@/pages/system/user/profile/resetPwd';
@@ -47,11 +48,12 @@ export default function ProfilePage() {
 
   const loadProfile = async () => {
     const response = await getUserProfile();
+    const profile = assertUserProfileData(response.data);
     setState((prev) => ({
       ...prev,
-      user: response.data?.user || {},
-      roleGroup: response.data?.roleGroup || '',
-      postGroup: response.data?.postGroup || ''
+      user: profile.user,
+      roleGroup: profile.roleGroup,
+      postGroup: profile.postGroup
     }));
   };
 
@@ -59,7 +61,7 @@ export default function ProfilePage() {
     const response = await getOnline();
     setState((prev) => ({
       ...prev,
-      devices: response.rows || []
+      devices: response.rows
     }));
   };
 

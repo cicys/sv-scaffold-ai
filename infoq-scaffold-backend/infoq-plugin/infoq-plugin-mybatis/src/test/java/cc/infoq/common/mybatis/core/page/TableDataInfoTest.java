@@ -68,7 +68,7 @@ class TableDataInfoTest {
         TableDataInfo<String> data = TableDataInfo.build(List.of(), page);
 
         assertEquals(0L, data.getTotal());
-        assertNull(data.getRows());
+        assertEquals(List.of(), data.getRows());
         assertEquals(200, data.getCode());
         assertEquals("查询成功", data.getMsg());
     }

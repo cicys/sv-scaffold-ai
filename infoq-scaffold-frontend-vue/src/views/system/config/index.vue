@@ -259,6 +259,16 @@ const initialFormData: ConfigForm = {
   remark: ''
 };
 
+const assertConfigPanel = (value: unknown): ConfigPanel => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('配置面板响应 data 必须是对象');
+  }
+  if (!Array.isArray((value as ConfigPanel).groups)) {
+    throw new Error('配置面板响应 data.groups 必须是数组');
+  }
+  return value as ConfigPanel;
+};
+
 const panel = reactive<ConfigPanel>({ groups: [] });
 const loading = ref(false);
 const keyword = ref('');
@@ -344,12 +354,14 @@ const loadPanel = async () => {
   loading.value = true;
   try {
     const response = await getConfigPanel();
-    panel.groups = response.data?.groups || [];
+    panel.groups = assertConfigPanel(response.data).groups;
     orderRows.value = allItems.value.map((item) => ({
       configId: item.configId,
       groupKey: item.groupKey,
       displayOrder: item.displayOrder || 0
     }));
+  } catch (error) {
+    proxy?.$modal.msgError(error instanceof Error ? error.message : '配置面板加载失败');
   } finally {
     loading.value = false;
   }

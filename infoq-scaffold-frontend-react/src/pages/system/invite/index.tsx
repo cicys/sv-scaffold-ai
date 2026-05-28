@@ -44,8 +44,7 @@ const initialCancelForm: CancelInviteFormState = {
   canceledReason: ''
 };
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 export default function InvitePage() {
   const [query, setQuery] = useState<InviteCodeQuery>(initialQuery);
@@ -64,16 +63,19 @@ export default function InvitePage() {
   const generatePermanent = Form.useWatch('permanent', generateForm) ?? true;
   const dict = useDictOptions('sys_invite_code_status');
 
-  const loadList = useCallback(async (nextQuery: InviteCodeQuery = query, nextRange: [Dayjs, Dayjs] | null = dateRange) => {
-    setLoading(true);
-    try {
-      const response = await listInvite(addDateRange({ ...nextQuery }, formatRange(nextRange)));
-      setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange, query]);
+  const loadList = useCallback(
+    async (nextQuery: InviteCodeQuery = query, nextRange: [Dayjs, Dayjs] | null = dateRange) => {
+      setLoading(true);
+      try {
+        const response = await listInvite(addDateRange({ ...nextQuery }, formatRange(nextRange)));
+        setList(response.rows);
+        setTotal(response.total);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dateRange, query]
+  );
 
   useEffect(() => {
     loadList(initialQuery, null);
@@ -89,7 +91,10 @@ export default function InvitePage() {
       width: 260,
       align: 'center',
       render: (value: string) => (
-        <Typography.Text copyable={{ text: value, onCopy: () => modal.msgSuccess('邀请码已复制') }} style={{ fontFamily: 'Consolas, Monaco, monospace' }}>
+        <Typography.Text
+          copyable={{ text: value, onCopy: () => modal.msgSuccess('邀请码已复制') }}
+          style={{ fontFamily: 'Consolas, Monaco, monospace' }}
+        >
           {value}
         </Typography.Text>
       )
@@ -343,7 +348,12 @@ export default function InvitePage() {
               </Col>
               <Col xs={24} md={12} xl={8}>
                 <Form.Item label="生成时间" style={{ width: '100%', marginBottom: 12 }}>
-                  <DatePicker.RangePicker showTime style={{ width: '100%' }} value={dateRange} onChange={(value) => setDateRange((value as [Dayjs, Dayjs]) || null)} />
+                  <DatePicker.RangePicker
+                    showTime
+                    style={{ width: '100%' }}
+                    value={dateRange}
+                    onChange={(value) => setDateRange((value as [Dayjs, Dayjs]) || null)}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24}>
@@ -369,7 +379,12 @@ export default function InvitePage() {
             <Button className="btn-plain-primary" icon={<PlusOutlined />} onClick={openGenerateDialog}>
               生成邀请码
             </Button>
-            <Button className="btn-plain-warning" icon={<CloseCircleOutlined />} onClick={() => openCancelDialog()} disabled={selectedRows.length !== 1}>
+            <Button
+              className="btn-plain-warning"
+              icon={<CloseCircleOutlined />}
+              onClick={() => openCancelDialog()}
+              disabled={selectedRows.length !== 1}
+            >
               作废
             </Button>
             <Button className="btn-plain-danger" icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedRows.length === 0}>
@@ -416,13 +431,7 @@ export default function InvitePage() {
         />
       </Card>
 
-      <Modal
-        open={generateDialogOpen}
-        title="生成邀请码"
-        confirmLoading={submitting}
-        onCancel={closeGenerateDialog}
-        onOk={handleGenerateSubmit}
-      >
+      <Modal open={generateDialogOpen} title="生成邀请码" confirmLoading={submitting} onCancel={closeGenerateDialog} onOk={handleGenerateSubmit}>
         <Form form={generateForm} layout="vertical" initialValues={initialGenerateForm}>
           <Form.Item label="生成数量" name="generateCount" rules={[{ required: true, message: '生成数量不能为空' }]}>
             <InputNumber min={1} max={100} precision={0} style={{ width: '100%' }} />
@@ -431,11 +440,7 @@ export default function InvitePage() {
             <Switch />
           </Form.Item>
           {!generatePermanent && (
-            <Form.Item
-              label="过期时间"
-              name="expireTime"
-              rules={[{ required: true, message: '请选择过期时间' }]}
-            >
+            <Form.Item label="过期时间" name="expireTime" rules={[{ required: true, message: '请选择过期时间' }]}>
               <DatePicker showTime style={{ width: '100%' }} format="YYYY-MM-DD HH:mm:ss" />
             </Form.Item>
           )}
@@ -445,13 +450,7 @@ export default function InvitePage() {
         </Form>
       </Modal>
 
-      <Modal
-        open={cancelDialogOpen}
-        title="作废邀请码"
-        confirmLoading={submitting}
-        onCancel={closeCancelDialog}
-        onOk={handleCancelSubmit}
-      >
+      <Modal open={cancelDialogOpen} title="作废邀请码" confirmLoading={submitting} onCancel={closeCancelDialog} onOk={handleCancelSubmit}>
         <Form form={cancelForm} layout="vertical" initialValues={initialCancelForm}>
           <Form.Item label="作废原因" name="canceledReason" rules={[{ required: true, message: '作废原因不能为空' }]}>
             <Input.TextArea rows={4} maxLength={255} showCount placeholder="请输入作废原因" />

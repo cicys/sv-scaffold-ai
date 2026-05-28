@@ -69,4 +69,32 @@ describe('pages/server', () => {
     expect(screen.queryByText('C:/Java/jdk-17')).not.toBeInTheDocument();
     expect(screen.queryByText('[-Xms256m, -Xmx1024m]')).not.toBeInTheDocument();
   });
+
+  it('shows an error when server monitor response omits sysFiles', async () => {
+    serverMocks.getServer.mockResolvedValueOnce({
+      data: {
+        cpu: { cpuNum: 8, used: 21.5, sys: 12.4, wait: 1.2, free: 64.9 },
+        mem: { total: 32, used: 10, free: 22, usage: 31.25 },
+        jvm: {
+          total: 512,
+          max: 1024,
+          used: 256,
+          free: 256,
+          usage: 50,
+          name: 'OpenJDK 64-Bit Server VM',
+          version: '17.0.12',
+          startTime: '2026-04-29 10:00:00',
+          runTime: '2小时 10分钟'
+        },
+        sys: {
+          osName: 'Windows 11',
+          osArch: 'amd64'
+        }
+      }
+    });
+
+    renderWithRouter(<ServerPage />, '/monitor/server');
+
+    expect(await screen.findByText('服务监控响应 sysFiles 必须是数组')).toBeInTheDocument();
+  });
 });

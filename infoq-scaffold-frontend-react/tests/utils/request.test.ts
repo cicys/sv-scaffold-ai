@@ -28,20 +28,49 @@ describe('utils/request', () => {
   it('handles success response', async () => {
     let capturedConfig: InternalAxiosRequestConfig | null = null;
     (service.defaults as { adapter: unknown }).adapter = async (config: InternalAxiosRequestConfig) =>
-      createResponse(
-        (capturedConfig = config),
-        {
+      createResponse((capturedConfig = config), {
         code: 200,
         data: {
           ok: true
         }
-      }
-      );
+      });
 
     const res = (await service.get('/demo', { params: { a: 1 } })) as { code: number; data: { ok: boolean } };
     expect(res.code).toBe(200);
     expect(res.data.ok).toBe(true);
     expect(capturedConfig?.headers.clientid).toBe('test-client');
+  });
+
+  it('rejects malformed api and pagination responses', async () => {
+    const msgErrorSpy = vi.spyOn(modal, 'msgError').mockImplementation(() => undefined as ReturnType<typeof modal.msgError>);
+
+    (service.defaults as { adapter: unknown }).adapter = async (config: InternalAxiosRequestConfig) =>
+      createResponse(config, {
+        data: {
+          ok: true
+        }
+      });
+
+    await expect(service.get('/missing-code')).rejects.toThrow('缺少状态码 code');
+
+    (service.defaults as { adapter: unknown }).adapter = async (config: InternalAxiosRequestConfig) =>
+      createResponse(config, {
+        code: '200',
+        data: {
+          ok: true
+        }
+      });
+
+    await expect(service.get('/invalid-code')).rejects.toThrow('状态码 code 必须是有限数字');
+
+    (service.defaults as { adapter: unknown }).adapter = async (config: InternalAxiosRequestConfig) =>
+      createResponse(config, {
+        code: 200,
+        rows: []
+      });
+
+    await expect(service.get('/missing-total')).rejects.toThrow('分页响应 total 必须是有限数字');
+    expect(msgErrorSpy).toHaveBeenCalledTimes(3);
   });
 
   it('handles 401 response and triggers relogin modal', async () => {

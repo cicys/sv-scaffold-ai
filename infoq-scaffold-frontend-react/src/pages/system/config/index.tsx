@@ -43,6 +43,16 @@ const hasDefaultValue = (item: ConfigPanelItem) => item.defaultValue !== null &&
 const toBooleanString = (checked: boolean) => (checked ? 'true' : 'false');
 const defaultPageSize = 10;
 
+const assertConfigPanel = (value: unknown): ConfigPanel => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('配置面板响应 data 必须是对象');
+  }
+  if (!Array.isArray((value as ConfigPanel).groups)) {
+    throw new Error('配置面板响应 data.groups 必须是数组');
+  }
+  return value as ConfigPanel;
+};
+
 export default function ConfigPage() {
   const [panel, setPanel] = useState<ConfigPanel>(initialPanel);
   const [loading, setLoading] = useState(false);
@@ -66,7 +76,7 @@ export default function ConfigPage() {
     setLoading(true);
     try {
       const response = await getConfigPanel();
-      const nextPanel = response.data || initialPanel;
+      const nextPanel = assertConfigPanel(response.data);
       setPanel(nextPanel);
       setOrderRows(
         getAllItems(nextPanel).map((item) => ({
@@ -75,6 +85,8 @@ export default function ConfigPage() {
           displayOrder: item.displayOrder ?? 0
         }))
       );
+    } catch (error) {
+      modal.msgError(error instanceof Error ? error.message : '配置面板加载失败');
     } finally {
       setLoading(false);
     }

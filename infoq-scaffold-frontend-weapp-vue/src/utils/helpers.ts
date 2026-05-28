@@ -1,5 +1,5 @@
 import uni from '@/utils/uni';
-import type { DictDataVO, DictOption, TableResponse } from '@/api/types';
+import type {DictDataVO, DictOption, TableResponse} from '@/api/types';
 
 const normalizeCaptchaBase64 = (img: string) => (img.startsWith('data:') ? img : `data:image/gif;base64,${img}`);
 
@@ -108,8 +108,33 @@ export const formatDateTime = (value?: string | number | Date) => {
   return `${date.getFullYear()}-${part(date.getMonth() + 1)}-${part(date.getDate())} ${part(date.getHours())}:${part(date.getMinutes())}`;
 };
 
-export const toDictOptions = (items?: DictDataVO[]) =>
-  (items || []).map<DictOption>((item) => ({
+export const assertArrayData = <T>(value: unknown, label = '响应 data'): T[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} 必须是数组`);
+  }
+  return value as T[];
+};
+
+export const assertObjectData = <T extends object>(value: unknown, label = '响应 data'): T => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${label} 必须是对象`);
+  }
+  return value as T;
+};
+
+export const assertAvatarUploadData = (value: unknown, label = '头像上传响应 data') => {
+  const data = assertObjectData<{ imgUrl?: unknown }>(value, label);
+  if (typeof data.imgUrl !== 'string') {
+    throw new Error(`${label}.imgUrl 必须是字符串`);
+  }
+  if (!data.imgUrl.trim()) {
+    throw new Error(`${label}.imgUrl 不能为空`);
+  }
+  return { imgUrl: data.imgUrl };
+};
+
+export const toDictOptions = (items: DictDataVO[]) =>
+  assertArrayData<DictDataVO>(items, '字典响应 data').map<DictOption>((item) => ({
     label: item.dictLabel,
     value: item.dictValue,
     cssClass: item.cssClass,
@@ -163,9 +188,9 @@ export const handleTree = <T extends TreeNodeRecord>(data: T[], id = 'id', paren
 
 export const handleDeptTree = <T extends TreeNodeRecord>(data: T[]) => handleTree(data, 'deptId', 'parentId', 'children');
 
-export const flattenTree = <T extends { children?: T[] }>(items?: T[], depth = 0): Array<FlatTreeItem<T>> => {
+export const flattenTree = <T extends { children?: T[] }>(items: T[], depth = 0): Array<FlatTreeItem<T>> => {
   const result: Array<FlatTreeItem<T>> = [];
-  (items || []).forEach((item) => {
+  assertArrayData<T>(items, '树形列表响应 data').forEach((item) => {
     result.push({ ...item, _depth: depth });
     if (item.children?.length) {
       result.push(...flattenTree(item.children, depth + 1));
@@ -174,4 +199,4 @@ export const flattenTree = <T extends { children?: T[] }>(items?: T[], depth = 0
   return result;
 };
 
-export const resolveTableTotal = <T>(value?: TableResponse<T>) => value?.total ?? value?.rows?.length ?? 0;
+export const resolveTableTotal = <T>(value: TableResponse<T>) => value.total;

@@ -36,13 +36,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { addMenu, getMenu, updateMenu, type MenuForm } from '@/api';
-import { ensureAuthenticated, ensurePermission } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
+import {addMenu, assertObjectData, getMenu, type MenuForm, updateMenu} from '@/api';
+import {ensureAuthenticated, ensurePermission} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const menuId = ref('');
@@ -69,7 +69,7 @@ const loadForm = async () => {
   if (!menuId.value) return;
   try {
     const response = await getMenu(menuId.value);
-    Object.assign(form, response.data || {});
+    Object.assign(form, assertObjectData(response.data, '菜单详情响应 data'));
   } catch (error) {
     await handlePageError(error, '菜单信息加载失败');
   }

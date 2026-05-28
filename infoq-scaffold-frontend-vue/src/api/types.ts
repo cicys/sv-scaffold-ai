@@ -1,5 +1,5 @@
 export interface ApiResult {
-  code?: number;
+  code: number;
   msg?: string;
 }
 
@@ -9,7 +9,7 @@ export interface ApiResponse<T> extends ApiResult {
 
 export interface TableResponse<T> extends ApiResult {
   rows: T[];
-  total?: number;
+  total: number;
 }
 
 /**

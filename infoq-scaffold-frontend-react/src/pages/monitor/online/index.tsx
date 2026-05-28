@@ -29,16 +29,19 @@ export default function OnlinePage() {
   const [total, setTotal] = useState(0);
   const dict = useDictOptions('sys_device_type');
 
-  const loadList = useCallback(async (nextQuery: OnlineQuery = query) => {
-    setLoading(true);
-    try {
-      const response = await list(nextQuery);
-      setListData(response.rows);
-      setTotal(response.total ?? response.rows.length);
-    } finally {
-      setLoading(false);
-    }
-  }, [query]);
+  const loadList = useCallback(
+    async (nextQuery: OnlineQuery = query) => {
+      setLoading(true);
+      try {
+        const response = await list(nextQuery);
+        setListData(response.rows);
+        setTotal(response.total);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [query]
+  );
 
   useEffect(() => {
     loadList(initialQuery);

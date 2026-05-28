@@ -1,21 +1,15 @@
-import { Swiper, SwiperItem, View, Text } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
-import { AtAvatar, AtGrid, AtIcon, AtNoticebar } from 'taro-ui';
-import {
-  formatDateTime,
-  listNotice,
-  loadWorkbenchSummary,
-  type AdminModuleKey,
-  type NoticeVO
-} from '@/api';
+import {Swiper, SwiperItem, Text, View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
+import {AtAvatar, AtGrid, AtIcon, AtNoticebar} from 'taro-ui';
+import {type AdminModuleKey, formatDateTime, listNotice, loadWorkbenchSummary, type NoticeVO} from '@/api';
 import defaultAvatar from '@/assets/images/profile.jpg';
-import { useState } from 'react';
+import {useState} from 'react';
 import BottomNav from '../../components/bottom-nav';
-import { adminModules } from '../../utils/admin';
-import { resolveAvatarUrl } from '../../utils/avatar';
-import { navigate, routes } from '../../utils/navigation';
-import { handlePageError } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {adminModules} from '../../utils/admin';
+import {resolveAvatarUrl} from '../../utils/avatar';
+import {navigate, routes} from '../../utils/navigation';
+import {handlePageError} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const gridModuleKeys: AdminModuleKey[] = ['users', 'roles', 'depts', 'notices', 'online', 'loginInfo'];
@@ -81,7 +75,7 @@ export default function HomePage() {
         setSummary(nextSummary);
         if (currentPermissions.includes('system:notice:list')) {
           const response = await listNotice(noticeQuery);
-          setRecentNotices(response.rows || []);
+          setRecentNotices(response.rows);
         } else {
           setRecentNotices([]);
         }

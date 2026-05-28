@@ -1,25 +1,26 @@
-import { View, Text, Picker } from '@tarojs/components';
-import Taro, { useDidShow, useRouter } from '@tarojs/taro';
+import {Picker, Text, View} from '@tarojs/components';
+import Taro, {useDidShow, useRouter} from '@tarojs/taro';
 import {
   addUser,
+  assertArrayData,
   deptTreeSelectForUser,
+  type DeptTreeVO,
+  type DictOption,
   flattenTree,
+  type FlatTreeItem,
   getDicts,
   getUser,
   optionSelectRoles,
+  type RoleVO,
   toDictOptions,
   updateUser,
-  type DeptTreeVO,
-  type DictOption,
-  type FlatTreeItem,
-  type RoleVO,
   type UserForm
 } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput } from 'taro-ui';
-import { routes } from '../../../utils/navigation';
-import { handlePageError, showSuccess } from '../../../utils/ui';
-import { useSessionStore } from '../../../store/session';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
+import {routes} from '../../../utils/navigation';
+import {handlePageError, showSuccess} from '../../../utils/ui';
+import {useSessionStore} from '../../../store/session';
 import './index.scss';
 
 const createForm = (): UserForm => ({
@@ -37,7 +38,8 @@ const createForm = (): UserForm => ({
   roleIds: []
 });
 
-const normalizeIdList = (items?: Array<string | number>) => (items || []).map((item) => String(item));
+const normalizeIdList = (items: unknown, label: string) =>
+  assertArrayData<string | number>(items, label).map((item) => String(item));
 
 export default function UserFormPage() {
   const router = useRouter();
@@ -68,7 +70,7 @@ export default function UserFormPage() {
       setStatusOptions(toDictOptions(statusRes.data));
       setSexOptions(toDictOptions(sexRes.data));
       setDeptOptions(flattenTree(deptRes.data));
-      setRoleOptions(roleRes.data || []);
+      setRoleOptions(assertArrayData(roleRes.data, '角色选项响应 data'));
 
       if (userId) {
         const response = await getUser(userId);
@@ -83,8 +85,8 @@ export default function UserFormPage() {
           sex: user.sex,
           status: user.status,
           remark: user.remark,
-          roleIds: normalizeIdList(roleIds),
-          postIds: normalizeIdList(postIds)
+          roleIds: normalizeIdList(roleIds, '用户详情响应 data.roleIds'),
+          postIds: normalizeIdList(postIds, '用户详情响应 data.postIds')
         });
       }
     } catch (error) {

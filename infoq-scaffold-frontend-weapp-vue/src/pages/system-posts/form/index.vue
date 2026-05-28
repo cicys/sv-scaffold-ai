@@ -60,13 +60,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { addPost, getPost, updatePost, getDicts, toDictOptions, type PostForm, type DictOption } from '@/api';
-import { ensureAuthenticated, ensurePermission } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
+import {
+  addPost,
+  assertObjectData,
+  type DictOption,
+  getDicts,
+  getPost,
+  type PostForm,
+  toDictOptions,
+  updatePost
+} from '@/api';
+import {ensureAuthenticated, ensurePermission} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const postId = ref('');
@@ -90,7 +99,7 @@ const loadData = async () => {
 
     if (postId.value) {
       const response = await getPost(postId.value);
-      Object.assign(form, response.data || {});
+      Object.assign(form, assertObjectData(response.data, '岗位详情响应 data'));
     }
   } catch (error) {
     await handlePageError(error, '岗位信息加载失败');

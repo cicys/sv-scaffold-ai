@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 
 type SetupOptions = {
   token?: string;
@@ -457,6 +457,61 @@ describe('request', () => {
     expect(mocks.decryptMock).not.toHaveBeenCalled();
   });
 
+  it('should reject response payloads without a valid numeric code', async () => {
+    const { request, AppError, mocks } = await setupRequestModule();
+
+    mocks.requestMock.mockResolvedValueOnce({
+      data: {
+        data: {
+          ok: true
+        }
+      },
+      header: {}
+    });
+
+    await expect(
+      request({
+        url: '/system/user/getInfo',
+        method: 'GET'
+      })
+    ).rejects.toBeInstanceOf(AppError);
+
+    mocks.requestMock.mockResolvedValueOnce({
+      data: {
+        code: '200',
+        data: {
+          ok: true
+        }
+      },
+      header: {}
+    });
+
+    await expect(
+      request({
+        url: '/system/user/getInfo',
+        method: 'GET'
+      })
+    ).rejects.toThrow('状态码 code 必须是有限数字');
+  });
+
+  it('should reject table payloads without rows array or numeric total', async () => {
+    const { request, mocks } = await setupRequestModule();
+    mocks.requestMock.mockResolvedValueOnce({
+      data: {
+        code: 200,
+        rows: []
+      },
+      header: {}
+    });
+
+    await expect(
+      request({
+        url: '/system/user/list',
+        method: 'GET'
+      })
+    ).rejects.toThrow('分页响应 total 必须是有限数字');
+  });
+
   it('should ignore non encrypt-key headers in decrypt path', async () => {
     const { request, mocks } = await setupRequestModule();
     mocks.requestMock.mockResolvedValue({
@@ -787,18 +842,26 @@ describe('request', () => {
     ).rejects.toBeInstanceOf(AppError);
   });
 
-  it('uploadFile should handle empty string response payload as successful default object', async () => {
+  it('uploadFile should reject empty or invalid json response payloads', async () => {
     const { uploadFile, mocks } = await setupRequestModule();
     mocks.uploadFileMock.mockResolvedValue({
       data: '',
       header: {}
     });
 
-    const payload = await uploadFile<Record<string, unknown>>({
+    await expect(uploadFile<Record<string, unknown>>({
       url: '/system/user/profile/avatar',
       filePath: '/tmp/avatar.png'
+    })).rejects.toThrow('上传响应契约错误：响应体不能为空');
+
+    mocks.uploadFileMock.mockResolvedValueOnce({
+      data: 'not-json',
+      header: {}
     });
 
-    expect(payload).toEqual({});
+    await expect(uploadFile<Record<string, unknown>>({
+      url: '/system/user/profile/avatar',
+      filePath: '/tmp/avatar.png'
+    })).rejects.toThrow('上传响应契约错误：响应体必须是合法 JSON');
   });
 });

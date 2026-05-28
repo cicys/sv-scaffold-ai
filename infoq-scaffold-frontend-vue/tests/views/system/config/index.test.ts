@@ -99,6 +99,7 @@ const configMocks = vi.hoisted(() => ({
   refreshCache: vi.fn(),
   msgSuccess: vi.fn(),
   msgWarning: vi.fn(),
+  msgError: vi.fn(),
   download: vi.fn()
 }));
 
@@ -280,7 +281,8 @@ describe('views/system/config/index', () => {
             useDict: () => reactive({}),
             $modal: {
               msgSuccess: configMocks.msgSuccess,
-              msgWarning: configMocks.msgWarning
+              msgWarning: configMocks.msgWarning,
+              msgError: configMocks.msgError
             },
             download: configMocks.download
           } as unknown as import('vue').ComponentCustomProperties & Record<string, unknown>
@@ -322,6 +324,15 @@ describe('views/system/config/index', () => {
     expect(wrapper.findAll('.config-setting-row')).toHaveLength(3);
     expect(wrapper.find('.config-list-panel').exists()).toBe(true);
     expect(wrapper.find('.config-list-scroll').exists()).toBe(true);
+  });
+
+  it('reports malformed config panel instead of rendering empty groups', async () => {
+    configMocks.getConfigPanel.mockResolvedValueOnce({ data: {} });
+
+    mountView();
+    await flushPromises();
+
+    expect(configMocks.msgError).toHaveBeenCalledWith('配置面板响应 data.groups 必须是数组');
   });
 
   it('paginates the config list inside the scrollable list panel', async () => {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DeleteOutlined, DownloadOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
 import { Button, Card, Col, DatePicker, Form, Input, Row, Select, Space, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { SortOrder, SorterResult } from 'antd/es/table/interface';
+import type { SorterResult, SortOrder } from 'antd/es/table/interface';
 import type { Dayjs } from 'dayjs';
 import useDictOptions from '@/hooks/useDictOptions';
 import { cleanOperLog, delOperLog, list } from '@/api/monitor/operLog';
@@ -49,8 +49,7 @@ const toAntSortOrder = (value?: string): SortOrder | undefined => {
   return undefined;
 };
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 export default function OperLogPage() {
   const [query, setQuery] = useState<OperLogQuery>(initialQuery);
@@ -69,7 +68,7 @@ export default function OperLogPage() {
     try {
       const response = await list(addDateRange({ ...nextQuery }, formatRange(nextRange)));
       setListData(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -326,13 +325,7 @@ export default function OperLogPage() {
             <Button
               className="btn-plain-warning"
               icon={<DownloadOutlined />}
-              onClick={() =>
-                download(
-                  '/monitor/operLog/export',
-                  addDateRange({ ...query }, formatRange(dateRange)),
-                  `operLog_${Date.now()}.xlsx`
-                )
-              }
+              onClick={() => download('/monitor/operLog/export', addDateRange({ ...query }, formatRange(dateRange)), `operLog_${Date.now()}.xlsx`)}
             >
               导出
             </Button>

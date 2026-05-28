@@ -53,19 +53,26 @@ export default function JobPage() {
     try {
       const response = await listJob(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
   }, []);
 
   const loadHandlerOptions = useCallback(async () => {
-    const response = await listJobHandlerKeys();
-    const nextOptions = response.data || [];
-    setHandlerOptions(nextOptions);
-    const currentKey = form.getFieldValue('handlerKey');
-    if (!currentKey && nextOptions.length > 0) {
-      form.setFieldValue('handlerKey', nextOptions[0]);
+    try {
+      const response = await listJobHandlerKeys();
+      if (!Array.isArray(response.data)) {
+        throw new Error('任务处理器响应 data 必须是数组');
+      }
+      const nextOptions = response.data;
+      setHandlerOptions(nextOptions);
+      const currentKey = form.getFieldValue('handlerKey');
+      if (!currentKey && nextOptions.length > 0) {
+        form.setFieldValue('handlerKey', nextOptions[0]);
+      }
+    } catch (error) {
+      modal.msgError(error instanceof Error ? error.message : '任务处理器加载失败');
     }
   }, [form]);
 

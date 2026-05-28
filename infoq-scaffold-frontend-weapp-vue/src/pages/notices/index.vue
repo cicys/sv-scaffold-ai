@@ -18,7 +18,7 @@
     <view class="list-content">
       <EmptyNotice v-if="!canList" message="当前账号没有访问权限" />
       <EmptyNotice v-else-if="rows.length === 0" message="未查询到相关公告" />
-      
+
       <template v-if="canList">
         <RecordCard
           v-for="item in rows"
@@ -29,12 +29,12 @@
           :actions="getNoticeActions(item)"
         >
           <template #extra>
-            <StatusTag 
-              :label="getDictLabel(typeOptions, item.noticeType) || '未知'" 
+            <StatusTag
+              :label="getDictLabel(typeOptions, item.noticeType) || '未知'"
               type="info"
             />
           </template>
-          
+
           <KeyValueList
             :items="[
               { label: '状态', value: item.status === '0' ? '正常' : '停用' },
@@ -54,28 +54,28 @@
     </view>
 
     <FabButton v-if="canAdd" @click="openCreate" />
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { 
-  delNotice, 
-  formatDateTime, 
-  getDictLabel, 
-  getDicts, 
-  listNotice, 
-  toDictOptions, 
-  type DictOption, 
-  type NoticeVO 
+import {computed, reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {
+  delNotice,
+  type DictOption,
+  formatDateTime,
+  getDictLabel,
+  getDicts,
+  listNotice,
+  type NoticeVO,
+  toDictOptions
 } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {navigate, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -117,8 +117,8 @@ const loadData = async () => {
       canList.value ? listNotice(query) : Promise.resolve({ rows: [], total: 0 })
     ]);
     typeOptions.value = toDictOptions(typeResponse.data);
-    rows.value = listResponse.rows || [];
-    total.value = listResponse.total || 0;
+    rows.value = listResponse.rows;
+    total.value = listResponse.total;
   } catch (error) {
     await handlePageError(error, '公告列表加载失败');
   }
@@ -158,7 +158,7 @@ const handleDelete = async (noticeId: number) => {
     content: `确定删除公告 #${noticeId} 吗？`
   });
   if (!res.confirm) return;
-  
+
   try {
     await delNotice(noticeId);
     await showSuccess('公告已删除');
@@ -177,8 +177,8 @@ const getNoticeActions = (item: NoticeVO) => {
     actions.push({ title: '编辑', onClick: () => openEdit(item.noticeId!) });
   }
   if (canRemove.value) {
-    actions.push({ 
-      title: '删除', 
+    actions.push({
+      title: '删除',
       onClick: () => handleDelete(item.noticeId!),
       danger: true
     });

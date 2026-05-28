@@ -217,10 +217,17 @@ const data = reactive<PageData<JobForm, JobQuery>>({
 const { queryParams, form, rules } = toRefs(data);
 
 const getHandlerOptions = async () => {
-  const res = await listJobHandlerKeys();
-  handlerOptions.value = res.data || [];
-  if (!form.value.handlerKey && handlerOptions.value.length > 0) {
-    form.value.handlerKey = handlerOptions.value[0];
+  try {
+    const res = await listJobHandlerKeys();
+    if (!Array.isArray(res.data)) {
+      throw new Error('任务处理器响应 data 必须是数组');
+    }
+    handlerOptions.value = res.data;
+    if (!form.value.handlerKey && handlerOptions.value.length > 0) {
+      form.value.handlerKey = handlerOptions.value[0];
+    }
+  } catch (error) {
+    proxy?.$modal.msgError(error instanceof Error ? error.message : '任务处理器加载失败');
   }
 };
 

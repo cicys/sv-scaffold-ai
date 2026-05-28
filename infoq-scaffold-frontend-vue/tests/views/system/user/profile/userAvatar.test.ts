@@ -209,6 +209,46 @@ describe('views/system/user/profile/userAvatar', () => {
     expect(wrapper.find('img.img-circle').attributes('src')).toBe('https://cdn.example.com/new-avatar.png');
   });
 
+  it('reports malformed avatar upload response', async () => {
+    avatarMocks.uploadAvatar.mockResolvedValueOnce({ data: {} });
+    const wrapper = mount(UserAvatarView, {
+      global: {
+        config: {
+          globalProperties: {
+            $modal: {
+              msgSuccess: avatarMocks.msgSuccess,
+              msgError: avatarMocks.msgError
+            }
+          } as unknown as import('vue').ComponentCustomProperties & Record<string, unknown>
+        },
+        stubs: {
+          'el-dialog': ElDialogStub,
+          'el-row': passthroughStub('ElRow'),
+          'el-col': passthroughStub('ElCol'),
+          'el-upload': ElUploadStub,
+          'el-button': ElButtonStub,
+          'el-icon': passthroughStub('ElIcon'),
+          Upload: true
+        }
+      }
+    });
+
+    await wrapper.find('.user-info-head').trigger('click');
+    await wrapper.find('button.emit-opened').trigger('click');
+    await flushPromises();
+
+    const uploadProps = wrapper.findComponent(ElUploadStub).props() as { beforeUpload: (file: File) => void };
+    uploadProps.beforeUpload(new File(['img'], 'avatar.png', { type: 'image/png' }));
+    await flushPromises();
+
+    const submitButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().replace(/\s/g, '') === '提交');
+    await submitButton!.trigger('click');
+    await flushPromises();
+
+    expect(avatarMocks.userStore.setAvatar).not.toHaveBeenCalled();
+    expect(avatarMocks.msgError).toHaveBeenCalledWith('头像上传响应 data.imgUrl 必须是字符串');
+  });
+
   it('covers rotate/scale/realtime preview and close dialog reset branches', async () => {
     const wrapper = mount(UserAvatarView, {
       global: {

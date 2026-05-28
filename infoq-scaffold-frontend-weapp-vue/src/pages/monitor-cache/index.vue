@@ -48,12 +48,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { getCache, type CacheVO } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { handlePageError } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {assertArrayData, assertObjectData, type CacheVO, getCache} from '@/api';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {handlePageError} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 import RecordCard from '@/components/RecordCard.vue';
 import KeyValueList from '@/components/KeyValueList.vue';
 import StatusTag from '@/components/StatusTag.vue';
@@ -75,6 +75,13 @@ const getCommandPercent = (value: string) => {
   return (Number(value) / maxCommandValue.value) * 100;
 };
 
+const assertCacheData = (value: CacheVO) => {
+  const cacheData = assertObjectData<CacheVO>(value, '缓存信息响应 data');
+  assertObjectData(cacheData.info, '缓存信息响应 data.info');
+  assertArrayData(cacheData.commandStats, '缓存信息响应 data.commandStats');
+  return cacheData;
+};
+
 const loadData = async () => {
   if (!ensureAuthenticated()) {
     return;
@@ -82,7 +89,7 @@ const loadData = async () => {
   try {
     await sessionStore.loadSession();
     const response = await getCache();
-    Object.assign(cache, response.data || {});
+    Object.assign(cache, assertCacheData(response.data));
   } catch (error) {
     await handlePageError(error, '缓存信息加载失败');
   }

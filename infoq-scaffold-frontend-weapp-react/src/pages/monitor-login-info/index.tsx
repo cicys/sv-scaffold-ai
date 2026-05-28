@@ -1,24 +1,24 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
   cleanLoginInfo,
   delLoginInfo,
+  type DictOption,
   getDictLabel,
   getDicts,
   listLoginInfo,
-  toDictOptions,
-  unlockLoginInfo,
-  type DictOption,
   type LoginInfoQuery,
-  type LoginInfoVO
+  type LoginInfoVO,
+  toDictOptions,
+  unlockLoginInfo
 } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, PaginationBar, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): LoginInfoQuery => ({
@@ -55,8 +55,8 @@ export default function MonitorLoginInfoPage() {
         canList ? listLoginInfo(nextQuery) : Promise.resolve({ rows: [], total: 0 })
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '登录日志加载失败');
     }
@@ -164,9 +164,9 @@ export default function MonitorLoginInfoPage() {
             title={item.userName || '未知用户'}
             statusColor={item.status === '0' ? '#52c41a' : '#ff4d4f'}
             extra={
-              <StatusTag 
-                label={getDictLabel(statusOptions, item.status) || '未知'} 
-                type={item.status === '0' ? 'success' : 'error'} 
+              <StatusTag
+                label={getDictLabel(statusOptions, item.status) || '未知'}
+                type={item.status === '0' ? 'success' : 'error'}
               />
             }
             actions={[
@@ -201,7 +201,7 @@ export default function MonitorLoginInfoPage() {
       </View>
 
       {canRemove && <FabButton icon="trash" onClick={() => void handleClean()} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

@@ -7,6 +7,13 @@ import { closeSSE } from '@/utils/sse';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
+const ensureStringArray = (value: unknown, label: string) => {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error(`${label} 必须是字符串数组`);
+  }
+  return value;
+};
+
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken());
   const name = ref('');
@@ -39,14 +46,10 @@ export const useUserStore = defineStore('user', () => {
       const data = res.data;
       const user = data.user;
       const profile = user.avatar == '' || user.avatar == null ? defAva : user.avatar;
-
-      if (data.roles && data.roles.length > 0) {
-        // 验证返回的roles是否是一个非空数组
-        roles.value = data.roles;
-        permissions.value = data.permissions;
-      } else {
-        roles.value = ['ROLE_DEFAULT'];
-      }
+      const nextRoles = ensureStringArray(data.roles, '用户角色');
+      const nextPermissions = ensureStringArray(data.permissions, '用户权限');
+      roles.value = nextRoles;
+      permissions.value = nextPermissions;
       name.value = user.userName;
       nickname.value = user.nickName;
       avatar.value = profile;

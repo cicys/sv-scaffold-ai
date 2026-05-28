@@ -1,24 +1,25 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
+  assertArrayData,
   delDept,
-  flattenTree,
-  getDictLabel,
-  getDicts,
-  listDept,
-  toDictOptions,
   type DeptQuery,
   type DeptVO,
   type DictOption,
-  type FlatTreeItem
+  flattenTree,
+  type FlatTreeItem,
+  getDictLabel,
+  getDicts,
+  listDept,
+  toDictOptions
 } from '@/api';
-import { useState } from 'react';
-import { AtInput, AtButton } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { navigate, routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {navigate, routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (): DeptQuery => ({
@@ -53,7 +54,7 @@ export default function SystemDeptsPage() {
         canList ? listDept(nextQuery) : Promise.resolve({ data: [] as DeptVO[] })
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
-      setList(flattenTree(listResponse.data || []));
+      setList(flattenTree(assertArrayData(listResponse.data, '部门列表响应 data')));
     } catch (error) {
       await handlePageError(error, '部门列表加载失败');
     }
@@ -134,18 +135,18 @@ export default function SystemDeptsPage() {
             title={`${'· '.repeat(item._depth)}${item.deptName}`}
             statusColor={item.status === '0' ? '#52c41a' : '#ff4d4f'}
             extra={
-              <StatusTag 
-                label={getDictLabel(statusOptions, item.status) || '未知'} 
-                type={item.status === '0' ? 'success' : 'error'} 
+              <StatusTag
+                label={getDictLabel(statusOptions, item.status) || '未知'}
+                type={item.status === '0' ? 'success' : 'error'}
               />
             }
             actions={[
               ...(canAdd ? [{ onClick: () => openCreate(item.deptId), title: '新增下级' }] : []),
               ...(canEdit ? [{ onClick: () => void openEdit(item.deptId), title: '编辑' }] : []),
-              ...(canRemove ? [{ 
-                onClick: () => void handleDelete(item.deptId), 
+              ...(canRemove ? [{
+                onClick: () => void handleDelete(item.deptId),
                 title: '删除',
-                danger: true 
+                danger: true
               }] : [])
             ]}
           >
@@ -161,7 +162,7 @@ export default function SystemDeptsPage() {
       </View>
 
       {canAdd && <FabButton onClick={() => openCreate()} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

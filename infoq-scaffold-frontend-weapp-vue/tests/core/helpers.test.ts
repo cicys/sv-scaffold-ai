@@ -1,16 +1,19 @@
-import { describe, expect, it, vi, type Mock } from 'vitest';
+import {describe, expect, it, type Mock, vi} from 'vitest';
 import {
-  asCaptchaImage,
-  flattenTree,
-  formatDateTime,
-  getDictLabel,
-  handleDeptTree,
-  handleTree,
-  parseStrEmpty,
-  resolveTableTotal,
-  stripHtml,
-  tansParams,
-  toDictOptions
+    asCaptchaImage,
+    assertArrayData,
+    assertAvatarUploadData,
+    assertObjectData,
+    flattenTree,
+    formatDateTime,
+    getDictLabel,
+    handleDeptTree,
+    handleTree,
+    parseStrEmpty,
+    resolveTableTotal,
+    stripHtml,
+    tansParams,
+    toDictOptions
 } from '../../src/utils/helpers';
 
 describe('helpers', () => {
@@ -135,7 +138,7 @@ describe('helpers', () => {
     expect(getDictLabel(options, '1')).toBe('停用');
     expect(getDictLabel(options, 'x')).toBe('x');
     expect(getDictLabel(options, undefined)).toBe('');
-    expect(toDictOptions(undefined)).toEqual([]);
+    expect(() => toDictOptions(undefined as unknown as [])).toThrow('字典响应 data 必须是数组');
   });
 
   it('flattenTree and resolveTableTotal should work for list responses', () => {
@@ -148,10 +151,24 @@ describe('helpers', () => {
     ]);
 
     expect(flat.map((item) => `${item.id}:${item._depth}`)).toEqual(['1:0', '2:1']);
-    expect(resolveTableTotal({ rows: [1, 2, 3] as unknown[], total: 9 })).toBe(9);
-    expect(resolveTableTotal({ rows: [1, 2, 3] as unknown[] })).toBe(3);
-    expect(resolveTableTotal(undefined)).toBe(0);
-    expect(flattenTree(undefined)).toEqual([]);
+    expect(resolveTableTotal({ code: 200, rows: [1, 2, 3] as unknown[], total: 9 })).toBe(9);
+    expect(() => flattenTree(undefined as unknown as [])).toThrow('树形列表响应 data 必须是数组');
+  });
+
+  it('assertArrayData and assertObjectData should reject malformed response data', () => {
+    const arrayData = [{ id: 1 }];
+    const objectData = { id: 1 };
+
+    expect(assertArrayData(arrayData, '列表响应 data')).toBe(arrayData);
+    expect(assertObjectData(objectData, '详情响应 data')).toBe(objectData);
+    expect(() => assertArrayData(undefined as unknown as [], '列表响应 data')).toThrow('列表响应 data 必须是数组');
+    expect(() => assertObjectData(undefined as unknown as object, '详情响应 data')).toThrow('详情响应 data 必须是对象');
+  });
+
+  it('assertAvatarUploadData should reject missing avatar url', () => {
+    expect(assertAvatarUploadData({ imgUrl: 'https://cdn.example.com/avatar.png' })).toEqual({ imgUrl: 'https://cdn.example.com/avatar.png' });
+    expect(() => assertAvatarUploadData({})).toThrow('头像上传响应 data.imgUrl 必须是字符串');
+    expect(() => assertAvatarUploadData({ imgUrl: '' })).toThrow('头像上传响应 data.imgUrl 不能为空');
   });
 
   it('V-HP-01 should build multi-root tree and recursively attach descendants', () => {

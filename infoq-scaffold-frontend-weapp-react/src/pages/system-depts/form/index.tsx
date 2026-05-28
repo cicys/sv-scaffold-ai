@@ -1,23 +1,24 @@
-import { View, Text, Picker } from '@tarojs/components';
-import Taro, { useDidShow, useRouter } from '@tarojs/taro';
+import {Picker, Text, View} from '@tarojs/components';
+import Taro, {useDidShow, useRouter} from '@tarojs/taro';
 import {
   addDept,
-  getDicts,
-  getDept,
-  listDept,
-  toDictOptions,
-  updateDept,
-  flattenTree,
-  type DictOption,
+  assertArrayData,
   type DeptForm,
   type DeptVO,
-  type FlatTreeItem
+  type DictOption,
+  flattenTree,
+  type FlatTreeItem,
+  getDept,
+  getDicts,
+  listDept,
+  toDictOptions,
+  updateDept
 } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput } from 'taro-ui';
-import { handlePageError, showSuccess } from '../../../utils/ui';
-import { useSessionStore } from '../../../store/session';
-import { routes } from '../../../utils/navigation';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
+import {handlePageError, showSuccess} from '../../../utils/ui';
+import {useSessionStore} from '../../../store/session';
+import {routes} from '../../../utils/navigation';
 import './index.scss';
 
 const createForm = (): DeptForm => ({
@@ -60,7 +61,7 @@ export default function DeptFormPage() {
         listDept({ pageNum: 1, pageSize: 100, deptName: '', deptCategory: '', status: '' })
       ]);
       setStatusOptions(toDictOptions(statusRes.data));
-      setTreeOptions(flattenTree(listRes.data || []));
+      setTreeOptions(flattenTree(assertArrayData(listRes.data, '部门列表响应 data')));
 
       if (deptId) {
         const response = await getDept(deptId);

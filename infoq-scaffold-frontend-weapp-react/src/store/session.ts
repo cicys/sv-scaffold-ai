@@ -1,12 +1,12 @@
-import { create } from 'zustand';
+import {create} from 'zustand';
 import {
   getInfo,
   getToken,
   hasPermission as hasGrantedPermission,
-  type LoginData,
   login,
-  normalizePermissions,
+  type LoginData,
   logout,
+  normalizePermissions,
   removeToken,
   setToken,
   type UserInfo,
@@ -32,6 +32,13 @@ const clearSessionState = {
   initialized: true
 };
 
+const resolvePermissions = (value: unknown) => {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error('用户权限必须是字符串数组');
+  }
+  return normalizePermissions(value);
+};
+
 export const useSessionStore = create<SessionState>((set, get) => ({
   token: getToken(),
   user: null,
@@ -55,7 +62,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({
       token: currentToken,
       user: info.user,
-      permissions: normalizePermissions(info.permissions || []),
+      permissions: resolvePermissions(info.permissions),
       initialized: true
     });
     return info;
@@ -70,7 +77,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({
       token,
       user: info.user,
-      permissions: normalizePermissions(info.permissions || []),
+      permissions: resolvePermissions(info.permissions),
       initialized: true
     });
   },

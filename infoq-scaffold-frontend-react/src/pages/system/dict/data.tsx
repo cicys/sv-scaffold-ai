@@ -3,7 +3,7 @@ import { CloseOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutl
 import { Button, Card, Col, Form, Input, InputNumber, Modal, Row, Select, Space, Table, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { optionselect as getDictTypeOptions, getType } from '@/api/system/dict/type';
+import { getType, optionselect as getDictTypeOptions } from '@/api/system/dict/type';
 import type { DictTypeVO } from '@/api/system/dict/type/types';
 import { addData, delData, getData, listData, updateData } from '@/api/system/dict/data';
 import type { DictDataForm, DictDataQuery, DictDataVO } from '@/api/system/dict/data/types';
@@ -68,29 +68,32 @@ export default function DictDataPage() {
     try {
       const response = await listData(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const loadCurrentType = useCallback(async (baseQuery: DictDataQuery) => {
-    if (!dictId) {
-      return;
-    }
-    const response = await getType(dictId);
-    const info = response.data;
-    if (!info) {
-      return;
-    }
-    const nextQuery = {
-      ...baseQuery,
-      dictType: info.dictType
-    };
-    setDefaultDictType(info.dictType);
-    setQuery(nextQuery);
-    loadList(nextQuery);
-  }, [dictId, loadList]);
+  const loadCurrentType = useCallback(
+    async (baseQuery: DictDataQuery) => {
+      if (!dictId) {
+        return;
+      }
+      const response = await getType(dictId);
+      const info = response.data;
+      if (!info) {
+        return;
+      }
+      const nextQuery = {
+        ...baseQuery,
+        dictType: info.dictType
+      };
+      setDefaultDictType(info.dictType);
+      setQuery(nextQuery);
+      loadList(nextQuery);
+    },
+    [dictId, loadList]
+  );
 
   useEffect(() => {
     loadTypeOptions();
@@ -274,13 +277,28 @@ export default function DictDataPage() {
             <Button className="btn-plain-primary" icon={<PlusOutlined />} onClick={handleAdd}>
               新增
             </Button>
-            <Button icon={<EditOutlined />} style={{ color: '#67c23a', borderColor: '#b7eb8f' }} onClick={() => handleEdit(selectedIds[0])} disabled={selectedIds.length !== 1}>
+            <Button
+              icon={<EditOutlined />}
+              style={{ color: '#67c23a', borderColor: '#b7eb8f' }}
+              onClick={() => handleEdit(selectedIds[0])}
+              disabled={selectedIds.length !== 1}
+            >
               修改
             </Button>
-            <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0} style={{ borderColor: '#ffccc7' }}>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete()}
+              disabled={selectedIds.length === 0}
+              style={{ borderColor: '#ffccc7' }}
+            >
               删除
             </Button>
-            <Button icon={<DownloadOutlined />} style={{ color: '#e6a23c', borderColor: '#ffd591' }} onClick={() => download('/system/dict/data/export', { ...query }, `dict_data_${Date.now()}.xlsx`)}>
+            <Button
+              icon={<DownloadOutlined />}
+              style={{ color: '#e6a23c', borderColor: '#ffd591' }}
+              onClick={() => download('/system/dict/data/export', { ...query }, `dict_data_${Date.now()}.xlsx`)}
+            >
               导出
             </Button>
             <Button icon={<CloseOutlined />} style={{ color: '#e6a23c', borderColor: '#ffd591' }} onClick={() => navigate('/system/dict')}>

@@ -57,7 +57,8 @@ const ElDialogStub = defineComponent({
     }
   },
   setup(props, { slots }) {
-    return () => (props.modelValue ? h('div', { class: 'el-dialog-stub', 'data-title': props.title }, [slots.default?.(), slots.footer?.()]) : h('div'));
+    return () =>
+      props.modelValue ? h('div', { class: 'el-dialog-stub', 'data-title': props.title }, [slots.default?.(), slots.footer?.()]) : h('div');
   }
 });
 

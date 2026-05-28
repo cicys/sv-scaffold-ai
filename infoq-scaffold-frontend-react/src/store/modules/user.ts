@@ -6,6 +6,13 @@ import { closeSSE, initSSE } from '@/utils/sse';
 import { closeWebSocket, initWebSocket } from '@/utils/websocket';
 import defaultAvatar from '@/assets/images/profile.jpg';
 
+const ensureStringArray = (value: unknown, label: string) => {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error(`${label} 必须是字符串数组`);
+  }
+  return value;
+};
+
 export type UserState = {
   token: string;
   name: string;
@@ -40,9 +47,11 @@ export const useUserStore = create<UserState>((set) => ({
     const res = await getUserInfo();
     const data = res.data;
     const user = data.user;
+    const roles = ensureStringArray(data.roles, '用户角色');
+    const permissions = ensureStringArray(data.permissions, '用户权限');
     set({
-      roles: data.roles && data.roles.length > 0 ? data.roles : ['ROLE_DEFAULT'],
-      permissions: data.permissions || [],
+      roles,
+      permissions,
       name: user.userName,
       nickname: user.nickName,
       avatar: user.avatar || defaultAvatar,

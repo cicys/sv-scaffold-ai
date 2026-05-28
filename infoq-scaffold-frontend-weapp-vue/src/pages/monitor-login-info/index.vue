@@ -24,7 +24,7 @@
     <view class="list-content">
       <EmptyNotice v-if="!canList" message="当前账号没有访问权限" />
       <EmptyNotice v-else-if="rows.length === 0" message="未查询到相关日志" />
-      
+
       <template v-if="canList">
         <RecordCard
           v-for="item in rows"
@@ -35,12 +35,12 @@
           :actions="getLoginInfoActions(item)"
         >
           <template #extra>
-            <StatusTag 
-              :label="getDictLabel(statusOptions, item.status) || '未知'" 
-              :type="item.status === '0' ? 'success' : 'error'" 
+            <StatusTag
+              :label="getDictLabel(statusOptions, item.status) || '未知'"
+              :type="item.status === '0' ? 'success' : 'error'"
             />
           </template>
-          
+
           <KeyValueList
             :items="[
               { label: '登录地址', value: item.ipaddr || '-' },
@@ -62,29 +62,28 @@
     </view>
 
     <FabButton v-if="canRemove" @click="handleClean" />
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { 
-  cleanLoginInfo, 
-  delLoginInfo, 
-  getDictLabel, 
-  getDicts, 
-  listLoginInfo, 
-  toDictOptions, 
-  unlockLoginInfo, 
-  type DictOption, 
-  type LoginInfoVO 
+import {computed, reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {
+  cleanLoginInfo,
+  delLoginInfo,
+  type DictOption,
+  getDictLabel,
+  getDicts,
+  listLoginInfo,
+  type LoginInfoVO,
+  toDictOptions,
+  unlockLoginInfo
 } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -124,8 +123,8 @@ const loadData = async () => {
       canList.value ? listLoginInfo(query) : Promise.resolve({ rows: [], total: 0 })
     ]);
     statusOptions.value = toDictOptions(statusResponse.data);
-    rows.value = listResponse.rows || [];
-    total.value = listResponse.total || 0;
+    rows.value = listResponse.rows;
+    total.value = listResponse.total;
   } catch (error) {
     await handlePageError(error, '登录日志加载失败');
   }
@@ -154,7 +153,7 @@ const handleDelete = async (infoId: string | number) => {
     content: `确定删除日志 #${infoId} 吗？`
   });
   if (!res.confirm) return;
-  
+
   try {
     await delLoginInfo(infoId);
     await showSuccess('日志已删除');
@@ -179,7 +178,7 @@ const handleClean = async () => {
     content: '确定清空所有登录日志吗？'
   });
   if (!res.confirm) return;
-  
+
   try {
     await cleanLoginInfo();
     await showSuccess('登录日志已清空');
@@ -195,8 +194,8 @@ const getLoginInfoActions = (item: LoginInfoVO) => {
     actions.push({ title: '解锁', onClick: () => handleUnlock(item.userName!) });
   }
   if (canRemove.value) {
-    actions.push({ 
-      title: '删除', 
+    actions.push({
+      title: '删除',
       onClick: () => handleDelete(item.infoId!),
       danger: true
     });

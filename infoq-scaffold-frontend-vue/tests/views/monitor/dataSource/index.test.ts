@@ -108,4 +108,24 @@ describe('views/monitor/dataSource/index', () => {
     expect(wrapper.text()).not.toContain('jdbc:mysql://localhost:3306/infoq');
     expect(wrapper.text()).not.toContain('P6Spy');
   });
+
+  it('shows an error when datasource monitor response omits items', async () => {
+    dataSourceMocks.getDataSourceMonitor.mockResolvedValueOnce({
+      data: {
+        summary: {
+          dataSourceCount: 1,
+          activeConnections: 3,
+          idleConnections: 7,
+          totalConnections: 10,
+          maximumPoolSize: 20,
+          threadsAwaitingConnection: 0
+        }
+      }
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('连接池监控响应 items 必须是数组');
+  });
 });

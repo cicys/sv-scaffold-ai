@@ -1,13 +1,22 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
-import { forceLogout, getDictLabel, getDicts, listOnlineUsers, toDictOptions, type DictOption, type OnlineQuery, type OnlineVO } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput } from 'taro-ui';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
+import {
+  type DictOption,
+  forceLogout,
+  getDictLabel,
+  getDicts,
+  listOnlineUsers,
+  type OnlineQuery,
+  type OnlineVO,
+  toDictOptions
+} from '@/api';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag } from '../../components/taro-ui-kit';
-import { routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): OnlineQuery => ({
@@ -40,8 +49,8 @@ export default function MonitorOnlinePage() {
         canList ? listOnlineUsers(nextQuery) : Promise.resolve({ rows: [], total: 0 })
       ]);
       setDeviceOptions(toDictOptions(deviceResponse.data));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '在线用户加载失败');
     }
@@ -125,9 +134,9 @@ export default function MonitorOnlinePage() {
             title={item.userName || '未知用户'}
             statusColor="#1677ff"
             extra={
-              <StatusTag 
-                label={getDictLabel(deviceOptions, item.deviceType) || '未知设备'} 
-                type="info" 
+              <StatusTag
+                label={getDictLabel(deviceOptions, item.deviceType) || '未知设备'}
+                type="info"
               />
             }
             actions={[

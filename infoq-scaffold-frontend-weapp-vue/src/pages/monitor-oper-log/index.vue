@@ -25,7 +25,7 @@
     <view class="list-content">
       <EmptyNotice v-if="!canList" message="当前账号没有访问权限" />
       <EmptyNotice v-else-if="rows.length === 0" message="未查询到相关日志" />
-      
+
       <template v-if="canList">
         <RecordCard
           v-for="item in rows"
@@ -36,12 +36,12 @@
           :actions="getOperLogActions(item)"
         >
           <template #extra>
-            <StatusTag 
-              :label="getDictLabel(statusOptions, String(item.status)) || '未知'" 
-              :type="item.status === 0 ? 'success' : 'error'" 
+            <StatusTag
+              :label="getDictLabel(statusOptions, String(item.status)) || '未知'"
+              :type="item.status === 0 ? 'success' : 'error'"
             />
           </template>
-          
+
           <KeyValueList
             :items="[
               { label: '操作人员', value: (item.operName || '-') + ' (' + (item.deptName || '-') + ')' },
@@ -90,28 +90,27 @@
     </view>
 
     <FabButton v-if="canRemove" @click="handleClean" />
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { 
-  cleanOperLog, 
-  delOperLog, 
-  getDictLabel, 
-  getDicts, 
-  listOperLog, 
-  toDictOptions, 
-  type DictOption, 
-  type OperLogVO 
+import {computed, reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {
+  cleanOperLog,
+  delOperLog,
+  type DictOption,
+  getDictLabel,
+  getDicts,
+  listOperLog,
+  type OperLogVO,
+  toDictOptions
 } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -159,8 +158,8 @@ const loadData = async () => {
     ]);
     statusOptions.value = toDictOptions(statusResponse.data);
     typeOptions.value = toDictOptions(typeResponse.data);
-    rows.value = listResponse.rows || [];
-    total.value = listResponse.total || 0;
+    rows.value = listResponse.rows;
+    total.value = listResponse.total;
   } catch (error) {
     await handlePageError(error, '操作日志加载失败');
   }
@@ -189,7 +188,7 @@ const handleDelete = async (operId: string | number) => {
     content: `确定删除日志 #${operId} 吗？`
   });
   if (!res.confirm) return;
-  
+
   try {
     await delOperLog(operId);
     await showSuccess('日志已删除');
@@ -205,7 +204,7 @@ const handleClean = async () => {
     content: '确定清空所有操作日志吗？'
   });
   if (!res.confirm) return;
-  
+
   try {
     await cleanOperLog();
     await showSuccess('操作日志已清空');
@@ -218,17 +217,17 @@ const handleClean = async () => {
 const getOperLogActions = (item: OperLogVO) => {
   const actions = [];
   if (canQuery.value) {
-    actions.push({ 
-      title: '详情', 
+    actions.push({
+      title: '详情',
       onClick: () => {
         selectedLog.value = item;
         detailVisible.value = true;
-      } 
+      }
     });
   }
   if (canRemove.value) {
-    actions.push({ 
-      title: '删除', 
+    actions.push({
+      title: '删除',
       onClick: () => handleDelete(item.operId!),
       danger: true
     });

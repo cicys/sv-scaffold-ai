@@ -21,7 +21,7 @@
       </view>
 
       <EmptyNotice v-if="rows.length === 0" message="未查询到相关数据项" />
-      
+
       <RecordCard
         v-for="item in rows"
         :key="String(item.dictCode)"
@@ -29,12 +29,12 @@
         :title="item.dictLabel"
       >
         <template #extra>
-          <StatusTag 
-            :label="item.status === '0' ? '正常' : '停用'" 
-            :type="item.status === '0' ? 'success' : 'error'" 
+          <StatusTag
+            :label="item.status === '0' ? '正常' : '停用'"
+            :type="item.status === '0' ? 'success' : 'error'"
           />
         </template>
-        
+
         <KeyValueList
           :items="[
             { label: '字典键值', value: item.dictValue || '-' },
@@ -45,18 +45,18 @@
         />
       </RecordCard>
     </view>
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { onLoad, onShow } from '@dcloudio/uni-app';
-import { listData, type DictDataVO } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { handlePageError } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {reactive, ref} from 'vue';
+import {onLoad, onShow} from '@dcloudio/uni-app';
+import {type DictDataVO, listData} from '@/api';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {handlePageError} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 import RecordCard from '@/components/RecordCard.vue';
 import KeyValueList from '@/components/KeyValueList.vue';
 import StatusTag from '@/components/StatusTag.vue';
@@ -83,7 +83,7 @@ const loadData = async () => {
       ...query,
       dictType: dictType.value
     });
-    rows.value = response.rows || [];
+    rows.value = response.rows;
   } catch (error) {
     await handlePageError(error, '字典数据加载失败');
   }
@@ -117,7 +117,7 @@ onShow(() => {
   background: rgba($primary-color, 0.05);
   border-radius: 12rpx;
   border: 1rpx solid rgba($primary-color, 0.1);
-  
+
   .info-text {
     font-size: 24rpx;
     color: $primary-color;

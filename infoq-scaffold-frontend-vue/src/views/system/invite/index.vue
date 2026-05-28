@@ -136,12 +136,7 @@
           <el-switch v-model="generateForm.permanent" />
         </el-form-item>
         <el-form-item v-if="!generateForm.permanent" label="过期时间" prop="expireTime">
-          <el-date-picker
-            v-model="generateForm.expireTime"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="请选择过期时间"
-          />
+          <el-date-picker v-model="generateForm.expireTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择过期时间" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="generateForm.remark" type="textarea" :rows="4" maxlength="255" show-word-limit placeholder="请输入用途备注" />
@@ -186,9 +181,7 @@ interface InviteCancelViewForm {
 }
 
 const { proxy } = getCurrentInstance() as ComponentInternalInstance;
-const { sys_invite_code_status } = toDictRefs(
-  (proxy?.useDict('sys_invite_code_status') ?? {}) as Record<'sys_invite_code_status', DictDataOption[]>
-);
+const { sys_invite_code_status } = toDictRefs((proxy?.useDict('sys_invite_code_status') ?? {}) as Record<'sys_invite_code_status', DictDataOption[]>);
 
 const inviteList = ref<InviteCodeVO[]>([]);
 const selectedRows = ref<InviteCodeVO[]>([]);
@@ -266,7 +259,7 @@ const getList = async () => {
   try {
     const res = await listInvite(proxy?.addDateRange({ ...queryParams }, dateRange.value));
     inviteList.value = res.rows;
-    total.value = res.total ?? 0;
+    total.value = res.total;
   } finally {
     loading.value = false;
   }
@@ -388,11 +381,7 @@ const handleDelete = async (row?: InviteCodeVO) => {
 };
 
 const handleExport = () => {
-  proxy?.download(
-    'system/invite/export',
-    proxy?.addDateRange({ ...queryParams }, dateRange.value),
-    `invite_${new Date().getTime()}.xlsx`
-  );
+  proxy?.download('system/invite/export', proxy?.addDateRange({ ...queryParams }, dateRange.value), `invite_${new Date().getTime()}.xlsx`);
 };
 
 const handleCopy = async (inviteCode: string) => {

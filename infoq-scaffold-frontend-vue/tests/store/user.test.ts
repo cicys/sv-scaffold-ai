@@ -42,7 +42,7 @@ describe('store/user', () => {
     await expect(store.login({ username: 'u', password: 'p', code: '', uuid: '' } as LoginData)).rejects.toBeTruthy();
   });
 
-  it('getInfo should map profile and fallback role', async () => {
+  it('getInfo should map profile without injecting fallback role', async () => {
     vi.mocked(getInfo).mockResolvedValue({
       data: {
         user: { userName: 'alice', nickName: 'Alice', avatar: '', userId: 1001 },
@@ -57,7 +57,8 @@ describe('store/user', () => {
     expect(store.name).toBe('alice');
     expect(store.nickname).toBe('Alice');
     expect(store.userId).toBe(1001);
-    expect(store.roles).toEqual(['ROLE_DEFAULT']);
+    expect(store.roles).toEqual([]);
+    expect(store.permissions).toEqual(['system:user:list']);
   });
 
   it('getInfo should map roles/permissions and keep custom avatar', async () => {

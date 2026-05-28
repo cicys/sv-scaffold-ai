@@ -52,20 +52,22 @@ export default function FileUpload({
         setFileList(value);
         return;
       }
-      let response: Awaited<ReturnType<typeof listByIds>> | undefined;
       try {
-        response = await listByIds(value);
+        const response = await listByIds(value);
+        if (!Array.isArray(response.data)) {
+          throw new Error('文件列表响应格式错误');
+        }
+        const next = response.data.map((item) => ({
+          uid: String(item.ossId),
+          name: item.originalName,
+          status: 'done' as const,
+          url: item.url,
+          ossId: item.ossId
+        }));
+        setFileList(next);
       } catch {
-        response = undefined;
+        modal.msgError('加载已上传文件失败，请稍后重试');
       }
-      const next = (response?.data || []).map((item) => ({
-        uid: String(item.ossId),
-        name: item.originalName,
-        status: 'done' as const,
-        url: item.url,
-        ossId: item.ossId
-      }));
-      setFileList(next);
     };
 
     hydrate();
@@ -140,7 +142,7 @@ export default function FileUpload({
       setFileList(next);
       onChange?.(toValueString(next));
       return true;
-    },
+    }
   };
 
   return (

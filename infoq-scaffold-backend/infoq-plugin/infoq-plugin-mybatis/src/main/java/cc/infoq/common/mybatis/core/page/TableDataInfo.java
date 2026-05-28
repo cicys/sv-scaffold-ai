@@ -98,7 +98,7 @@ public class TableDataInfo<T> implements Serializable {
      */
     public static <T> TableDataInfo<T> build(List<T> list, IPage<T> page) {
         if (CollUtil.isEmpty(list)) {
-            return TableDataInfo.build();
+            return new TableDataInfo<>(List.of(), 0);
         }
         List<T> pageList = CollUtil.page((int) page.getCurrent() - 1, (int) page.getSize(), list);
         return new TableDataInfo<>(pageList, list.size());

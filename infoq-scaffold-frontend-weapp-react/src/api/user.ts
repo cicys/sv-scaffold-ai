@@ -22,7 +22,7 @@ export const updateUserProfile = (data: Partial<UserForm>) =>
   });
 
 export const uploadAvatar = (filePath: string) =>
-  uploadFile<ApiResponse<{ imgUrl?: string }>>({
+  uploadFile<ApiResponse<{ imgUrl: string }>>({
     url: '/system/user/profile/avatar',
     filePath,
     name: 'avatarfile'

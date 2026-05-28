@@ -1,24 +1,25 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
+  assertArrayData,
   delMenu,
+  type DictOption,
   flattenTree,
+  type FlatTreeItem,
   getDictLabel,
   getDicts,
   listMenu,
-  toDictOptions,
-  type DictOption,
-  type FlatTreeItem,
   type MenuQuery,
-  type MenuVO
+  type MenuVO,
+  toDictOptions
 } from '@/api';
-import { useState } from 'react';
-import { AtInput, AtButton } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { navigate, routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {navigate, routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const menuTypeOptions = [
@@ -56,7 +57,7 @@ export default function SystemMenusPage() {
         canList ? listMenu(nextQuery) : Promise.resolve({ data: [] as MenuVO[] })
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
-      setList(flattenTree(listResponse.data || []));
+      setList(flattenTree(assertArrayData(listResponse.data, '菜单列表响应 data')));
     } catch (error) {
       await handlePageError(error, '菜单列表加载失败');
     }
@@ -137,18 +138,18 @@ export default function SystemMenusPage() {
             title={`${'· '.repeat(item._depth)}${item.menuName}`}
             statusColor={item.status === '0' ? '#52c41a' : '#ff4d4f'}
             extra={
-              <StatusTag 
-                label={menuTypeOptions.find(o => o.value === item.menuType)?.label || '未知'} 
-                type={item.menuType === 'M' ? 'info' : item.menuType === 'C' ? 'success' : 'warning'} 
+              <StatusTag
+                label={menuTypeOptions.find(o => o.value === item.menuType)?.label || '未知'}
+                type={item.menuType === 'M' ? 'info' : item.menuType === 'C' ? 'success' : 'warning'}
               />
             }
             actions={[
               ...(canAdd ? [{ onClick: () => openCreate(item.menuId), title: '新增下级' }] : []),
               ...(canEdit ? [{ onClick: () => void openEdit(item.menuId), title: '编辑' }] : []),
-              ...(canRemove ? [{ 
-                onClick: () => void handleDelete(item.menuId), 
+              ...(canRemove ? [{
+                onClick: () => void handleDelete(item.menuId),
                 title: '删除',
-                danger: true 
+                danger: true
               }] : [])
             ]}
           >
@@ -164,7 +165,7 @@ export default function SystemMenusPage() {
       </View>
 
       {canAdd && <FabButton onClick={() => openCreate()} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

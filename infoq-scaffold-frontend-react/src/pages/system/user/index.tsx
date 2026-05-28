@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { MenuProps } from 'antd';
 import {
   Button,
   Card,
@@ -20,7 +21,6 @@ import {
   TreeSelect,
   Upload
 } from 'antd';
-import type { MenuProps } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload/interface';
@@ -44,6 +44,7 @@ import { optionselect as getPostOptions } from '@/api/system/post';
 import { listRole } from '@/api/system/role';
 import type { RoleQuery, RoleVO } from '@/api/system/role/types';
 import { addUser, changeUserStatus, delUser, deptTreeSelect, getUser, listUser, resetUserPwd, updateUser } from '@/api/system/user';
+import { assertUserDetailData } from '@/api/system/user/guards';
 import type { UserForm, UserQuery, UserVO } from '@/api/system/user/types';
 import type { DeptTreeVO } from '@/api/system/dept/types';
 import type { PostVO } from '@/api/system/post/types';
@@ -79,8 +80,7 @@ const initialForm: UserForm = {
   roleIds: []
 };
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 const toTreeData = (nodes: DeptTreeVO[]): DataNode[] =>
   nodes.map((node) => ({
@@ -183,16 +183,19 @@ export default function UserPage() {
     setDeptTree(response.data);
   }, []);
 
-  const loadList = useCallback(async (nextQuery: UserQuery = query, nextRange: [Dayjs, Dayjs] | null = dateRange) => {
-    setLoading(true);
-    try {
-      const response = await listUser(addDateRange({ ...nextQuery }, formatRange(nextRange)));
-      setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange, query]);
+  const loadList = useCallback(
+    async (nextQuery: UserQuery = query, nextRange: [Dayjs, Dayjs] | null = dateRange) => {
+      setLoading(true);
+      try {
+        const response = await listUser(addDateRange({ ...nextQuery }, formatRange(nextRange)));
+        setList(response.rows);
+        setTotal(response.total);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dateRange, query]
+  );
 
   const loadBaseOptions = useCallback(async (deptId?: string | number) => {
     const [roleResponse, postResponse] = await Promise.all([
@@ -248,46 +251,52 @@ export default function UserPage() {
     }
   ];
 
-  const handleEdit = useCallback(async (userId?: string | number) => {
-    if (!userId) {
-      return;
-    }
-    const response = await getUser(userId);
-    const data = response.data;
-    setRoleOptions(data.roles);
-    setPostOptions(data.posts);
-    form.resetFields();
-    form.setFieldsValue({
-      userId: String(data.user.userId),
-      deptId: data.user.deptId,
-      userName: data.user.userName,
-      nickName: data.user.nickName,
-      phonenumber: data.user.phonenumber,
-      email: data.user.email,
-      sex: data.user.sex,
-      status: data.user.status,
-      remark: data.user.remark,
-      roleIds: data.roleIds || [],
-      postIds: data.postIds || []
-    });
-    setDialogOpen(true);
-  }, [form]);
+  const handleEdit = useCallback(
+    async (userId?: string | number) => {
+      if (!userId) {
+        return;
+      }
+      const response = await getUser(userId);
+      const data = assertUserDetailData(response.data);
+      setRoleOptions(data.roles);
+      setPostOptions(data.posts);
+      form.resetFields();
+      form.setFieldsValue({
+        userId: String(data.user.userId),
+        deptId: data.user.deptId,
+        userName: data.user.userName,
+        nickName: data.user.nickName,
+        phonenumber: data.user.phonenumber,
+        email: data.user.email,
+        sex: data.user.sex,
+        status: data.user.status,
+        remark: data.user.remark,
+        roleIds: data.roleIds,
+        postIds: data.postIds
+      });
+      setDialogOpen(true);
+    },
+    [form]
+  );
 
-  const handleDelete = useCallback(async (userId?: string | number | Array<string | number>) => {
-    const target = userId || selectedIds;
-    if (!target || (Array.isArray(target) && target.length === 0)) {
-      modal.msgWarning('请选择要删除的用户');
-      return;
-    }
-    const confirmed = await modal.confirm(`是否确认删除用户编号为 "${Array.isArray(target) ? target.join(',') : target}" 的数据项？`);
-    if (!confirmed) {
-      return;
-    }
-    await delUser(target);
-    modal.msgSuccess('删除成功');
-    setSelectedIds([]);
-    loadList();
-  }, [loadList, selectedIds]);
+  const handleDelete = useCallback(
+    async (userId?: string | number | Array<string | number>) => {
+      const target = userId || selectedIds;
+      if (!target || (Array.isArray(target) && target.length === 0)) {
+        modal.msgWarning('请选择要删除的用户');
+        return;
+      }
+      const confirmed = await modal.confirm(`是否确认删除用户编号为 "${Array.isArray(target) ? target.join(',') : target}" 的数据项？`);
+      if (!confirmed) {
+        return;
+      }
+      await delUser(target);
+      modal.msgSuccess('删除成功');
+      setSelectedIds([]);
+      loadList();
+    },
+    [loadList, selectedIds]
+  );
 
   const handleSubmit = useCallback(async () => {
     const values = await form.validateFields();
@@ -369,10 +378,7 @@ export default function UserPage() {
         width: 560,
         okText: '确定',
         content: (
-          <div
-            style={{ maxHeight: '50vh', overflowY: 'auto', paddingRight: 8 }}
-            dangerouslySetInnerHTML={{ __html: response.msg || '导入成功' }}
-          />
+          <div style={{ maxHeight: '50vh', overflowY: 'auto', paddingRight: 8 }} dangerouslySetInnerHTML={{ __html: response.msg || '导入成功' }} />
         )
       });
       loadList(initialQuery, null);
@@ -428,10 +434,22 @@ export default function UserPage() {
         render: (_, record) => (
           <Space size={4}>
             <Tooltip title="修改">
-              <Button className="table-action-link" type="link" icon={<EditOutlined />} disabled={record.userId === 1} onClick={() => handleEdit(record.userId)} />
+              <Button
+                className="table-action-link"
+                type="link"
+                icon={<EditOutlined />}
+                disabled={record.userId === 1}
+                onClick={() => handleEdit(record.userId)}
+              />
             </Tooltip>
             <Tooltip title="删除">
-              <Button className="table-action-link" type="link" icon={<DeleteOutlined />} disabled={record.userId === 1} onClick={() => handleDelete(record.userId)} />
+              <Button
+                className="table-action-link"
+                type="link"
+                icon={<DeleteOutlined />}
+                disabled={record.userId === 1}
+                onClick={() => handleDelete(record.userId)}
+              />
             </Tooltip>
             <Tooltip title="重置密码">
               <Button
@@ -563,11 +581,7 @@ export default function UserPage() {
                   <Col xs={24} md={8} xl={4}>
                     <Form.Item style={{ marginBottom: 0 }}>
                       <Space>
-                        <Button
-                          type="primary"
-                          icon={<SearchOutlined />}
-                          onClick={handleQuery}
-                        >
+                        <Button type="primary" icon={<SearchOutlined />} onClick={handleQuery}>
                           搜索
                         </Button>
                         <Button icon={<ReloadOutlined />} onClick={handleResetQuery}>
@@ -595,12 +609,7 @@ export default function UserPage() {
                 >
                   修改
                 </Button>
-                <Button
-                  className="btn-plain-danger"
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDelete()}
-                  disabled={selectedIds.length === 0}
-                >
+                <Button className="btn-plain-danger" icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0}>
                   删除
                 </Button>
                 <Dropdown
@@ -694,11 +703,7 @@ export default function UserPage() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="手机号码"
-                name="phonenumber"
-                rules={[{ pattern: /^1[3456789][0-9]\d{8}$/, message: '请输入正确的手机号码' }]}
-              >
+              <Form.Item label="手机号码" name="phonenumber" rules={[{ pattern: /^1[3456789][0-9]\d{8}$/, message: '请输入正确的手机号码' }]}>
                 <Input />
               </Form.Item>
             </Col>
