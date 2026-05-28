@@ -18,7 +18,22 @@
     <dependencies>
         <dependency>
             <groupId>cc.infoq</groupId>
-            <artifactId>infoq-plugin-jackson</artifactId>
+            <artifactId>infoq-core-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 

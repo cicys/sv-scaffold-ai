@@ -22,7 +22,8 @@
 
 ## 5. 下游依赖
 
-- 编译期依赖 `infoq-plugin-jackson`
+- 编译期依赖 `infoq-core-common`、`jackson-databind`、`hutool-core` 和 `lombok`。
+- 该模块只依赖 Jackson API，不依赖 `infoq-plugin-jackson` 自动装配模块。
 
 ## 6. 关键配置
 
