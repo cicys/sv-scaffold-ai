@@ -4,6 +4,8 @@ import cc.infoq.common.constant.CacheNames;
 import cc.infoq.common.constant.SystemConstants;
 import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.redis.utils.CacheUtils;
+import cc.infoq.common.security.auth.LoginUserContext;
+import cc.infoq.common.security.auth.SecurityAuthorizationService;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.SpringUtils;
 import cc.infoq.system.domain.bo.SysConfigBo;
@@ -25,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 
 import java.util.List;
 
@@ -38,6 +41,9 @@ class SysConfigServiceImplTest {
 
     @Mock
     private SysConfigMapper sysConfigMapper;
+
+    @Mock
+    private SecurityAuthorizationService securityAuthorizationService;
 
     private CacheManager cacheManager;
     private Cache cache;
@@ -54,7 +60,7 @@ class SysConfigServiceImplTest {
         context.refresh();
         new SpringUtils().setApplicationContext(context);
         lenient().when(cacheManager.getCache(anyString())).thenReturn(cache);
-        service = new SysConfigServiceImpl(sysConfigMapper);
+        service = new SysConfigServiceImpl(sysConfigMapper, securityAuthorizationService);
     }
 
     @Test
@@ -166,6 +172,74 @@ class SysConfigServiceImplTest {
     }
 
     @Test
+    @DisplayName("selectConfigPanel: should mark normal config editable when user has edit permission")
+    void selectConfigPanelShouldMarkNormalConfigEditableWhenUserHasEditPermission() {
+        SysConfig config = new SysConfig();
+        config.setConfigId(6L);
+        config.setConfigName("系统模式");
+        config.setConfigKey("sys.mode");
+        config.setConfigValue("dev");
+        config.setValueType("text");
+        config.setGroupKey("advanced");
+        config.setDisplayOrder(1);
+        when(sysConfigMapper.selectList(any())).thenReturn(List.of(config));
+        when(securityAuthorizationService.hasPermission("system:config:edit")).thenReturn(true);
+
+        var panel = service.selectConfigPanel();
+
+        var item = panel.getGroups().get(3).getItems().get(0);
+        assertTrue(item.getEditable());
+        assertNull(item.getEditableReason());
+    }
+
+    @Test
+    @DisplayName("selectConfigPanel: should return non-editable when authentication is missing")
+    void selectConfigPanelShouldReturnNonEditableWhenAuthenticationIsMissing() {
+        SysConfig config = new SysConfig();
+        config.setConfigId(7L);
+        config.setConfigName("系统模式");
+        config.setConfigKey("sys.mode");
+        config.setConfigValue("dev");
+        config.setValueType("text");
+        config.setGroupKey("advanced");
+        config.setDisplayOrder(1);
+        when(sysConfigMapper.selectList(any())).thenReturn(List.of(config));
+        when(securityAuthorizationService.hasPermission("system:config:edit"))
+            .thenThrow(new AuthenticationCredentialsNotFoundException("missing"));
+
+        var panel = service.selectConfigPanel();
+
+        var item = panel.getGroups().get(3).getItems().get(0);
+        assertFalse(item.getEditable());
+        assertEquals("缺少 system:config:edit 权限", item.getEditableReason());
+    }
+
+    @Test
+    @DisplayName("selectConfigPanel: should mark sensitive config non-editable for non-superadmin")
+    void selectConfigPanelShouldMarkSensitiveConfigNonEditableForNonSuperadmin() {
+        SysConfig config = new SysConfig();
+        config.setConfigId(8L);
+        config.setConfigName("是否开启注册");
+        config.setConfigKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
+        config.setConfigValue("false");
+        config.setValueType("switch");
+        config.setGroupKey("account");
+        config.setDisplayOrder(1);
+        when(sysConfigMapper.selectList(any())).thenReturn(List.of(config));
+        when(securityAuthorizationService.hasPermission("system:config:edit")).thenReturn(true);
+
+        try (MockedStatic<LoginUserContext> loginUserContext = mockStatic(LoginUserContext.class)) {
+            loginUserContext.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+
+            var panel = service.selectConfigPanel();
+
+            var item = panel.getGroups().get(0).getItems().get(0);
+            assertFalse(item.getEditable());
+            assertEquals("账号敏感配置仅超级管理员可编辑", item.getEditableReason());
+        }
+    }
+
+    @Test
     @DisplayName("insertConfig: should return config value when insert succeeds")
     void insertConfigShouldReturnConfigValueWhenInsertSucceeds() {
         SysConfigBo bo = new SysConfigBo();
@@ -248,10 +322,10 @@ class SysConfigServiceImplTest {
         when(sysConfigMapper.selectById(5L)).thenReturn(existing);
 
         try (MockedStatic<MapstructUtils> mapstructUtils = mockStatic(MapstructUtils.class);
-             MockedStatic<cc.infoq.common.satoken.utils.LoginHelper> loginHelper = mockStatic(cc.infoq.common.satoken.utils.LoginHelper.class)) {
+             MockedStatic<LoginUserContext> loginUserContext = mockStatic(LoginUserContext.class)) {
             mapstructUtils.when(() -> MapstructUtils.convert(bo, SysConfig.class)).thenReturn(entity);
-            loginHelper.when(cc.infoq.common.satoken.utils.LoginHelper::isLogin).thenReturn(true);
-            loginHelper.when(cc.infoq.common.satoken.utils.LoginHelper::isSuperAdmin).thenReturn(false);
+            loginUserContext.when(LoginUserContext::isLogin).thenReturn(true);
+            loginUserContext.when(LoginUserContext::isSuperAdmin).thenReturn(false);
 
             assertThrows(ServiceException.class, () -> service.updateConfig(bo));
             verify(sysConfigMapper, never()).updateById(any(SysConfig.class));
@@ -320,7 +394,11 @@ class SysConfigServiceImplTest {
         when(sysConfigMapper.updateById(existing)).thenReturn(1);
         when(sysConfigMapper.update(any(SysConfig.class), any())).thenReturn(1);
 
-        try (MockedStatic<CacheUtils> cacheUtils = mockStatic(CacheUtils.class)) {
+        try (MockedStatic<CacheUtils> cacheUtils = mockStatic(CacheUtils.class);
+             MockedStatic<LoginUserContext> loginUserContext = mockStatic(LoginUserContext.class)) {
+            loginUserContext.when(LoginUserContext::isLogin).thenReturn(true);
+            loginUserContext.when(LoginUserContext::isSuperAdmin).thenReturn(true);
+
             String value = service.resetConfigByKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
 
             assertEquals("false", value);
@@ -358,12 +436,28 @@ class SysConfigServiceImplTest {
         when(sysConfigMapper.selectByIds(any())).thenReturn(List.of(existing));
         when(sysConfigMapper.updateById(any(SysConfig.class))).thenReturn(1);
 
-        try (MockedStatic<cc.infoq.common.satoken.utils.LoginHelper> loginHelper = mockStatic(cc.infoq.common.satoken.utils.LoginHelper.class)) {
-            loginHelper.when(cc.infoq.common.satoken.utils.LoginHelper::isSuperAdmin).thenReturn(true);
+        try (MockedStatic<LoginUserContext> loginUserContext = mockStatic(LoginUserContext.class)) {
+            loginUserContext.when(LoginUserContext::isSuperAdmin).thenReturn(true);
 
             service.reorderConfigs(List.of(row));
 
             verify(sysConfigMapper).updateById(any(SysConfig.class));
+        }
+    }
+
+    @Test
+    @DisplayName("reorderConfigs: should reject non-superadmin")
+    void reorderConfigsShouldRejectNonSuperadmin() {
+        cc.infoq.system.domain.bo.SysConfigReorderBo row = new cc.infoq.system.domain.bo.SysConfigReorderBo();
+        row.setConfigId(5L);
+        row.setGroupKey("account");
+        row.setDisplayOrder(30);
+
+        try (MockedStatic<LoginUserContext> loginUserContext = mockStatic(LoginUserContext.class)) {
+            loginUserContext.when(LoginUserContext::isSuperAdmin).thenReturn(false);
+
+            assertThrows(ServiceException.class, () -> service.reorderConfigs(List.of(row)));
+            verify(sysConfigMapper, never()).selectByIds(any());
         }
     }
 
