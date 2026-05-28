@@ -17,6 +17,7 @@
 
 - 认证：`AuthStrategy`、`PasswordAuthStrategy`、`EmailAuthStrategy`、`SysLoginServiceImpl`
 - 用户与权限：`SysUserServiceImpl`、`SysRoleServiceImpl`、`SysMenuServiceImpl`、`SysPermissionServiceImpl`
+- 参数配置：`SysConfigServiceImpl` 负责 `configKey -> configValue` 读取、类型化配置面板、恢复默认、排序和账号敏感配置保护
 - 监控：`ServerMonitorServiceImpl`、`DataSourceMonitorServiceImpl`
 - 调度：`SchedulerApplicationRunner`、`QuartzBootstrapCoordinator`、`SysJobServiceImpl`
 - 插件桥接：`OptionalMailHelper`、`OptionalSseHelper`
@@ -35,6 +36,7 @@
 ## 6. 关键配置
 
 - `AuthController` 登录时要求请求体能解析出 `clientId` 与 `grantType`。
+- `SysConfigController` 的配置中心接口继续保留旧列表/导出语义，同时新增 `panel`、`resetByKey`、`reorder`；`configType` 仍表示是否系统内置，值类型由 `valueType` 表达。
 - Quartz 相关 runner、Controller 和部分任务处理通过 `infoq.quartz.enabled` 控制是否装配。
 - 登录成功后会经 `OptionalSseHelper` 延迟推送欢迎消息，是否真正推送取决于 SSE 能力是否开启。
 

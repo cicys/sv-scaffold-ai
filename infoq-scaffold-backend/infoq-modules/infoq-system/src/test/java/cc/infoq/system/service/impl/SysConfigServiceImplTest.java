@@ -134,6 +134,38 @@ class SysConfigServiceImplTest {
     }
 
     @Test
+    @DisplayName("selectConfigPanel: should group configs and fallback unknown metadata")
+    void selectConfigPanelShouldGroupAndFallbackMetadata() {
+        SysConfig account = new SysConfig();
+        account.setConfigId(5L);
+        account.setConfigName("是否开启注册");
+        account.setConfigKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
+        account.setConfigValue("false");
+        account.setConfigType(SystemConstants.YES);
+        account.setValueType("switch");
+        account.setDefaultValue("false");
+        account.setGroupKey("account");
+        account.setDisplayOrder(10);
+
+        SysConfig unknown = new SysConfig();
+        unknown.setConfigId(99L);
+        unknown.setConfigName("历史配置");
+        unknown.setConfigKey("sys.legacy");
+        unknown.setConfigValue("v");
+        unknown.setGroupKey("missing");
+
+        when(sysConfigMapper.selectList(any())).thenReturn(List.of(account, unknown));
+
+        var panel = service.selectConfigPanel();
+
+        assertEquals(4, panel.getGroups().size());
+        assertEquals("账号与登录", panel.getGroups().get(0).getGroupName());
+        assertEquals(1, panel.getGroups().get(0).getItems().size());
+        assertEquals("advanced", panel.getGroups().get(3).getItems().get(0).getGroupKey());
+        assertEquals("text", panel.getGroups().get(3).getItems().get(0).getValueType());
+    }
+
+    @Test
     @DisplayName("insertConfig: should return config value when insert succeeds")
     void insertConfigShouldReturnConfigValueWhenInsertSucceeds() {
         SysConfigBo bo = new SysConfigBo();
@@ -200,6 +232,33 @@ class SysConfigServiceImplTest {
     }
 
     @Test
+    @DisplayName("updateConfig: should reject non-superadmin when existing key is sensitive")
+    void updateConfigShouldRejectNonSuperAdminWhenExistingKeyIsSensitive() {
+        SysConfigBo bo = new SysConfigBo();
+        bo.setConfigId(5L);
+        bo.setConfigKey("sys.safe");
+        bo.setConfigValue("false");
+        SysConfig entity = new SysConfig();
+        entity.setConfigId(5L);
+        entity.setConfigKey("sys.safe");
+        entity.setConfigValue("false");
+        SysConfig existing = new SysConfig();
+        existing.setConfigId(5L);
+        existing.setConfigKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
+        when(sysConfigMapper.selectById(5L)).thenReturn(existing);
+
+        try (MockedStatic<MapstructUtils> mapstructUtils = mockStatic(MapstructUtils.class);
+             MockedStatic<cc.infoq.common.satoken.utils.LoginHelper> loginHelper = mockStatic(cc.infoq.common.satoken.utils.LoginHelper.class)) {
+            mapstructUtils.when(() -> MapstructUtils.convert(bo, SysConfig.class)).thenReturn(entity);
+            loginHelper.when(cc.infoq.common.satoken.utils.LoginHelper::isLogin).thenReturn(true);
+            loginHelper.when(cc.infoq.common.satoken.utils.LoginHelper::isSuperAdmin).thenReturn(false);
+
+            assertThrows(ServiceException.class, () -> service.updateConfig(bo));
+            verify(sysConfigMapper, never()).updateById(any(SysConfig.class));
+        }
+    }
+
+    @Test
     @DisplayName("updateConfig: should update by key when configId is null")
     void updateConfigShouldUpdateByKeyWhenConfigIdIsNull() {
         SysConfigBo bo = new SysConfigBo();
@@ -242,6 +301,69 @@ class SysConfigServiceImplTest {
 
             assertThrows(ServiceException.class, () -> service.updateConfig(bo));
             cacheUtils.verify(() -> CacheUtils.evict(CacheNames.SYS_CONFIG, "sys.mode"));
+        }
+    }
+
+    @Test
+    @DisplayName("resetConfigByKey: should restore default and sync invite register")
+    void resetConfigByKeyShouldRestoreDefaultAndSyncInviteRegister() {
+        SysConfig existing = new SysConfig();
+        existing.setConfigId(5L);
+        existing.setConfigName("注册开关");
+        existing.setConfigKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
+        existing.setConfigValue("true");
+        existing.setValueType("switch");
+        existing.setDefaultValue("false");
+        existing.setGroupKey("account");
+        existing.setDisplayOrder(10);
+        when(sysConfigMapper.selectOne(any())).thenReturn(existing);
+        when(sysConfigMapper.updateById(existing)).thenReturn(1);
+        when(sysConfigMapper.update(any(SysConfig.class), any())).thenReturn(1);
+
+        try (MockedStatic<CacheUtils> cacheUtils = mockStatic(CacheUtils.class)) {
+            String value = service.resetConfigByKey(SystemConstants.ACCOUNT_REGISTER_CONFIG_KEY);
+
+            assertEquals("false", value);
+            assertEquals("false", existing.getConfigValue());
+            verify(sysConfigMapper).updateById(existing);
+            verify(sysConfigMapper).update(any(SysConfig.class), any());
+            cacheUtils.verify(() -> CacheUtils.evict(CacheNames.SYS_CONFIG, SystemConstants.ACCOUNT_INVITE_REGISTER_CONFIG_KEY));
+        }
+    }
+
+    @Test
+    @DisplayName("resetConfigByKey: should reject config without default value")
+    void resetConfigByKeyShouldRejectMissingDefaultValue() {
+        SysConfig existing = new SysConfig();
+        existing.setConfigId(9L);
+        existing.setConfigKey("sys.no.default");
+        existing.setConfigValue("v");
+        existing.setValueType("text");
+        existing.setDefaultValue(null);
+        when(sysConfigMapper.selectOne(any())).thenReturn(existing);
+
+        assertThrows(ServiceException.class, () -> service.resetConfigByKey("sys.no.default"));
+    }
+
+    @Test
+    @DisplayName("reorderConfigs: should update rows for superadmin only")
+    void reorderConfigsShouldUpdateRowsForSuperadminOnly() {
+        cc.infoq.system.domain.bo.SysConfigReorderBo row = new cc.infoq.system.domain.bo.SysConfigReorderBo();
+        row.setConfigId(5L);
+        row.setGroupKey("account");
+        row.setDisplayOrder(30);
+        SysConfig existing = new SysConfig();
+        existing.setConfigId(5L);
+
+        when(sysConfigMapper.selectByIds(any())).thenReturn(List.of(existing));
+        when(sysConfigMapper.updateById(any(SysConfig.class))).thenReturn(1);
+
+        try (MockedStatic<cc.infoq.common.satoken.utils.LoginHelper> loginHelper = mockStatic(cc.infoq.common.satoken.utils.LoginHelper.class)) {
+            loginHelper.when(cc.infoq.common.satoken.utils.LoginHelper::isSuperAdmin).thenReturn(true);
+
+            service.reorderConfigs(List.of(row));
+
+            verify(sysConfigMapper).updateById(any(SysConfig.class));
         }
     }
 

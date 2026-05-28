@@ -2,39 +2,113 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { computed, defineComponent, h, inject, provide, reactive } from 'vue';
 import ConfigView from '@/views/system/config/index.vue';
 
+const panelFixture = {
+  groups: [
+    {
+      groupKey: 'account',
+      groupName: '账号与登录',
+      displayOrder: 10,
+      items: [
+        {
+          configId: 5,
+          configName: '是否开启注册',
+          configKey: 'sys.account.registerUser',
+          configValue: 'true',
+          configType: 'Y',
+          valueType: 'switch',
+          defaultValue: 'false',
+          groupKey: 'account',
+          displayOrder: 10,
+          options: null,
+          uiProps: {},
+          editable: true,
+          editableReason: null,
+          remark: '关闭后公开注册不可访问'
+        },
+        {
+          configId: 2,
+          configName: '初始密码',
+          configKey: 'sys.user.initPassword',
+          configValue: '123456',
+          configType: 'Y',
+          valueType: 'password',
+          defaultValue: '123456',
+          groupKey: 'account',
+          displayOrder: 40,
+          options: null,
+          uiProps: {},
+          editable: true,
+          editableReason: null,
+          remark: '初始化密码'
+        }
+      ]
+    },
+    {
+      groupKey: 'theme',
+      groupName: '界面与主题',
+      displayOrder: 20,
+      items: [
+        {
+          configId: 3,
+          configName: '侧边栏主题',
+          configKey: 'sys.index.sideTheme',
+          configValue: 'theme-light',
+          configType: 'Y',
+          valueType: 'select',
+          defaultValue: 'theme-light',
+          groupKey: 'theme',
+          displayOrder: 10,
+          options: [
+            { label: '深色主题', value: 'theme-dark' },
+            { label: '浅色主题', value: 'theme-light' }
+          ],
+          uiProps: {},
+          editable: true,
+          editableReason: null,
+          remark: '深色主题theme-dark，浅色主题theme-light'
+        }
+      ]
+    }
+  ]
+};
+
+const largePanelFixture = {
+  groups: [
+    {
+      ...panelFixture.groups[0],
+      items: Array.from({ length: 12 }, (_, index) => ({
+        ...panelFixture.groups[0].items[0],
+        configId: 100 + index,
+        configName: `分页配置${index + 1}`,
+        configKey: `sys.page.${index + 1}`,
+        configValue: `value-${index + 1}`,
+        valueType: 'text',
+        remark: `分页测试${index + 1}`
+      }))
+    }
+  ]
+};
+
 const configMocks = vi.hoisted(() => ({
-  listConfig: vi.fn(),
-  getConfig: vi.fn(),
-  getConfigKey: vi.fn(),
+  getConfigPanel: vi.fn(),
   addConfig: vi.fn(),
   updateConfig: vi.fn(),
   updateConfigByKey: vi.fn(),
-  delConfig: vi.fn(),
+  resetConfigByKey: vi.fn(),
+  reorderConfig: vi.fn(),
   refreshCache: vi.fn(),
-  modalConfirm: vi.fn(() => Promise.resolve()),
   msgSuccess: vi.fn(),
-  download: vi.fn(),
-  rows: [
-    {
-      configId: 1,
-      configName: '系统主题',
-      configKey: 'sys.theme',
-      configValue: 'light',
-      configType: 'N',
-      remark: '主题配置',
-      createTime: '2026-03-07 10:00:00'
-    }
-  ] as Array<Record<string, unknown>>
+  msgWarning: vi.fn(),
+  download: vi.fn()
 }));
 
 vi.mock('@/api/system/config', () => ({
-  listConfig: configMocks.listConfig,
-  getConfig: configMocks.getConfig,
-  getConfigKey: configMocks.getConfigKey,
+  getConfigPanel: configMocks.getConfigPanel,
   addConfig: configMocks.addConfig,
   updateConfig: configMocks.updateConfig,
   updateConfigByKey: configMocks.updateConfigByKey,
-  delConfig: configMocks.delConfig,
+  resetConfigByKey: configMocks.resetConfigByKey,
+  reorderConfig: configMocks.reorderConfig,
   refreshCache: configMocks.refreshCache
 }));
 
@@ -44,7 +118,15 @@ vi.mock('@/store/modules/user', () => ({
   })
 }));
 
-const TABLE_DATA_SYMBOL = Symbol('config-table-data');
+const passthroughStub = (name: string) =>
+  defineComponent({
+    name,
+    setup(_, { slots }) {
+      return () => h('div', slots.default?.());
+    }
+  });
+
+const TABLE_DATA_SYMBOL = Symbol('configTableData');
 
 const ElCardStub = defineComponent({
   name: 'ElCard',
@@ -53,84 +135,11 @@ const ElCardStub = defineComponent({
   }
 });
 
-const ElDialogStub = defineComponent({
-  name: 'ElDialog',
-  props: {
-    modelValue: {
-      type: Boolean,
-      default: false
-    },
-    title: {
-      type: String,
-      default: ''
-    }
-  },
-  emits: ['update:modelValue'],
-  setup(props, { slots }) {
-    return () =>
-      props.modelValue ? h('div', { class: 'el-dialog-stub', 'data-title': props.title }, [slots.default?.(), slots.footer?.()]) : h('div');
-  }
-});
-
-const ElFormStub = defineComponent({
-  name: 'ElForm',
-  setup(_, { slots, expose }) {
-    expose({
-      resetFields: vi.fn(),
-      validate: (cb: (valid: boolean) => void) => cb(true)
-    });
-    return () => h('form', { class: 'el-form-stub' }, slots.default?.());
-  }
-});
-
-const ElTableStub = defineComponent({
-  name: 'ElTable',
-  props: {
-    data: {
-      type: Array,
-      default: () => []
-    }
-  },
-  emits: ['selection-change'],
-  setup(props, { slots, emit }) {
-    provide(
-      TABLE_DATA_SYMBOL,
-      computed(() => props.data as unknown[])
-    );
-    return () =>
-      h('div', { class: 'el-table-stub' }, [
-        h(
-          'button',
-          {
-            class: 'selection-first',
-            onClick: () => emit('selection-change', [(props.data as unknown[])[0]])
-          },
-          'selection-first'
-        ),
-        slots.default?.()
-      ]);
-  }
-});
-
-const ElTableColumnStub = defineComponent({
-  name: 'ElTableColumn',
-  setup(_, { slots }) {
-    const rows = inject(
-      TABLE_DATA_SYMBOL,
-      computed(() => [] as unknown[])
-    );
-    return () =>
-      h('div', { class: 'el-table-column-stub' }, (slots.default && slots.default({ row: rows.value[0] || { createTime: '' }, $index: 0 })) || []);
-  }
-});
-
 const ElButtonStub = defineComponent({
   name: 'ElButton',
   props: {
-    icon: {
-      type: String,
-      default: ''
-    }
+    icon: { type: String, default: '' },
+    disabled: { type: Boolean, default: false }
   },
   emits: ['click'],
   setup(props, { slots, emit }) {
@@ -140,7 +149,8 @@ const ElButtonStub = defineComponent({
         {
           class: 'el-button-stub',
           'data-icon': props.icon,
-          onClick: (e: MouseEvent) => emit('click', e)
+          disabled: props.disabled,
+          onClick: (event: MouseEvent) => emit('click', event)
         },
         slots.default?.()
       );
@@ -150,10 +160,7 @@ const ElButtonStub = defineComponent({
 const ElSwitchStub = defineComponent({
   name: 'ElSwitch',
   props: {
-    modelValue: {
-      type: Boolean,
-      default: false
-    }
+    modelValue: { type: Boolean, default: false }
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
@@ -162,7 +169,7 @@ const ElSwitchStub = defineComponent({
         'button',
         {
           class: 'el-switch-stub',
-          'data-checked': String(props.modelValue),
+          'data-model-value': String(props.modelValue),
           onClick: () => {
             const next = !props.modelValue;
             emit('update:modelValue', next);
@@ -174,53 +181,94 @@ const ElSwitchStub = defineComponent({
   }
 });
 
-const passthroughStub = (name: string) =>
-  defineComponent({
-    name,
-    setup(_, { slots }) {
-      return () => h('div', slots.default?.());
+const ElFormStub = defineComponent({
+  name: 'ElForm',
+  setup(_, { slots, expose }) {
+    expose({
+      resetFields: vi.fn(),
+      validate: (cb: (valid: boolean) => void) => cb(true)
+    });
+    return () => h('form', slots.default?.());
+  }
+});
+
+const ElInputStub = defineComponent({
+  name: 'ElInput',
+  props: {
+    modelValue: { type: [String, Number], default: '' },
+    placeholder: { type: String, default: '' }
+  },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    return () =>
+      h('input', {
+        value: props.modelValue,
+        placeholder: props.placeholder,
+        onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).value)
+      });
+  }
+});
+
+const ElTableStub = defineComponent({
+  name: 'ElTable',
+  props: {
+    data: {
+      type: Array,
+      default: () => []
     }
-  });
+  },
+  setup(props, { slots }) {
+    provide(
+      TABLE_DATA_SYMBOL,
+      computed(() => props.data as unknown[])
+    );
+    return () => h('div', { class: 'el-table-stub' }, slots.default?.());
+  }
+});
+
+const ElTableColumnStub = defineComponent({
+  name: 'ElTableColumn',
+  setup(_, { slots }) {
+    const rows = inject(
+      TABLE_DATA_SYMBOL,
+      computed(() => [] as unknown[])
+    );
+    return () => h('div', { class: 'el-table-column-stub' }, (slots.default && slots.default({ row: rows.value[0] || {}, $index: 0 })) || []);
+  }
+});
+
+const PaginationStub = defineComponent({
+  name: 'Pagination',
+  props: {
+    total: { type: Number, default: 0 },
+    page: { type: Number, default: 1 },
+    limit: { type: Number, default: 10 }
+  },
+  emits: ['update:page', 'update:limit', 'pagination'],
+  setup(props, { emit }) {
+    return () =>
+      h('div', { class: 'pagination-stub', 'data-total': String(props.total) }, [
+        h(
+          'button',
+          {
+            class: 'pagination-next-stub',
+            onClick: () => {
+              emit('update:page', 2);
+              emit('pagination', { page: 2, limit: props.limit });
+            }
+          },
+          'next'
+        )
+      ]);
+  }
+});
 
 describe('views/system/config/index', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    configMocks.rows = [
-      {
-        configId: 1,
-        configName: '系统主题',
-        configKey: 'sys.theme',
-        configValue: 'light',
-        configType: 'N',
-        remark: '主题配置',
-        createTime: '2026-03-07 10:00:00'
-      }
-    ];
-    configMocks.listConfig.mockImplementation(() =>
-      Promise.resolve({
-        rows: configMocks.rows,
-        total: configMocks.rows.length
-      })
-    );
-    configMocks.getConfig.mockResolvedValue({
-      data: {
-        configId: 1,
-        configName: '系统主题',
-        configKey: 'sys.theme',
-        configValue: 'light',
-        configType: 'N',
-        remark: '主题配置'
-      }
-    });
-    configMocks.addConfig.mockResolvedValue(undefined);
-    configMocks.updateConfig.mockResolvedValue(undefined);
-    configMocks.getConfigKey.mockImplementation((key: string) =>
-      Promise.resolve({
-        data: key === 'sys.account.registerUser' ? 'true' : 'false'
-      })
-    );
+    configMocks.getConfigPanel.mockResolvedValue({ data: panelFixture });
     configMocks.updateConfigByKey.mockResolvedValue(undefined);
-    configMocks.delConfig.mockResolvedValue(undefined);
+    configMocks.resetConfigByKey.mockResolvedValue({ data: 'false' });
     configMocks.refreshCache.mockResolvedValue(undefined);
   });
 
@@ -229,24 +277,10 @@ describe('views/system/config/index', () => {
       global: {
         config: {
           globalProperties: {
-            useDict: () =>
-              reactive({
-                sys_yes_no: [
-                  { label: '是', value: 'Y' },
-                  { label: '否', value: 'N' }
-                ]
-              }),
-            animate: {
-              searchAnimate: {
-                enter: '',
-                leave: ''
-              }
-            },
-            addDateRange: (query: Record<string, unknown>, range: unknown[]) => ({ ...query, range }),
-            parseTime: (value: string) => value,
+            useDict: () => reactive({}),
             $modal: {
-              confirm: configMocks.modalConfirm,
-              msgSuccess: configMocks.msgSuccess
+              msgSuccess: configMocks.msgSuccess,
+              msgWarning: configMocks.msgWarning
             },
             download: configMocks.download
           } as unknown as import('vue').ComponentCustomProperties & Record<string, unknown>
@@ -256,167 +290,90 @@ describe('views/system/config/index', () => {
           hasPermi: {}
         },
         stubs: {
-          transition: passthroughStub('Transition'),
-          'el-row': passthroughStub('ElRow'),
-          'el-col': passthroughStub('ElCol'),
           'el-card': ElCardStub,
-          'el-form': ElFormStub,
-          'el-form-item': passthroughStub('ElFormItem'),
-          'el-input': true,
+          'el-button': ElButtonStub,
+          'el-switch': ElSwitchStub,
+          'el-input': ElInputStub,
           'el-select': passthroughStub('ElSelect'),
           'el-option': passthroughStub('ElOption'),
-          'el-date-picker': true,
-          'right-toolbar': true,
+          'el-tag': passthroughStub('ElTag'),
+          'el-empty': passthroughStub('ElEmpty'),
+          'el-drawer': passthroughStub('ElDrawer'),
+          'el-tabs': passthroughStub('ElTabs'),
+          'el-tab-pane': passthroughStub('ElTabPane'),
+          'el-form': ElFormStub,
+          'el-form-item': passthroughStub('ElFormItem'),
+          'el-input-number': true,
           'el-table': ElTableStub,
           'el-table-column': ElTableColumnStub,
-          'dict-tag': true,
-          pagination: true,
-          'el-tooltip': passthroughStub('ElTooltip'),
-          'el-dialog': ElDialogStub,
-          'el-radio-group': passthroughStub('ElRadioGroup'),
-          'el-radio': passthroughStub('ElRadio'),
-          'el-button': ElButtonStub,
-          'el-switch': ElSwitchStub
+          pagination: PaginationStub
         }
       }
     });
 
-  it('loads config list on mounted', async () => {
-    mountView();
-    await flushPromises();
-
-    expect(configMocks.listConfig).toHaveBeenCalledWith(
-      expect.objectContaining({
-        pageNum: 1,
-        pageSize: 10
-      })
-    );
-    expect(configMocks.getConfigKey).toHaveBeenCalledWith('sys.account.registerUser');
-    expect(configMocks.getConfigKey).toHaveBeenCalledWith('sys.account.inviteRegister');
-  });
-
-  it('adds config successfully', async () => {
+  it('loads grouped config panel on mounted', async () => {
     const wrapper = mountView();
     await flushPromises();
 
-    const addButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().trim() === '新增');
-    expect(addButton).toBeDefined();
-    await addButton!.trigger('click');
-    await flushPromises();
-
-    const submitButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().replace(/\s/g, '') === '确定');
-    expect(submitButton).toBeDefined();
-    await submitButton!.trigger('click');
-    await flushPromises();
-
-    expect(configMocks.addConfig).toHaveBeenCalledTimes(1);
-    expect(configMocks.msgSuccess).toHaveBeenCalledWith('操作成功');
+    expect(configMocks.getConfigPanel).toHaveBeenCalled();
+    expect(wrapper.text()).toContain('账号与登录');
+    expect(wrapper.text()).toContain('是否开启注册');
+    expect(wrapper.text()).toContain('初始密码');
+    expect(wrapper.findAll('.config-setting-row')).toHaveLength(3);
+    expect(wrapper.find('.config-list-panel').exists()).toBe(true);
+    expect(wrapper.find('.config-list-scroll').exists()).toBe(true);
   });
 
-  it('updates config successfully', async () => {
+  it('paginates the config list inside the scrollable list panel', async () => {
+    configMocks.getConfigPanel.mockResolvedValueOnce({ data: largePanelFixture });
     const wrapper = mountView();
     await flushPromises();
 
-    const editButton = wrapper
-      .findAll('button.el-button-stub')
-      .find((button) => button.attributes('data-icon') === 'Edit' && button.text().trim() === '');
+    expect(wrapper.text()).toContain('分页配置1');
+    expect(wrapper.findAll('.config-setting-row')).toHaveLength(10);
+    expect(wrapper.text()).not.toContain('分页配置11');
+
+    await wrapper.find('button.pagination-next-stub').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('分页配置11');
+    expect(wrapper.findAll('.config-setting-row')).toHaveLength(2);
+  });
+
+  it('updates switch config by key', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const switchButton = wrapper.find('button.el-switch-stub[data-model-value="true"]');
+    expect(switchButton.exists()).toBe(true);
+    await switchButton.trigger('click');
+    await flushPromises();
+
+    expect(configMocks.updateConfigByKey).toHaveBeenCalledWith('sys.account.registerUser', false);
+  });
+
+  it('enters password edit mode without leaving the config card layout', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const editButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().includes('编辑'));
     expect(editButton).toBeDefined();
     await editButton!.trigger('click');
     await flushPromises();
 
-    expect(configMocks.getConfig).toHaveBeenCalledWith(1);
-
-    const submitButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().replace(/\s/g, '') === '确定');
-    expect(submitButton).toBeDefined();
-    await submitButton!.trigger('click');
-    await flushPromises();
-
-    expect(configMocks.updateConfig).toHaveBeenCalledTimes(1);
-    expect(configMocks.msgSuccess).toHaveBeenCalledWith('操作成功');
+    expect(wrapper.find('.config-card-main-editing').exists()).toBe(true);
+    expect(wrapper.findAll('input').some((input) => (input.element as HTMLInputElement).value === '123456')).toBe(true);
   });
 
-  it('deletes config by selected rows', async () => {
+  it('restores default value through resetByKey', async () => {
     const wrapper = mountView();
     await flushPromises();
 
-    await wrapper.find('button.selection-first').trigger('click');
-
-    const deleteButton = wrapper
-      .findAll('button.el-button-stub')
-      .find((button) => button.attributes('data-icon') === 'Delete' && button.text().replace(/\s/g, '') === '删除');
-    expect(deleteButton).toBeDefined();
-    await deleteButton!.trigger('click');
-    await flushPromises();
-
-    expect(configMocks.delConfig).toHaveBeenCalledWith([1]);
-    expect(configMocks.msgSuccess).toHaveBeenCalledWith('删除成功');
-  });
-
-  it('exports and refreshes cache', async () => {
-    const wrapper = mountView();
-    await flushPromises();
-
-    const exportButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().trim() === '导出');
-    expect(exportButton).toBeDefined();
-    await exportButton!.trigger('click');
-    expect(configMocks.download).toHaveBeenCalledWith(
-      'system/config/export',
-      expect.objectContaining({
-        pageNum: 1,
-        pageSize: 10
-      }),
-      expect.stringMatching(/^config_\d+\.xlsx$/)
-    );
-
-    const refreshButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().trim() === '刷新缓存');
-    expect(refreshButton).toBeDefined();
-    await refreshButton!.trigger('click');
-    await flushPromises();
-
-    expect(configMocks.refreshCache).toHaveBeenCalledTimes(1);
-    expect(configMocks.msgSuccess).toHaveBeenCalledWith('刷新缓存成功');
-  });
-
-  it('covers query/reset and cancel dialog branches', async () => {
-    const wrapper = mountView();
-    await flushPromises();
-
-    const searchButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().trim() === '搜索');
-    const resetButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().trim() === '重置');
-    expect(searchButton).toBeDefined();
+    const resetButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().includes('恢复默认'));
     expect(resetButton).toBeDefined();
-
-    await searchButton!.trigger('click');
-    await flushPromises();
     await resetButton!.trigger('click');
     await flushPromises();
-    expect(configMocks.listConfig).toHaveBeenCalledTimes(3);
 
-    const addButton = wrapper.findAll('button.el-button-stub').find((button) => button.text().trim() === '新增');
-    expect(addButton).toBeDefined();
-    await addButton!.trigger('click');
-    await flushPromises();
-
-    const cancelButton = wrapper
-      .find('.el-dialog-stub[data-title="添加参数"]')
-      .findAll('button.el-button-stub')
-      .find((button) => button.text().replace(/\s/g, '') === '取消');
-    expect(cancelButton).toBeDefined();
-    await cancelButton!.trigger('click');
-    await flushPromises();
-  });
-
-  it('updates account settings switch by key', async () => {
-    const wrapper = mountView();
-    await flushPromises();
-
-    const switches = wrapper.findAll('button.el-switch-stub');
-    expect(switches.length).toBeGreaterThanOrEqual(2);
-
-    await switches[0].trigger('click');
-    await flushPromises();
-
-    expect(configMocks.updateConfigByKey).toHaveBeenCalledWith('sys.account.registerUser', false);
-    expect(configMocks.msgSuccess).toHaveBeenCalledWith('操作成功');
+    expect(configMocks.resetConfigByKey).toHaveBeenCalledWith('sys.account.registerUser');
   });
 });

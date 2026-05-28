@@ -24,6 +24,7 @@
 | --- | --- | --- |
 | `sys_client` | 登录前校验 `clientId`、`grantType`、token 时效、设备类型 | `AuthController`、`SysClientServiceImpl` |
 | `sys_user` | 登录用户、用户管理主表 | `PasswordAuthStrategy`、`SysUserServiceImpl` |
+| `sys_config` | 系统参数值与配置中心 UI 元数据；业务读取仍以 `configKey -> configValue` 为稳定路径 | `SysConfigServiceImpl`、`SysConfigController` |
 | `sys_invite_code` | 邀请码生成、校验、作废、过期与消费 | `SysInviteCodeServiceImpl`、`SysInviteCodeMapper.xml` |
 | `sys_role` / `sys_menu` / 关联表 | 角色权限、菜单权限、前端路由 | `SysPermissionServiceImpl`、`SysMenuServiceImpl` |
 | `sys_login_info` | 登录审计日志 | `SysLoginInfoServiceImpl` |
@@ -181,6 +182,16 @@ sequenceDiagram
 5. 邀请码消费走 `SysInviteCodeMapper.consumeInviteCode(...)`，SQL 条件要求 `status='0'` 且 `expire_time > now`，因此并发提交时只会有一个请求成功把同一个邀请码置为已使用。
 
 这条链路说明当前公开注册并不是“前端自己拼规则”，而是由 backend 统一下发能力位、统一校验邀请码、统一分配默认归属，并在事务里完成邀请码一次性消费。
+
+### 3.4 参数配置中心
+
+后台参数设置由 [SysConfigController](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/controller/system/SysConfigController.java) 与 [SysConfigServiceImpl](../infoq-modules/infoq-system/src/main/java/cc/infoq/system/service/impl/SysConfigServiceImpl.java) 承载：
+
+- 旧业务读取路径保持不变：`selectConfigByKey(configKey)` 只返回 `configValue` 字符串，并使用 `sys_config` 缓存。
+- 配置中心新增 `GET /system/config/panel`，按后端固定分组返回 `groupKey`、`groupName`、`displayOrder` 和配置项集合，React / Vue 不各自硬编码分组名称。
+- `configType` 仍表示“是否系统内置”（`Y` / `N`），不表示参数值类型；值类型由 `valueType` 表达。
+- `resetByKey` 由后端读取 `defaultValue` 后恢复默认，并通过缓存写入策略返回新值；当注册总开关恢复或修改为 `false` 时，会同步关闭邀请码注册并清理对应缓存。
+- 账号敏感配置 `sys.account.registerUser`、`sys.account.inviteRegister`、`sys.account.forgotPassword` 只允许超级管理员修改。
 
 ## 4. 登录后的用户信息与路由装配
 

@@ -76,10 +76,43 @@ vi.mock('@/api/system/config', () => ({
     rows: [{ configId: 1, configName: '系统皮肤', configKey: 'sys.index.skinName', configValue: 'blue', configType: 'Y' }],
     total: 1
   }),
+  getConfigPanel: vi.fn().mockResolvedValue({
+    data: {
+      groups: [
+        {
+          groupKey: 'theme',
+          groupName: '界面与主题',
+          displayOrder: 20,
+          items: [
+            {
+              configId: 1,
+              configName: '系统皮肤',
+              configKey: 'sys.index.skinName',
+              configValue: 'skin-purple',
+              configType: 'Y',
+              valueType: 'select',
+              defaultValue: 'skin-purple',
+              groupKey: 'theme',
+              displayOrder: 20,
+              options: [{ label: '紫色', value: 'skin-purple' }],
+              uiProps: {},
+              editable: true,
+              editableReason: null,
+              remark: '皮肤配置'
+            }
+          ]
+        }
+      ]
+    }
+  }),
+  getConfigKey: vi.fn().mockResolvedValue({ data: 'true' }),
   addConfig: vi.fn(),
   delConfig: vi.fn(),
   getConfig: vi.fn(),
+  reorderConfig: vi.fn(),
   refreshCache: vi.fn(),
+  resetConfigByKey: vi.fn(),
+  updateConfigByKey: vi.fn(),
   updateConfig: vi.fn()
 }));
 
@@ -137,7 +170,16 @@ vi.mock('@/api/system/dict/data', () => ({
 
 vi.mock('@/api/system/oss', () => ({
   listOss: vi.fn().mockResolvedValue({
-    rows: [{ ossId: 1, fileName: 'avatar.png', originalName: 'avatar.png', fileSuffix: '.png', service: 'minio', url: 'https://cdn.example.com/avatar.png' }],
+    rows: [
+      {
+        ossId: 1,
+        fileName: 'avatar.png',
+        originalName: 'avatar.png',
+        fileSuffix: '.png',
+        service: 'minio',
+        url: 'https://cdn.example.com/avatar.png'
+      }
+    ],
     total: 1
   }),
   delOss: vi.fn()
@@ -175,50 +217,109 @@ function asResolvedValue<T>(value: unknown): T {
 }
 
 beforeEach(() => {
-  vi.mocked(configApi.listConfig).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof configApi.listConfig>>>({
-    rows: [{ configId: 1, configName: '系统皮肤', configKey: 'sys.index.skinName', configValue: 'blue', configType: 'Y' }],
-    total: 1
-  }));
-  vi.mocked(noticeApi.listNotice).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof noticeApi.listNotice>>>({
-    rows: [{ noticeId: 1, noticeTitle: '系统公告', noticeType: '2', status: '0', createByName: 'admin' }],
-    total: 1
-  }));
-  vi.mocked(clientApi.listClient).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof clientApi.listClient>>>({
-    rows: [{ id: 1, clientId: 'pc-web', clientKey: 'pc-web', clientSecret: 'secret', grantTypeList: ['password'], deviceType: 'pc', status: '0' }],
-    total: 1
-  }));
-  vi.mocked(dictTypeApi.listType).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof dictTypeApi.listType>>>({
-    rows: [{ dictId: 1, dictName: '用户状态', dictType: 'sys_user_status', remark: '用户状态字典' }],
-    total: 1
-  }));
-  vi.mocked(dictTypeApi.optionselect).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof dictTypeApi.optionselect>>>({
-    data: [{ dictId: 1, dictName: '用户状态', dictType: 'sys_user_status' }]
-  }));
-  vi.mocked(dictTypeApi.getType).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof dictTypeApi.getType>>>({
-    data: { dictId: 1, dictName: '用户状态', dictType: 'sys_user_status' }
-  }));
-  vi.mocked(dictDataApi.listData).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof dictDataApi.listData>>>({
-    rows: [{ dictCode: 1, dictType: 'sys_user_status', dictLabel: '正常', dictValue: '0', listClass: 'success', cssClass: '' }],
-    total: 1
-  }));
-  vi.mocked(ossApi.listOss).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof ossApi.listOss>>>({
-    rows: [{ ossId: 1, fileName: 'avatar.png', originalName: 'avatar.png', fileSuffix: '.png', service: 'minio', url: 'https://cdn.example.com/avatar.png' }],
-    total: 1
-  }));
-  vi.mocked(ossConfigApi.listOssConfig).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof ossConfigApi.listOssConfig>>>({
-    rows: [{ ossConfigId: 1, configKey: 'minio', endpoint: '127.0.0.1', domain: 'cdn.example.com', bucketName: 'avatar', status: '0' }],
-    total: 1
-  }));
+  vi.mocked(configApi.listConfig).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof configApi.listConfig>>>({
+      rows: [{ configId: 1, configName: '系统皮肤', configKey: 'sys.index.skinName', configValue: 'blue', configType: 'Y' }],
+      total: 1
+    })
+  );
+  vi.mocked(configApi.getConfigPanel).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof configApi.getConfigPanel>>>({
+      data: {
+        groups: [
+          {
+            groupKey: 'theme',
+            groupName: '界面与主题',
+            displayOrder: 20,
+            items: [
+              {
+                configId: 1,
+                configName: '系统皮肤',
+                configKey: 'sys.index.skinName',
+                configValue: 'skin-purple',
+                configType: 'Y',
+                valueType: 'select',
+                defaultValue: 'skin-purple',
+                groupKey: 'theme',
+                displayOrder: 20,
+                options: [{ label: '紫色', value: 'skin-purple' }],
+                uiProps: {},
+                editable: true,
+                editableReason: null,
+                remark: '皮肤配置'
+              }
+            ]
+          }
+        ]
+      }
+    })
+  );
+  vi.mocked(configApi.getConfigKey).mockResolvedValue(asResolvedValue<Awaited<ReturnType<typeof configApi.getConfigKey>>>({ data: 'true' }));
+  vi.mocked(noticeApi.listNotice).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof noticeApi.listNotice>>>({
+      rows: [{ noticeId: 1, noticeTitle: '系统公告', noticeType: '2', status: '0', createByName: 'admin' }],
+      total: 1
+    })
+  );
+  vi.mocked(clientApi.listClient).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof clientApi.listClient>>>({
+      rows: [{ id: 1, clientId: 'pc-web', clientKey: 'pc-web', clientSecret: 'secret', grantTypeList: ['password'], deviceType: 'pc', status: '0' }],
+      total: 1
+    })
+  );
+  vi.mocked(dictTypeApi.listType).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof dictTypeApi.listType>>>({
+      rows: [{ dictId: 1, dictName: '用户状态', dictType: 'sys_user_status', remark: '用户状态字典' }],
+      total: 1
+    })
+  );
+  vi.mocked(dictTypeApi.optionselect).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof dictTypeApi.optionselect>>>({
+      data: [{ dictId: 1, dictName: '用户状态', dictType: 'sys_user_status' }]
+    })
+  );
+  vi.mocked(dictTypeApi.getType).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof dictTypeApi.getType>>>({
+      data: { dictId: 1, dictName: '用户状态', dictType: 'sys_user_status' }
+    })
+  );
+  vi.mocked(dictDataApi.listData).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof dictDataApi.listData>>>({
+      rows: [{ dictCode: 1, dictType: 'sys_user_status', dictLabel: '正常', dictValue: '0', listClass: 'success', cssClass: '' }],
+      total: 1
+    })
+  );
+  vi.mocked(ossApi.listOss).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof ossApi.listOss>>>({
+      rows: [
+        {
+          ossId: 1,
+          fileName: 'avatar.png',
+          originalName: 'avatar.png',
+          fileSuffix: '.png',
+          service: 'minio',
+          url: 'https://cdn.example.com/avatar.png'
+        }
+      ],
+      total: 1
+    })
+  );
+  vi.mocked(ossConfigApi.listOssConfig).mockResolvedValue(
+    asResolvedValue<Awaited<ReturnType<typeof ossConfigApi.listOssConfig>>>({
+      rows: [{ ossConfigId: 1, configKey: 'minio', endpoint: '127.0.0.1', domain: 'cdn.example.com', bucketName: 'avatar', status: '0' }],
+      total: 1
+    })
+  );
 });
 
 describe('pages/ops', () => {
   it('renders the config page with list data', async () => {
     renderWithRouter(<ConfigPage />, '/system/config');
 
-    expect(await screen.findByPlaceholderText('请输入参数名称')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('搜索配置名称、键名或备注')).toBeInTheDocument();
     expect(await screen.findByText('系统皮肤')).toBeInTheDocument();
     await waitFor(() => {
-      expect(configApi.listConfig).toHaveBeenCalled();
+      expect(configApi.getConfigPanel).toHaveBeenCalled();
     });
   });
 

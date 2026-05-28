@@ -51,6 +51,36 @@ public class SysConfigVo implements Serializable {
     private String configValue;
 
     /**
+     * 参数值类型
+     */
+    private String valueType;
+
+    /**
+     * 默认值，null 表示无默认值
+     */
+    private String defaultValue;
+
+    /**
+     * 配置分组
+     */
+    private String groupKey;
+
+    /**
+     * 显示顺序
+     */
+    private Integer displayOrder;
+
+    /**
+     * 下拉选项 JSON
+     */
+    private String optionsJson;
+
+    /**
+     * UI 属性 JSON
+     */
+    private String uiPropsJson;
+
+    /**
      * 系统内置（Y是 N否）
      */
     @ExcelProperty(value = "系统内置", converter = ExcelDictConvert.class)

@@ -18,7 +18,7 @@
 | --- | --- |
 | `login`、`register`、`forgot-password` | 登录前公开入口与自助认证页面；`register` 会根据 backend 能力位决定是否展示邀请码校验与验证码发送门禁 |
 | `index` | 登录后的首页入口 |
-| `system/*` | 用户、角色、菜单、部门、岗位、字典、配置、邀请码、公告、客户端、OSS、个人中心 |
+| `system/*` | 用户、角色、菜单、部门、岗位、字典、配置、邀请码、公告、客户端、OSS、个人中心；`system/config` 使用后端 `panel` 接口渲染类型化配置中心，OSS 页面读取 `sys.oss.previewListResource` 保持预览开关一致 |
 | `monitor/*` | 在线用户、登录日志、操作日志、缓存、数据源、服务、任务与任务日志 |
 | `redirect/*`、`error/*` | 路由跳转和错误展示 |
 
