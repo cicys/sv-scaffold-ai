@@ -50,7 +50,7 @@
 - PowerShell 7 可以使用 `Set-Content -Encoding utf8NoBOM`、`Add-Content -Encoding utf8NoBOM`，但这只是可选优化，不是团队默认基线。
 - `chcp 65001`、`[Console]::InputEncoding`、`[Console]::OutputEncoding` 和 `$OutputEncoding` 只解决终端显示与 native command 管道问题，不能作为文件写入编码正确的证明。
 - 其他读取工具在支持显式编码参数时，应按 UTF-8 解码；Node.js 文件读写优先使用 `utf8`。
-- 提交或构建前执行仓库真实存在的 UTF-8 校验命令；Windows 后端可使用 `cd infoq-scaffold-backend && mvn validate`。若专用校验脚本尚不存在，不得在规约或交付说明中引用虚假路径。
+- 提交或构建前执行仓库真实存在的 UTF-8 校验命令；后端可使用 `node .codex/scripts/backend_mvn.mjs -- validate`。若专用校验脚本尚不存在，不得在规约或交付说明中引用虚假路径。
 
 ## 安全基线
 

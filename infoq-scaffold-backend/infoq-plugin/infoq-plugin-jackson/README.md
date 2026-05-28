@@ -18,7 +18,8 @@
 
 ## 4. 上游依赖
 
-- `web`、`redis`、`log`、`translation`、`sensitive`、`excel`、`oss` 等多个插件直接依赖该模块。
+- `web`、`redis`、`log`、`translation`、`excel`、`oss` 等多个插件直接依赖该模块。
+- `sensitive` 只依赖 Jackson API，不直接依赖本自动装配模块。
 - `AuthController` 等业务代码也会直接调用 `JsonUtils`。
 
 ## 5. 下游依赖

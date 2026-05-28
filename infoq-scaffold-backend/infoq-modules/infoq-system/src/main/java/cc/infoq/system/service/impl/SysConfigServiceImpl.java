@@ -8,6 +8,7 @@ import cc.infoq.common.mybatis.core.page.PageQuery;
 import cc.infoq.common.mybatis.core.page.TableDataInfo;
 import cc.infoq.common.redis.utils.CacheUtils;
 import cc.infoq.common.security.auth.LoginUserContext;
+import cc.infoq.common.security.auth.SecurityAuthorizationService;
 import cc.infoq.common.service.ConfigService;
 import cc.infoq.common.utils.MapstructUtils;
 import cc.infoq.common.utils.ObjectUtils;
@@ -20,7 +21,6 @@ import cc.infoq.system.domain.vo.*;
 import cc.infoq.system.enums.ConfigGroupEnum;
 import cc.infoq.system.mapper.SysConfigMapper;
 import cc.infoq.system.service.SysConfigService;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.ObjectUtil;
@@ -60,6 +60,8 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     };
 
     private final SysConfigMapper sysConfigMapper;
+
+    private final SecurityAuthorizationService securityAuthorizationService;
 
     /**
      * 分页查询参数配置列表
@@ -291,7 +293,7 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void reorderConfigs(List<SysConfigReorderBo> rows) {
-        if (!LoginHelper.isSuperAdmin()) {
+        if (!LoginUserContext.isSuperAdmin()) {
             throw new ServiceException("仅超级管理员可调整配置顺序");
         }
         if (ObjectUtils.isEmpty(rows)) {
@@ -461,7 +463,7 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
         if (isReadonly(uiProps)) {
             return "该配置已标记为只读";
         }
-        if (isSensitiveConfig(config.getConfigKey()) && !LoginHelper.isSuperAdmin()) {
+        if (isSensitiveConfig(config.getConfigKey()) && !LoginUserContext.isSuperAdmin()) {
             return "账号敏感配置仅超级管理员可编辑";
         }
         if (!PANEL_EDITABLE_VALUE_TYPES.contains(valueType)) {
@@ -472,7 +474,7 @@ public class SysConfigServiceImpl implements SysConfigService, ConfigService {
 
     private boolean hasEditPermission() {
         try {
-            return StpUtil.hasPermission("system:config:edit");
+            return securityAuthorizationService.hasPermission("system:config:edit");
         } catch (Exception e) {
             return false;
         }

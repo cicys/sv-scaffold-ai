@@ -12,7 +12,7 @@
 #### 场景：维护插件目录
 
 - 当维护者调整插件依赖或文档时
-- 则必须继续把 `infoq-plugin-web`、`infoq-plugin-security`、`infoq-plugin-satoken`、`infoq-plugin-mybatis`、`infoq-plugin-redis`、`infoq-plugin-jackson`、`infoq-plugin-oss` 视为固定保留
+- 则必须继续把 `infoq-plugin-web`、`infoq-plugin-security`、`infoq-plugin-mybatis`、`infoq-plugin-redis`、`infoq-plugin-jackson`、`infoq-plugin-oss` 视为固定保留
 - 并且必须继续把 `translation`、`sensitive`、`excel`、`log` 视为通用复用插件
 - 并且必须继续把 `encrypt`、`mail`、`sse`、`websocket`、`doc` 视为可配置插件
 
@@ -51,4 +51,4 @@
 
 - 当维护者调整 OSS 能力时
 - 则 `infoq-plugin-oss` 不得被误删或降级为可选插件
-- 并且涉及 Redis / Sa-Token / 限流 / 缓存能力时，必须保持 Redisson OSS 兼容
+- 并且涉及 Redis / 鉴权 token / 限流 / 缓存能力时，必须保持 Redisson OSS 兼容

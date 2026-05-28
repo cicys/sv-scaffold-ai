@@ -25,7 +25,7 @@ node .codex/skills/infoq-backend-unit-test-patterns/scripts/scan_missing_tests.m
 6. 先执行定向测试：
 
 ```bash
-mvn -pl infoq-modules/infoq-system -am \
+node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am \
   -DskipTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false \
   -Dtest=<ClassNameTest> test
@@ -85,8 +85,8 @@ mvn -pl infoq-modules/infoq-system -am \
 以下检查必须全部通过：
 
 ```bash
-mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
-mvn -pl infoq-modules/infoq-system -am clean package -P dev -DskipTests=false
+node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test
+node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am clean package -P dev -DskipTests=false
 node .codex/skills/infoq-backend-smoke-test/scripts/run_smoke.mjs
 ```
 

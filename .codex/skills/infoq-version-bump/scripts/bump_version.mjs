@@ -257,4 +257,4 @@ assertContainsFixed(springDocPropertiesTest, `assertEquals("${targetVersion}", p
 console.log('[version-bump] version bump completed successfully.');
 console.log('[version-bump] suggested follow-up:');
 console.log(`  rg -n "${targetVersion.replace(/\./g, '\\.')}" README.md doc script infoq-scaffold-backend infoq-scaffold-frontend-react infoq-scaffold-frontend-vue infoq-scaffold-frontend-weapp-react infoq-scaffold-frontend-weapp-vue infoq-scaffold-docs`);
-console.log('  mvn -pl infoq-plugin/infoq-plugin-doc -am -DskipTests=false -Dsurefire.failIfNoSpecifiedTests=false -Dtest=SpringDocConfigTest,SpringDocPropertiesTest test');
+console.log('  node .codex/scripts/backend_mvn.mjs -- -pl infoq-plugin/infoq-plugin-doc -am -DskipTests=false -Dsurefire.failIfNoSpecifiedTests=false -Dtest=SpringDocConfigTest,SpringDocPropertiesTest test');

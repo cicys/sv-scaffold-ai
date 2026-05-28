@@ -12,13 +12,13 @@ node .codex/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stac
 node .codex/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.mjs --backend-port 8081 --profile local
 ```
 
-若不使用 skill 主入口，可改用工作区原生命令手动启动。启动 backend 前先确认 `java -version` 与 `mvn -version` 指向 JDK 17。
+若不使用 skill 主入口，可改用工作区原生命令手动启动。backend 构建优先使用 `node .codex/scripts/backend_mvn.mjs -- ...`；直接用 `mvn` 时先确认 JDK 17 与 Maven 3.9.x。
 
 Backend：
 
 ```bash
 cd infoq-scaffold-backend
-mvn clean install -DskipTests
+node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
 java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8080 --captcha.enable=false
 ```
 

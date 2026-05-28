@@ -180,7 +180,7 @@
 - 项目文本文件统一 UTF-8，写入使用 UTF-8 without BOM
 - Windows PowerShell 5.1 是默认 shell 基线；读取源码、配置、文档时，`Get-Content`/`Select-String` 必须显式指定 `-Encoding UTF8`
 - Windows PowerShell 5.1 禁止用 `>`、`>>`、`Out-File`、`Set-Content`、`Add-Content` 写入仓库文本文件；写入使用明确 UTF-8 without BOM 的方式
-- 提交或构建前执行仓库真实存在的 UTF-8 校验命令；Windows 后端可用 `cd infoq-scaffold-backend && mvn validate`
+- 提交或构建前执行仓库真实存在的 UTF-8 校验命令；后端可用 `node .codex/scripts/backend_mvn.mjs -- validate`
 - 后端 `.editorconfig` 使用 4 空格；前端使用 2 空格
 - 前端包管理策略：优先 `pnpm`，不可用时回退等价 `npm` 命令
 
@@ -188,9 +188,9 @@
 
 ### Backend
 
-- 构建：`cd infoq-scaffold-backend && mvn clean package -P dev`
-- 运行：`cd infoq-scaffold-backend && mvn clean install -DskipTests && java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local`
-- 定向测试：`cd infoq-scaffold-backend && mvn -pl infoq-modules/infoq-system -am -DskipTests=false test`
+- 构建：`node .codex/scripts/backend_mvn.mjs -- clean package -P dev`
+- 运行：`node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests && java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local`
+- 定向测试：`node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test`
 
 ### React Admin
 

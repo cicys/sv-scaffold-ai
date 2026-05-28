@@ -6,7 +6,7 @@ import {
     isProcessAlive,
     resolveDocTmpPath,
     resolvePackageManager,
-    runCommandChecked,
+    runBackendMavenChecked,
     spawnDetachedProcess,
     tailFile,
     terminateProcessTree,
@@ -179,9 +179,7 @@ export async function runAdminDevStack(config, argv) {
     const backendUrl = `http://127.0.0.1:${options.backendPort}/auth/code`;
     if (options.buildBackend || !fs.existsSync(backendJar)) {
       console.log(`[${config.label}] building backend jar...`);
-      await runCommandChecked('mvn', ['-pl', 'infoq-admin', '-am', '-DskipTests', 'package'], {
-        cwd: backendDir
-      });
+      await runBackendMavenChecked(config.repoRoot, ['-pl', 'infoq-admin', '-am', '-DskipTests', 'package']);
     }
 
     if (!fs.existsSync(backendJar)) {

@@ -9,8 +9,8 @@ import {
     normalizeForwardedArgs,
     resolveDocTmpPath,
     resolveRepoRoot,
+    runBackendMavenChecked,
     runCommand,
-    runCommandChecked,
     spawnDetachedProcess,
     spawnPythonScript,
     tailFile,
@@ -334,9 +334,7 @@ async function main() {
 
   if (buildFirst || !fs.existsSync(jarPath)) {
     console.log('[cluster-smoke] building backend jar...');
-    await runCommandChecked('mvn', ['-pl', 'infoq-admin', '-am', '-DskipTests', 'package'], {
-      cwd: backendDir
-    });
+    await runBackendMavenChecked(repoRoot, ['-pl', 'infoq-admin', '-am', '-DskipTests', 'package']);
   }
 
   if (!fs.existsSync(jarPath)) {

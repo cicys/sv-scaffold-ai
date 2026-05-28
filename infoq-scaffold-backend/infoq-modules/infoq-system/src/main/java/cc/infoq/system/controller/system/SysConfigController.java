@@ -50,7 +50,7 @@ public class SysConfigController extends BaseController {
     /**
      * 获取参数配置面板
      */
-    @SaCheckPermission("system:config:list")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:config:list')")
     @GetMapping("/panel")
     public ApiResult<SysConfigPanelVo> panel() {
         return ApiResult.ok(sysConfigService.selectConfigPanel());
@@ -133,7 +133,7 @@ public class SysConfigController extends BaseController {
     /**
      * 根据参数键名恢复默认值
      */
-    @SaCheckPermission("system:config:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:config:edit')")
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PostMapping("/resetByKey")
@@ -144,7 +144,7 @@ public class SysConfigController extends BaseController {
     /**
      * 批量调整参数配置显示顺序
      */
-    @SaCheckPermission("system:config:edit")
+    @PreAuthorize("@securityAuthorizationService.hasPermission('system:config:edit')")
     @Log(title = "参数管理", businessType = BusinessType.UPDATE)
     @RepeatSubmit()
     @PutMapping("/reorder")

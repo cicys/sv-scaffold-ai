@@ -98,7 +98,7 @@ node .codex/skills/infoq-plugin-introducer/scripts/generate_plugin_plan.mjs \
 至少执行：
 
 ```bash
-cd infoq-scaffold-backend && mvn clean package -P dev -pl infoq-modules/infoq-system -am
+node .codex/scripts/backend_mvn.mjs -- clean package -P dev -pl infoq-modules/infoq-system -am
 cd infoq-scaffold-frontend-vue && pnpm run build:prod
 ```
 
