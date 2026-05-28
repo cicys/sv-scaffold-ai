@@ -13,6 +13,9 @@ services:
       - ${INFOQ_DEPLOY_ROOT:-/infoq}/mysql/data/:/var/lib/mysql/
       - ${INFOQ_DEPLOY_ROOT:-/infoq}/mysql/conf/:/etc/mysql/conf.d/
       - ../../sql/infoq_scaffold_2.0.0.sql:/docker-entrypoint-initdb.d/01-infoq.sql:ro
+      - ../../sql/infoq_scaffold_update_20260425.sql:/docker-entrypoint-initdb.d/02-update-20260425.sql:ro
+      - ../../sql/infoq_scaffold_update_20260429.sql:/docker-entrypoint-initdb.d/03-update-20260429.sql:ro
+      - ../../sql/infoq_scaffold_update_20260526.sql:/docker-entrypoint-initdb.d/04-update-20260526.sql:ro
     command:
       - --default-authentication-plugin=mysql_native_password
       - --character-set-server=utf8mb4

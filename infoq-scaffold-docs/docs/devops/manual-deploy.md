@@ -74,8 +74,7 @@ infoq-release/
 在仓库根目录执行：
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean package -P prod -pl infoq-admin -am
+node .codex/scripts/backend_mvn.mjs -- clean package -P prod -pl infoq-admin -am
 ```
 
 构建产物：

@@ -7,10 +7,14 @@ COMPOSE_FILE="${REPO_ROOT}/script/docker/docker-compose.yml"
 REDIS_CONF_SOURCE="${REPO_ROOT}/script/docker/redis/conf/redis.conf"
 SERVER_CONFIG_TEMPLATE="${REPO_ROOT}/script/docker/server/application-prod.yml"
 SQL_INIT_FILE="${REPO_ROOT}/sql/infoq_scaffold_2.0.0.sql"
+SQL_UPDATE_20260425_FILE="${REPO_ROOT}/sql/infoq_scaffold_update_20260425.sql"
+SQL_UPDATE_20260429_FILE="${REPO_ROOT}/sql/infoq_scaffold_update_20260429.sql"
+SQL_UPDATE_20260526_FILE="${REPO_ROOT}/sql/infoq_scaffold_update_20260526.sql"
 BACKEND_DIR="${REPO_ROOT}/infoq-scaffold-backend"
 BACKEND_SERVICES=(mysql redis minio infoq-admin)
 DEFAULT_DEPLOY_ROOT="/infoq"
 DEPLOY_ROOT=""
+COMPOSE_CMD=()
 
 usage() {
   cat <<'EOF'
@@ -37,8 +41,28 @@ require_command() {
   fi
 }
 
+resolve_compose_command() {
+  if (( ${#COMPOSE_CMD[@]} > 0 )); then
+    return
+  fi
+
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker compose)
+    return
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker-compose)
+    return
+  fi
+
+  echo "[backend] 缺少 Docker Compose CLI: 需要 docker compose 或 docker-compose" >&2
+  exit 1
+}
+
 compose() {
-  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" docker compose -f "${COMPOSE_FILE}" "$@"
+  resolve_compose_command
+  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" "$@"
 }
 
 resolve_deploy_root() {
@@ -90,7 +114,7 @@ package_backend() {
 }
 
 build_image() {
-  require_command docker
+  resolve_compose_command
   compose build infoq-admin
 }
 
@@ -124,25 +148,115 @@ wait_for_redis() {
   done
 }
 
-ensure_database_initialized() {
-  local table_count
+mysql_query() {
+  local sql="$1"
+  compose exec -T mysql mysql -uroot -proot -Nse "${sql}" 2>/dev/null | tr -d '\r'
+}
 
+mysql_exec_infoq_file() {
+  local sql_file="$1"
+  local label="$2"
+
+  if [[ ! -f "${sql_file}" ]]; then
+    echo "[backend] 缺少 SQL 文件: ${sql_file}" >&2
+    exit 1
+  fi
+
+  echo "[backend] 导入 ${label}: ${sql_file##${REPO_ROOT}/}"
+  compose exec -T mysql mysql -uroot -proot infoq < "${sql_file}"
+}
+
+table_exists() {
+  local table_name="$1"
+  mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name)=LOWER('${table_name}');"
+}
+
+column_count() {
+  local table_name="$1"
+  local column_list="$2"
+  mysql_query "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='infoq' AND LOWER(table_name)=LOWER('${table_name}') AND column_name IN (${column_list});"
+}
+
+menu_exists() {
+  local menu_id="$1"
+  mysql_query "SELECT COUNT(*) FROM infoq.sys_menu WHERE menu_id=${menu_id};"
+}
+
+ensure_base_schema() {
+  if [[ "$(table_exists sys_oss_config)" == "1" ]]; then
+    return
+  fi
+
+  mysql_exec_infoq_file "${SQL_INIT_FILE}" "基础库"
+}
+
+ensure_scheduler_schema() {
+  local job_table_exists
+  local quartz_lock_exists
+
+  job_table_exists="$(table_exists sys_job)"
+  quartz_lock_exists="$(table_exists qrtz_locks)"
+
+  if [[ "${job_table_exists}" == "1" && "${quartz_lock_exists}" == "1" ]]; then
+    return
+  fi
+
+  mysql_exec_infoq_file "${SQL_UPDATE_20260425_FILE}" "定时任务与 Quartz 表"
+}
+
+ensure_monitor_menu_data() {
+  if [[ "$(menu_exists 2026042910)" == "1" ]]; then
+    return
+  fi
+
+  mysql_exec_infoq_file "${SQL_UPDATE_20260429_FILE}" "监控菜单数据"
+}
+
+ensure_config_metadata_columns() {
+  local expected_count=6
+  local actual_count
+  local metadata_columns="'value_type','default_value','group_key','display_order','options_json','ui_props_json'"
+
+  actual_count="$(column_count sys_config "${metadata_columns}")"
+  if [[ "${actual_count}" == "${expected_count}" ]]; then
+    return
+  fi
+
+  if [[ "${actual_count}" != "0" ]]; then
+    echo "[backend] 检测到 sys_config 配置元数据列处于部分迁移状态，请人工检查后重试" >&2
+    exit 1
+  fi
+
+  mysql_exec_infoq_file "${SQL_UPDATE_20260526_FILE}" "配置元数据列"
+}
+
+validate_database_initialized() {
+  local required_tables_count
+  local metadata_columns_count
+  local metadata_columns="'value_type','default_value','group_key','display_order','options_json','ui_props_json'"
+
+  required_tables_count="$(mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name) IN ('sys_oss_config','sys_job','qrtz_locks');")"
+  metadata_columns_count="$(column_count sys_config "${metadata_columns}")"
+
+  if [[ "${required_tables_count}" != "3" || "${metadata_columns_count}" != "6" ]]; then
+    echo "[backend] 数据库初始化校验失败: required_tables=${required_tables_count}, sys_config_metadata_columns=${metadata_columns_count}" >&2
+    exit 1
+  fi
+}
+
+ensure_database_initialized() {
   if [[ ! -f "${SQL_INIT_FILE}" ]]; then
     echo "[backend] 缺少 SQL 初始化文件: ${SQL_INIT_FILE}" >&2
     exit 1
   fi
 
-  table_count="$(compose exec -T mysql mysql -uroot -proot -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND table_name='sys_oss_config';" 2>/dev/null | tr -d '\r')"
-
-  if [[ "${table_count:-0}" == "1" ]]; then
-    echo "[backend] 数据库已初始化，跳过 SQL 导入"
-    return
-  fi
-
-  echo "[backend] 检测到 infoq 库未初始化，开始导入 ${SQL_INIT_FILE##${REPO_ROOT}/}"
   compose exec -T mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS infoq CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-  compose exec -T mysql mysql -uroot -proot infoq < "${SQL_INIT_FILE}"
-  echo "[backend] 数据库初始化完成"
+  ensure_base_schema
+  ensure_scheduler_schema
+  ensure_monitor_menu_data
+  ensure_config_metadata_columns
+  validate_database_initialized
+  echo "[backend] 数据库初始化和增量 SQL 校验完成"
 }
 
 start_dependencies() {
@@ -153,7 +267,7 @@ start_dependencies() {
 }
 
 deploy_backend() {
-  require_command docker
+  resolve_compose_command
   prepare_dirs
   package_backend
   start_dependencies
@@ -162,7 +276,7 @@ deploy_backend() {
 }
 
 start_backend() {
-  require_command docker
+  resolve_compose_command
   prepare_dirs
   start_dependencies
   compose start infoq-admin
@@ -170,22 +284,22 @@ start_backend() {
 }
 
 stop_backend() {
-  require_command docker
+  resolve_compose_command
   compose stop "${BACKEND_SERVICES[@]}"
 }
 
 restart_backend() {
-  require_command docker
+  resolve_compose_command
   compose restart infoq-admin
 }
 
 status_backend() {
-  require_command docker
+  resolve_compose_command
   compose ps "${BACKEND_SERVICES[@]}"
 }
 
 show_logs() {
-  require_command docker
+  resolve_compose_command
   local service="${1:-infoq-admin}"
   compose logs -f "${service}"
 }
