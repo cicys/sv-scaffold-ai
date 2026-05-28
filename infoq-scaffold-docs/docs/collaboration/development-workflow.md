@@ -72,12 +72,12 @@ repo-level 或高风险治理变更，除 active change 外，还应在 `doc/pla
 
 说明：`openspec-check` 是 active change 的结构前置校验，不替代上述运行态或构建验证。
 
-## 5. Java 17 预检
+## 5. Backend Maven 预检
 
-backend 工作区基线是 JDK 17。
+backend 工作区基线是 JDK 17 与 Maven 3.9.x。
 
-- 在任何 backend `mvn` 编译、`spring-boot:run` 或 `java -jar` 之前，先确认 `java -version` 与 `mvn -version` 都指向 Java 17。
-- 如果当前 shell 解析到 JDK 8 或其他旧版本，先在当前终端覆盖 `JAVA_HOME` 与 `PATH`，再继续执行。
+- 后端 Maven 命令优先使用 `node .codex/scripts/backend_mvn.mjs -- ...`，该入口优先读取 `.idea` 项目配置，并在配置不可用时搜索本机 JDK 17 与 Maven 3.9.x。
+- 如果必须直接使用 `mvn`，先确认 `java -version` 指向 Java 17，且 `mvn -version` 指向 Maven 3.9.x 与 Java 17。
 - 不允许在错误 JDK 下继续碰运气编译，然后把失败误判为代码问题。
 
 ## 6. skills 与 MCP 的配合

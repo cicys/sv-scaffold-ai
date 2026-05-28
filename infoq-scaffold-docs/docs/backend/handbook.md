@@ -214,14 +214,13 @@ outline: [2, 3]
 常用命令：
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean install -DskipTests
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8081 --captcha.enable=false  # 本地临时避冲突 override
-mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
-mvn clean package -P prod -pl infoq-admin -am
+node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8081 --captcha.enable=false  # 本地临时避冲突 override
+node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test
+node .codex/scripts/backend_mvn.mjs -- clean package -P prod -pl infoq-admin -am
 ```
 
 ## 10. 相关文档

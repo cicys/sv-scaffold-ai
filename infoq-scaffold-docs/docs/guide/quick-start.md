@@ -19,7 +19,7 @@ outline: [2, 3]
 | 组件 | 建议版本 |
 | --- | --- |
 | JDK | 17 |
-| Maven | 3.9+ |
+| Maven | 3.9.x |
 | Node.js | >= 20.15.0 |
 | pnpm | >= 10.0.0 |
 | MySQL | 8.x |
@@ -34,7 +34,7 @@ outline: [2, 3]
 
 - 默认 Maven profile 是 `dev`。
 - 若要稳定命中指定 profile，优先使用 `java -jar` 显式传入 `--spring.profiles.active=...`。
-- 本仓库当前推荐的确定性运行路径是先 `mvn clean install -DskipTests`，再运行 `infoq-admin/target/infoq-admin.jar`。
+- 本仓库当前推荐的确定性运行路径是先 `node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests`，再运行 `infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar`。
 
 ### 管理端
 
@@ -65,22 +65,20 @@ outline: [2, 3]
 ### 4.1 使用默认 `dev` profile
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean install -DskipTests
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
+node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=dev
 ```
 
 ### 4.2 使用 `local` profile
 
 ```bash
-cd infoq-scaffold-backend
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
 
 如需继续执行浏览器自动化登录或受保护路由探测，临时追加：
 
 ```bash
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --captcha.enable=false
 ```
 
 启动后优先验证两个入口：
@@ -165,10 +163,9 @@ pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
 ### 后端
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean package -P dev
-mvn clean package -P prod -pl infoq-admin -am
-mvn -pl infoq-modules/infoq-system -am -DskipTests=false test
+node .codex/scripts/backend_mvn.mjs -- clean package -P dev
+node .codex/scripts/backend_mvn.mjs -- clean package -P prod -pl infoq-admin -am
+node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test
 ```
 
 ### Vue 管理端

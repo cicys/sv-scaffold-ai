@@ -312,6 +312,9 @@
                         </goals>
                         <configuration>
                             <propertyName>surefireArgLine</propertyName>
+                            <excludes>
+                                <exclude>net.sf.jsqlparser.parser.CCJSqlParserTokenManager*</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                     <execution>

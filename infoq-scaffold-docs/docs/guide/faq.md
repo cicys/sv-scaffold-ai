@@ -43,23 +43,21 @@ outline: [2, 3]
 错误示例：
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean install -DskipTests
-java -jar infoq-admin/target/infoq-admin.jar
+node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar
 ```
 
 正确示例：
 
 ```bash
-cd infoq-scaffold-backend
-mvn clean install -DskipTests
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
 ```
 
 若你本地还临时避开了 `8080` 端口冲突，再继续显式传端口，并同步前端代理：
 
 ```bash
-java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8081 --captcha.enable=false
+java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local --server.port=8081 --captcha.enable=false
 ```
 
 这类 `8081` 只是本地 override，不是共享真值。提交前要恢复共享默认 `8080`，并让运行态脚本通过 `--backend-port` 之类的显式参数处理本地差异。

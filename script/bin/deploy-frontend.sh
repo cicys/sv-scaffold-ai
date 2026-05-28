@@ -8,6 +8,7 @@ NGINX_CONF_SOURCE="${REPO_ROOT}/script/docker/nginx/conf/nginx.conf"
 FRONTEND_SERVICES=(infoq-frontend-vue infoq-frontend-react nginx-web)
 DEFAULT_DEPLOY_ROOT="/infoq"
 DEPLOY_ROOT=""
+COMPOSE_CMD=()
 
 usage() {
   cat <<'EOF'
@@ -16,7 +17,7 @@ usage() {
 命令说明:
   prepare   创建前端与网关所需宿主机目录，并同步 nginx.conf
   build     构建 Vue 与 React 前端镜像
-  deploy    prepare + docker compose up -d --build --no-deps infoq-frontend-vue infoq-frontend-react nginx-web
+  deploy    prepare + Docker Compose up -d --build --no-deps infoq-frontend-vue infoq-frontend-react nginx-web
   start     启动 Vue、React 与 nginx-web
   stop      停止 Vue、React 与 nginx-web
   restart   重启 Vue、React 与 nginx-web
@@ -33,8 +34,28 @@ require_command() {
   fi
 }
 
+resolve_compose_command() {
+  if (( ${#COMPOSE_CMD[@]} > 0 )); then
+    return
+  fi
+
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker compose)
+    return
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+    COMPOSE_CMD=(docker-compose)
+    return
+  fi
+
+  echo "[frontend] 缺少 Docker Compose CLI: 需要 docker compose 或 docker-compose" >&2
+  exit 1
+}
+
 compose() {
-  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" docker compose -f "${COMPOSE_FILE}" "$@"
+  resolve_compose_command
+  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" "$@"
 }
 
 resolve_deploy_root() {
@@ -69,12 +90,12 @@ prepare_dirs() {
 }
 
 build_frontends() {
-  require_command docker
+  resolve_compose_command
   compose build infoq-frontend-vue infoq-frontend-react
 }
 
 deploy_frontends() {
-  require_command docker
+  resolve_compose_command
   prepare_dirs
   compose up -d --build --no-deps "${FRONTEND_SERVICES[@]}"
   echo "[frontend] 部署完成"
@@ -83,28 +104,27 @@ deploy_frontends() {
 }
 
 start_frontends() {
-  require_command docker
+  resolve_compose_command
   prepare_dirs
   compose up -d --no-deps "${FRONTEND_SERVICES[@]}"
 }
 
 stop_frontends() {
-  require_command docker
+  resolve_compose_command
   compose stop "${FRONTEND_SERVICES[@]}"
 }
 
 restart_frontends() {
-  require_command docker
+  resolve_compose_command
   compose restart "${FRONTEND_SERVICES[@]}"
 }
 
 status_frontends() {
-  require_command docker
+  resolve_compose_command
   compose ps "${FRONTEND_SERVICES[@]}"
 }
 
 show_logs() {
-  require_command docker
   case "${1:-all}" in
     vue)
       compose logs -f infoq-frontend-vue
