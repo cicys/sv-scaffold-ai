@@ -70,15 +70,26 @@ export const useUserStore = defineStore('user', () => {
     return Promise.reject(err);
   };
 
+  const clearLocalSession = () => {
+    token.value = '';
+    roles.value = [];
+    permissions.value = [];
+    name.value = '';
+    nickname.value = '';
+    avatar.value = '';
+    userId.value = '';
+    removeToken();
+  };
+
   // 注销
   const logout = async (): Promise<void> => {
     // 先关闭前端SSE连接，防止旧连接在退出后继续重连
     closeSSE();
-    await logoutApi();
-    token.value = '';
-    roles.value = [];
-    permissions.value = [];
-    removeToken();
+    try {
+      await logoutApi();
+    } finally {
+      clearLocalSession();
+    }
   };
 
   const setAvatar = (value: string) => {

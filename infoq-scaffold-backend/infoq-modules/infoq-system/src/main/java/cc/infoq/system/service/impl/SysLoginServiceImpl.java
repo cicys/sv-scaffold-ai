@@ -24,6 +24,7 @@ import cc.infoq.system.service.*;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.Opt;
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -117,12 +118,13 @@ public class SysLoginServiceImpl implements SysLoginService {
      * @param userId 用户ID
      */
     public void recordLoginInfo(Long userId, String ip) {
-        SysUser sysUser = new SysUser();
-        sysUser.setUserId(userId);
-        sysUser.setLoginIp(ip);
-        sysUser.setLoginDate(DateUtils.getNowDate());
-        sysUser.setUpdateBy(userId);
-        DataPermissionHelper.ignore(() -> userMapper.updateById(sysUser));
+        var now = DateUtils.getNowDate();
+        DataPermissionHelper.ignore(() -> userMapper.update(null, new UpdateWrapper<SysUser>()
+            .set("login_ip", ip)
+            .set("login_date", now)
+            .set("update_by", userId)
+            .set("update_time", now)
+            .eq("user_id", userId)));
     }
 
     /**

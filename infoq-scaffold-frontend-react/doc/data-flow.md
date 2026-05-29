@@ -143,7 +143,7 @@ API 模块本身主要承担：
 -> navigateTo('/login')
 ```
 
-这条链路说明当前 React admin 不会静默吞掉过期会话，而是显式弹窗并让用户决定是否重新登录。
+这条链路说明当前 React admin 不会静默吞掉过期会话，而是显式弹窗并让用户决定是否重新登录。若 token 已被后端撤销，`userStore.logout()` 仍会在 `/auth/logout` 失败后清理本地会话，避免继续携带旧 token 请求受保护接口。
 
 ## 5. 登出与消息通道关闭
 
@@ -154,7 +154,7 @@ userStore.logout()
 -> closeSSE()
 -> closeWebSocket()
 -> POST /auth/logout
--> removeToken()
+-> finally removeToken()
 -> 清空用户状态
 ```
 

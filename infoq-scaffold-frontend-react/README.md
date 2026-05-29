@@ -12,7 +12,7 @@
 - `AuthGuard.tsx` 负责 token 检查、登录后 `getInfo()` 和动态路由装配的引导。
 - `BackendRouteView.tsx` 负责把后端返回的 `component` 字符串解析成真实页面组件，并同步 tags view。
 - `src/api/login.ts` 的登录、OAuth ticket、注册和忘记密码公开请求沿用既有加密请求约定；`GET /auth/code` 现在也是登录页公开能力位的真值来源。
-- `useUserStore` 在 password 或 OAuth ticket 登录成功后会初始化 SSE 和 WebSocket；登出时会显式关闭连接。
+- `useUserStore` 在 password 或 OAuth ticket 登录成功后会初始化 SSE 和 WebSocket；登出时会显式关闭连接，并且 `/auth/logout` 失败也会清理本地会话。
 
 ## 模块导航
 

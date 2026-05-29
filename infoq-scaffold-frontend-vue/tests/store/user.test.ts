@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { useUserStore } from '@/store/modules/user';
-import { getToken } from '@/utils/auth';
+import { getToken, setToken } from '@/utils/auth';
 import type { ApiResponse, LoginData, LoginResult } from '@/api/types';
 import type { UserInfo } from '@/api/system/user/types';
 
@@ -114,6 +114,32 @@ describe('store/user', () => {
     expect(store.token).toBe('');
     expect(store.roles).toEqual([]);
     expect(store.permissions).toEqual([]);
+  });
+
+  it('logout should clear local session when logout api fails', async () => {
+    vi.mocked(logout).mockRejectedValueOnce(new Error('logout unauthorized'));
+    setToken('expired-token');
+    const store = useUserStore();
+    store.token = 'expired-token';
+    store.roles = ['admin'];
+    store.permissions = ['system:user:list'];
+    store.name = 'admin';
+    store.nickname = 'Admin';
+    store.avatar = 'avatar.png';
+    store.userId = 1;
+
+    await expect(store.logout()).rejects.toBeTruthy();
+
+    expect(closeSSE).toHaveBeenCalled();
+    expect(logout).toHaveBeenCalled();
+    expect(getToken()).toBeNull();
+    expect(store.token).toBe('');
+    expect(store.roles).toEqual([]);
+    expect(store.permissions).toEqual([]);
+    expect(store.name).toBe('');
+    expect(store.nickname).toBe('');
+    expect(store.avatar).toBe('');
+    expect(store.userId).toBe('');
   });
 
   it('setAvatar should update avatar directly', () => {

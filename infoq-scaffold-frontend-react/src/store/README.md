@@ -17,7 +17,7 @@
 
 | 模块 | 当前职责 |
 | --- | --- |
-| `user` | token、用户信息、角色权限、password/OAuth ticket 登录登出、SSE/WebSocket 生命周期 |
+| `user` | token、用户信息、角色权限、password/OAuth ticket 登录登出、SSE/WebSocket 生命周期、退出失败时的本地会话清理 |
 | `permission` | 动态菜单拉取、路由转换、侧边栏/顶栏/组件映射缓存 |
 | `app` | 语言、组件尺寸等应用级偏好 |
 | `settings` | 主题、暗色模式等界面设置 |
@@ -39,6 +39,14 @@
 -> AuthGuard 调 user.getInfo()
 -> permission.generateRoutes()
 -> router / layout / pages 使用 store 结果
+```
+
+```text
+会话退出或过期重登
+-> user.logout()
+-> closeSSE() / closeWebSocket()
+-> 尝试 POST /auth/logout
+-> 无论后端退出是否成功，都清理本地 token / 用户信息 / 角色权限
 ```
 
 ## 6. 公共约束

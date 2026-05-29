@@ -35,6 +35,11 @@ const applyLoginToken = (token: string, set: (state: Partial<UserState>) => void
   initWebSocket(import.meta.env.VITE_APP_BASE_API + '/resource/websocket');
 };
 
+const clearLocalSession = (set: (state: Partial<UserState>) => void) => {
+  removeToken();
+  set({ token: '', roles: [], permissions: [], name: '', nickname: '', avatar: '', userId: '' });
+};
+
 export const useUserStore = create<UserState>((set) => ({
   token: getToken(),
   name: '',
@@ -71,9 +76,11 @@ export const useUserStore = create<UserState>((set) => ({
   logout: async () => {
     closeSSE();
     closeWebSocket();
-    await logoutApi();
-    removeToken();
-    set({ token: '', roles: [], permissions: [], name: '', nickname: '', avatar: '', userId: '' });
+    try {
+      await logoutApi();
+    } finally {
+      clearLocalSession(set);
+    }
   },
   setAvatar: (value) => set({ avatar: value })
 }));

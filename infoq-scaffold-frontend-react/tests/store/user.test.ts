@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ApiResponse, LoginData, LoginResult } from '@/api/types';
-import { getToken } from '@/utils/auth';
+import { getToken, setToken } from '@/utils/auth';
 
 const userStoreMocks = vi.hoisted(() => ({
   login: vi.fn(),
@@ -69,5 +69,36 @@ describe('store/user', () => {
     expect(getToken()).toBe('oauth-token');
     expect(userStoreMocks.initSSE).toHaveBeenCalledWith('/test-api/resource/sse');
     expect(userStoreMocks.initWebSocket).toHaveBeenCalledWith('/test-api/resource/websocket');
+  });
+
+  it('logout should clear local session when logout api fails', async () => {
+    const error = new Error('logout unauthorized');
+    userStoreMocks.logout.mockRejectedValueOnce(error);
+    setToken('expired-token');
+    useUserStore.setState({
+      token: 'expired-token',
+      roles: ['admin'],
+      permissions: ['system:user:list'],
+      name: 'admin',
+      nickname: 'Admin',
+      avatar: 'avatar.png',
+      userId: 1
+    });
+
+    await expect(useUserStore.getState().logout()).rejects.toThrow('logout unauthorized');
+
+    expect(userStoreMocks.closeSSE).toHaveBeenCalled();
+    expect(userStoreMocks.closeWebSocket).toHaveBeenCalled();
+    expect(userStoreMocks.logout).toHaveBeenCalled();
+    expect(getToken()).toBe('');
+    expect(useUserStore.getState()).toMatchObject({
+      token: '',
+      roles: [],
+      permissions: [],
+      name: '',
+      nickname: '',
+      avatar: '',
+      userId: ''
+    });
   });
 });

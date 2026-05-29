@@ -20,12 +20,12 @@ import cc.infoq.system.service.SysDeptService;
 import cc.infoq.system.service.SysPermissionService;
 import cc.infoq.system.service.SysPostService;
 import cc.infoq.system.service.SysRoleService;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -290,19 +290,14 @@ class SysLoginServiceImplTest {
     }
 
     @Test
-    @DisplayName("recordLoginInfo(userId, ip): should update user login fields by mapper")
+    @DisplayName("recordLoginInfo(userId, ip): should update user login fields without entity auto fill")
     void recordLoginInfoByUserIdShouldUpdateUserLoginFields() {
         SysLoginServiceImpl service = service();
 
         service.recordLoginInfo(99L, "127.0.0.1");
 
-        ArgumentCaptor<SysUser> captor = ArgumentCaptor.forClass(SysUser.class);
-        verify(userMapper).updateById(captor.capture());
-        SysUser actual = captor.getValue();
-        assertEquals(99L, actual.getUserId());
-        assertEquals("127.0.0.1", actual.getLoginIp());
-        assertEquals(99L, actual.getUpdateBy());
-        assertNotNull(actual.getLoginDate());
+        verify(userMapper).update(isNull(), argThat(SysLoginServiceImplTest::isLoginAuditUpdateWrapper));
+        verify(userMapper, never()).updateById(any(SysUser.class));
     }
 
     @Test
@@ -325,5 +320,20 @@ class SysLoginServiceImplTest {
             currentUserService,
             tokenService
         );
+    }
+
+    private static boolean isLoginAuditUpdateWrapper(Wrapper<SysUser> wrapper) {
+        if (wrapper == null) {
+            return false;
+        }
+        String sqlSet = wrapper.getSqlSet();
+        String sqlSegment = wrapper.getCustomSqlSegment();
+        return sqlSet != null
+            && sqlSet.contains("login_ip")
+            && sqlSet.contains("login_date")
+            && sqlSet.contains("update_by")
+            && sqlSet.contains("update_time")
+            && sqlSegment != null
+            && sqlSegment.contains("user_id");
     }
 }
