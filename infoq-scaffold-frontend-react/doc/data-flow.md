@@ -35,6 +35,22 @@ LoginPage
 -> initWebSocket()
 ```
 
+OAuth 登录沿用同一个 token 落地路径，但授权发起和回调多两段公开接口：
+
+```text
+LoginPage
+-> getOAuthProviders()
+-> GET /auth/oauth/providers
+-> browser redirect /auth/oauth/{provider}/authorize
+-> OAuthCallbackPage
+-> exchangeOAuthTicket()
+-> POST /auth/oauth/ticket
+-> userStore.loginByOAuthTicket()
+-> setToken()
+-> initSSE()
+-> initWebSocket()
+```
+
 登录成功后，真正把当前用户资料和动态菜单装进前端状态的动作并不发生在登录页面本身，而是在 `AuthGuard.tsx`：
 
 ```text

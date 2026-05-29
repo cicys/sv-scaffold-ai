@@ -10,11 +10,11 @@ import cc.infoq.common.exception.ServiceException;
 import cc.infoq.common.json.utils.JsonUtils;
 import cc.infoq.common.utils.DateUtils;
 import cc.infoq.common.utils.MessageUtils;
-import cc.infoq.common.utils.StringUtils;
 import cc.infoq.common.utils.ValidatorUtils;
 import cc.infoq.system.domain.vo.LoginVo;
 import cc.infoq.system.domain.vo.SysClientVo;
 import cc.infoq.system.service.*;
+import cc.infoq.system.support.AuthGrantUtils;
 import cc.infoq.system.support.plugin.OptionalMailHelper;
 import cc.infoq.system.support.plugin.OptionalSseHelper;
 import cn.hutool.core.lang.Dict;
@@ -64,7 +64,7 @@ public class AuthController {
         String clientId = loginBody.getClientId();
         String grantType = loginBody.getGrantType();
         SysClientVo client = sysClientService.queryByClientId(clientId);
-        if (ObjectUtil.isNull(client) || !StringUtils.contains(client.getGrantType(), grantType)) {
+        if (ObjectUtil.isNull(client) || !AuthGrantUtils.supportsGrantType(client, grantType)) {
             log.info("Client id: {} grant type: {} is invalid.", clientId, grantType);
             return ApiResult.fail(MessageUtils.message("auth.grant.type.error"));
         } else if (!SystemConstants.NORMAL.equals(client.getStatus())) {

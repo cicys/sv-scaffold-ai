@@ -16,6 +16,7 @@
 |Execution Loop:按最小闭环工作，一次只改一类问题。|验证顺序固定为 main-flow verification -> targeted tests -> lint/build or equivalent checks -> diff review。|每次代码改动交付前都必须通过相关单元测试；若不适用或跑不起来，必须明确写出 blocker，不能当作 ready。|除非用户明确要求，不要把无关重构和行为修改绑在一起。
 |Unit Test Doctrine:不同类型单元测试必须按业务行为与边界条件编写，禁止脱离业务语义只为凑覆盖率。|单元测试失败时先检查并修复产品代码问题；仅在需求或断言错误且有证据时才允许改测试，禁止通过修改测试隐藏代码缺陷。|每种单测类型先跑通一个最小闭环后，必须沉淀一份仓库可复用 skill（含触发条件、标准步骤、验证命令与常见反模式），用于后续提效与节约 token。
 |Release Guardrails:可发布变更必须保持依赖版本与 lockfile 一致。|执行或部署前核验必需 env、config 和外部依赖。|影响共享环境、数据或部署状态的高风险/破坏性操作必须先获明确确认。
+|SQL Migration Policy:`sql/infoq_scaffold_2.0.0.sql` 是冻结初始化基线，永远不要修改。|所有新增、修改、删除表结构或初始化数据变更，只能新增 `sql/infoq_scaffold_update_YYYYMMDD.sql` 增量脚本承载。|若误改初始化 SQL，必须立即回退该文件，并把变更迁移到当前日期增量脚本。
 |Deployment Secrets:生产/Compose 部署使用仓库已有默认密码或 RSA 私钥。|前端保持 VITE_APP_ENCRYPT/TARO_APP_ENCRYPT=true 时必须在构建环境提供对应 RSA 公私钥。
 |Pre-Release Checklist:发布或交付前显式检查 performance impact、alerting/observability coverage、rollback path/script、config/SQL/dependency impact；任何未检查项都要作为 residual risk 说明。
 |Instruction Layering:根 `AGENTS.md` 只保留跨仓规则。|backend、Vue admin、React admin、weapp React、weapp Vue、docs site 使用更近的 `AGENTS.md` 或 `AGENTS.override.md` 写栈内细则。|当更近文件与根规则冲突时，以更近文件为准。

@@ -217,6 +217,34 @@ sse:
   enabled: true
   path: /resource/sse
 
+--- # OAuth 登录
+oauth:
+  enabled: false
+  state-ttl: 10m
+  ticket-ttl: 2m
+  auto-register-enabled: true
+  require-invite-when-invite-register-enabled: true
+  frontend-callback-path: /oauth/callback
+  providers:
+    github:
+      client-id: ${OAUTH_GITHUB_CLIENT_ID:}
+      client-secret: ${OAUTH_GITHUB_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_GITHUB_REDIRECT_URI:}
+      scopes:
+        - read:user
+        - user:email
+      pkce-enabled: true
+    linuxdo:
+      client-id: ${OAUTH_LINUXDO_CLIENT_ID:}
+      client-secret: ${OAUTH_LINUXDO_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_LINUXDO_REDIRECT_URI:}
+      authorize-uri: https://connect.linux.do/oauth2/authorize
+      token-uri: https://connect.linux.do/oauth2/token
+      user-info-uri: https://connect.linux.do/api/user
+      scopes:
+        - user
+      pkce-enabled: true
+
 --- # websocket
 websocket:
   # 如果关闭 需要和前端开关一起关闭

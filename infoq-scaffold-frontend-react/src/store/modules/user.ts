@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { login as loginApi, logout as logoutApi, getInfo as getUserInfo } from '@/api/login';
+import { exchangeOAuthTicket, getInfo as getUserInfo, login as loginApi, logout as logoutApi } from '@/api/login';
 import type { LoginData } from '@/api/types';
 import { getToken, removeToken, setToken } from '@/utils/auth';
 import { closeSSE, initSSE } from '@/utils/sse';
@@ -22,9 +22,17 @@ export type UserState = {
   roles: string[];
   permissions: string[];
   login: (userInfo: LoginData) => Promise<void>;
+  loginByOAuthTicket: (loginTicket: string) => Promise<void>;
   getInfo: () => Promise<void>;
   logout: () => Promise<void>;
   setAvatar: (value: string) => void;
+};
+
+const applyLoginToken = (token: string, set: (state: Partial<UserState>) => void) => {
+  setToken(token);
+  set({ token });
+  initSSE(import.meta.env.VITE_APP_BASE_API + '/resource/sse');
+  initWebSocket(import.meta.env.VITE_APP_BASE_API + '/resource/websocket');
 };
 
 export const useUserStore = create<UserState>((set) => ({
@@ -38,10 +46,12 @@ export const useUserStore = create<UserState>((set) => ({
   login: async (userInfo) => {
     const res = await loginApi(userInfo);
     const token = res.data.access_token;
-    setToken(token);
-    set({ token });
-    initSSE(import.meta.env.VITE_APP_BASE_API + '/resource/sse');
-    initWebSocket(import.meta.env.VITE_APP_BASE_API + '/resource/websocket');
+    applyLoginToken(token, set);
+  },
+  loginByOAuthTicket: async (loginTicket) => {
+    const res = await exchangeOAuthTicket({ loginTicket });
+    const token = res.data.access_token;
+    applyLoginToken(token, set);
   },
   getInfo: async () => {
     const res = await getUserInfo();

@@ -6,6 +6,7 @@ import type { UserInfo } from '@/api/system/user/types';
 
 vi.mock('@/api/login', () => ({
   login: vi.fn(),
+  exchangeOAuthTicket: vi.fn(),
   logout: vi.fn(() => Promise.resolve()),
   getInfo: vi.fn()
 }));
@@ -15,7 +16,7 @@ vi.mock('@/utils/sse', () => ({
   closeSSE: vi.fn()
 }));
 
-const { login, getInfo, logout } = await import('@/api/login');
+const { login, exchangeOAuthTicket, getInfo, logout } = await import('@/api/login');
 const { initSSE, closeSSE } = await import('@/utils/sse');
 
 describe('store/user', () => {
@@ -40,6 +41,18 @@ describe('store/user', () => {
     const store = useUserStore();
 
     await expect(store.login({ username: 'u', password: 'p', code: '', uuid: '' } as LoginData)).rejects.toBeTruthy();
+  });
+
+  it('oauth ticket login success should update token without initializing sse directly', async () => {
+    vi.mocked(exchangeOAuthTicket).mockResolvedValue({ data: { access_token: 'oauth-token' } } as ApiResponse<LoginResult>);
+    const store = useUserStore();
+
+    await store.loginByOAuthTicket('ticket-1');
+
+    expect(exchangeOAuthTicket).toHaveBeenCalledWith({ loginTicket: 'ticket-1' });
+    expect(store.token).toBe('oauth-token');
+    expect(getToken()).toBe('oauth-token');
+    expect(initSSE).not.toHaveBeenCalled();
   });
 
   it('getInfo should map profile without injecting fallback role', async () => {

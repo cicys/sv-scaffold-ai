@@ -1,8 +1,9 @@
-import { Button, Checkbox, Form, Input } from 'antd';
+import { GithubOutlined, LoginOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Divider, Form, Input } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getCodeImg } from '@/api/login';
-import type { LoginData } from '@/api/types';
+import { getCodeImg, getOAuthProviders } from '@/api/login';
+import type { LoginData, OAuthProviderOption } from '@/api/types';
 import AuthPageShell from '@/components/AuthPageShell';
 import SvgIcon from '@/components/SvgIcon';
 import { useUserStore } from '@/store/modules/user';
@@ -16,6 +17,8 @@ export default function LoginPage() {
   const [codeUrl, setCodeUrl] = useState('');
   const [registerEnabled, setRegisterEnabled] = useState(false);
   const [forgotPasswordEnabled, setForgotPasswordEnabled] = useState(false);
+  const [oauthProviders, setOauthProviders] = useState<OAuthProviderOption[]>([]);
+  const [oauthLoadingProvider, setOauthLoadingProvider] = useState('');
   const navigate = useNavigate();
   const login = useUserStore((state) => state.login);
   const { t } = useTranslation();
@@ -58,6 +61,24 @@ export default function LoginPage() {
     getCode();
   }, [form, getCode, title]);
 
+  useEffect(() => {
+    let mounted = true;
+    getOAuthProviders()
+      .then((res) => {
+        if (mounted) {
+          setOauthProviders(Array.isArray(res.data) ? res.data : []);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setOauthProviders([]);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const onFinish = async (values: LoginData) => {
     setLoading(true);
     try {
@@ -81,6 +102,20 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOAuthAuthorize = (provider: OAuthProviderOption) => {
+    const redirect = searchParams.get('redirect') || '/index';
+    const params = new URLSearchParams({
+      clientId: import.meta.env.VITE_APP_CLIENT_ID,
+      redirect
+    });
+    setOauthLoadingProvider(provider.providerCode);
+    window.location.assign(`${import.meta.env.VITE_APP_BASE_API}/auth/oauth/${provider.providerCode}/authorize?${params.toString()}`);
+  };
+
+  const renderProviderIcon = (providerCode: string) => {
+    return providerCode === 'github' ? <GithubOutlined /> : <LoginOutlined />;
   };
 
   return (
@@ -151,6 +186,26 @@ export default function LoginPage() {
             {forgotPasswordEnabled && registerEnabled && <span style={{ color: '#bfbfbf' }}>|</span>}
             {registerEnabled && <Link to="/register">{t('login.switchRegisterPage')}</Link>}
           </div>
+        )}
+        {oauthProviders.length > 0 && (
+          <>
+            <Divider plain style={{ margin: '6px 0 14px' }}>
+              {t('login.oauthDivider')}
+            </Divider>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {oauthProviders.map((provider) => (
+                <Button
+                  key={provider.providerCode}
+                  block
+                  icon={renderProviderIcon(provider.providerCode)}
+                  loading={oauthLoadingProvider === provider.providerCode}
+                  onClick={() => handleOAuthAuthorize(provider)}
+                >
+                  {t('login.oauthProvider', { provider: provider.providerName })}
+                </Button>
+              ))}
+            </div>
+          </>
         )}
       </Form>
     </AuthPageShell>

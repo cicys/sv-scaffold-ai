@@ -139,7 +139,7 @@ describe('permission route guard', () => {
   it('allows whitelist route when token is missing', async () => {
     const ctx = await loadPermissionGuard();
     const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/register/sub-page'), createToRoute('/'), next);
+    await ctx.beforeHook(createToRoute('/oauth/callback'), createToRoute('/'), next);
 
     expect(next).toHaveBeenCalledWith();
   });

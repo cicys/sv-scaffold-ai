@@ -98,6 +98,7 @@ describe('router/auth-permission', () => {
   it('treats forgot-password paths as public whitelist routes', () => {
     expect(isWhiteListRoute('/forgot-password')).toBe(true);
     expect(isWhiteListRoute('/forgot-password/reset')).toBe(true);
+    expect(isWhiteListRoute('/oauth/callback')).toBe(true);
     expect(isWhiteListRoute('/system/user')).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import { to } from 'await-to-js';
 import { getToken, removeToken, setToken } from '@/utils/auth';
-import { login as loginApi, logout as logoutApi, getInfo as getUserInfo } from '@/api/login';
+import { exchangeOAuthTicket, getInfo as getUserInfo, login as loginApi, logout as logoutApi } from '@/api/login';
 import { LoginData } from '@/api/types';
 import defAva from '@/assets/images/profile.jpg';
 import { closeSSE } from '@/utils/sse';
@@ -30,6 +30,17 @@ export const useUserStore = defineStore('user', () => {
    */
   const login = async (userInfo: LoginData): Promise<void> => {
     const [err, res] = await to(loginApi(userInfo));
+    if (res) {
+      const data = res.data;
+      setToken(data.access_token);
+      token.value = data.access_token;
+      return Promise.resolve();
+    }
+    return Promise.reject(err);
+  };
+
+  const loginByOAuthTicket = async (loginTicket: string): Promise<void> => {
+    const [err, res] = await to(exchangeOAuthTicket({ loginTicket }));
     if (res) {
       const data = res.data;
       setToken(data.access_token);
@@ -83,6 +94,7 @@ export const useUserStore = defineStore('user', () => {
     roles,
     permissions,
     login,
+    loginByOAuthTicket,
     getInfo,
     logout,
     setAvatar

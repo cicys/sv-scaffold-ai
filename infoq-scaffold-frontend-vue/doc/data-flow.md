@@ -32,6 +32,20 @@ LoginView
 -> setToken()
 ```
 
+OAuth 登录沿用同一个 token 落地路径，但授权发起和回调多两段公开接口：
+
+```text
+LoginView
+-> getOAuthProviders()
+-> GET /auth/oauth/providers
+-> browser redirect /auth/oauth/{provider}/authorize
+-> OAuthCallbackView
+-> exchangeOAuthTicket()
+-> POST /auth/oauth/ticket
+-> userStore.loginByOAuthTicket()
+-> setToken()
+```
+
 登录成功后，真正把用户资料和动态菜单装进前端状态的动作由全局守卫 `permission.ts` 完成：
 
 ```text

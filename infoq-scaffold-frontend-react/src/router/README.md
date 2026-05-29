@@ -17,9 +17,9 @@
 
 | 子模块 | 当前职责 |
 | --- | --- |
-| `AppRouter.tsx` | 固定公开路由、主布局壳路由和 404 入口 |
+| `AppRouter.tsx` | 固定公开路由、OAuth 回调页、主布局壳路由和 404 入口 |
 | `AuthGuard.tsx` | 有 token 时补齐用户信息和动态菜单 |
-| `public-routes.ts` | `/login`、`/register`、`/forgot-password` 等公开路径匹配 |
+| `public-routes.ts` | `/login`、`/register`、`/forgot-password`、`/oauth/callback` 等公开路径匹配 |
 | `BackendRouteView.tsx` | 根据路径或组件名渲染真实页面 |
 | `route-transform.ts` | 规范化后端菜单并生成 `routeComponentMap` |
 
@@ -41,7 +41,7 @@ App.tsx
 
 ## 6. 公共约束
 
-- `/login`、`/register`、`/forgot-password`、`/401`、`/index` 等固定路由必须稳定存在。
+- `/login`、`/oauth/callback`、`/register`、`/forgot-password`、`/401`、`/index` 等固定路由必须稳定存在。
 - 后端返回的特殊组件名 `Layout`、`ParentView`、`InnerLink` 由本目录做特殊处理。
 - 路由冲突需要在 `route-transform.ts` 阶段显式检测，而不是等运行时偶发 404。
 

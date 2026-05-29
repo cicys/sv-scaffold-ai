@@ -183,6 +183,21 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("login: should fail when grant type only matches by substring")
+    void loginShouldFailWhenGrantTypeOnlyMatchesBySubstring() {
+        SysClientVo client = new SysClientVo();
+        client.setClientId("pc");
+        client.setGrantType("oauth2");
+        client.setStatus(SystemConstants.NORMAL);
+        when(sysClientService.queryByClientId("pc")).thenReturn(client);
+
+        ApiResult<LoginVo> result = controller.login("{\"clientId\":\"pc\",\"grantType\":\"oauth\"}");
+
+        assertEquals(ApiResult.FAIL, result.getCode());
+        verifyNoInteractions(scheduledExecutorService);
+    }
+
+    @Test
     @DisplayName("login: should return success and schedule welcome message when client is valid")
     void loginShouldReturnSuccessAndScheduleMessage() {
         SysClientVo client = new SysClientVo();

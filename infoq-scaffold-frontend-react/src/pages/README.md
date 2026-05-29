@@ -6,7 +6,7 @@
 
 ## 2. 子模块清单
 
-- `login.tsx`、`register.tsx`、`forgot-password.tsx`、`index.tsx`
+- `login.tsx`、`oauth-callback.tsx`、`register.tsx`、`forgot-password.tsx`、`index.tsx`
 - `system/*`
 - `monitor/*`
 - `redirect/*`
@@ -16,7 +16,7 @@
 
 | 页面分组 | 当前职责 |
 | --- | --- |
-| `login`、`register`、`forgot-password` | 登录前公开入口与自助认证页面；`register` 会根据 backend 能力位决定是否展示邀请码校验与验证码发送门禁 |
+| `login`、`oauth-callback`、`register`、`forgot-password` | 登录前公开入口、第三方登录回调与自助认证页面；`register` 会根据 backend 能力位决定是否展示邀请码校验与验证码发送门禁 |
 | `index` | 登录后的首页入口 |
 | `system/*` | 用户、角色、菜单、部门、岗位、字典、配置、邀请码、公告、客户端、OSS、个人中心；`system/config` 使用后端 `panel` 接口渲染类型化配置中心，OSS 页面读取 `sys.oss.previewListResource` 保持预览开关一致 |
 | `monitor/*` | 在线用户、登录日志、操作日志、缓存、数据源、服务、任务与任务日志 |
@@ -52,7 +52,7 @@ Route match
 
 ## 8. 下钻阅读路径
 
-1. 公开入口：`login.tsx`、`register.tsx`、`forgot-password.tsx`（`register` 含邀请码注册门禁）
+1. 公开入口：`login.tsx`、`oauth-callback.tsx`、`register.tsx`、`forgot-password.tsx`（`register` 含邀请码注册门禁）
 2. 首页：`index.tsx`
 3. 业务页：`system/*`（重点关注 `system/config/index.tsx`、`system/invite/index.tsx`）
 4. 监控页：`monitor/*`

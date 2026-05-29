@@ -60,6 +60,13 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- OAuth 登录 -->
+            <dependency>
+                <groupId>cc.infoq</groupId>
+                <artifactId>infoq-plugin-oauth</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- 文档服务 -->
             <dependency>
                 <groupId>cc.infoq</groupId>

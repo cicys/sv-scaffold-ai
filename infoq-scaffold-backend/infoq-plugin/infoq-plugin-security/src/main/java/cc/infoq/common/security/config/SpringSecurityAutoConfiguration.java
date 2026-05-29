@@ -44,6 +44,7 @@ public class SpringSecurityAutoConfiguration {
         "/auth/register",
         "/auth/forgot-password",
         "/auth/invite/code/check",
+        "/auth/oauth/**",
         "/auth/email/code",
         "/resource/email/code",
         SecurityConfig.HEALTH_CHECK_PATH,

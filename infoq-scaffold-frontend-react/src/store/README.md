@@ -17,7 +17,7 @@
 
 | 模块 | 当前职责 |
 | --- | --- |
-| `user` | token、用户信息、角色权限、登录登出、SSE/WebSocket 生命周期 |
+| `user` | token、用户信息、角色权限、password/OAuth ticket 登录登出、SSE/WebSocket 生命周期 |
 | `permission` | 动态菜单拉取、路由转换、侧边栏/顶栏/组件映射缓存 |
 | `app` | 语言、组件尺寸等应用级偏好 |
 | `settings` | 主题、暗色模式等界面设置 |
@@ -34,7 +34,7 @@
 
 ```text
 登录成功
--> user.login()
+-> user.login() / user.loginByOAuthTicket()
 -> token 持久化
 -> AuthGuard 调 user.getInfo()
 -> permission.generateRoutes()

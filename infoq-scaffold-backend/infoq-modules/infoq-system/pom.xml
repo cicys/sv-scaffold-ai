@@ -36,6 +36,10 @@
             <groupId>cc.infoq</groupId>
             <artifactId>infoq-plugin-security</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cc.infoq</groupId>
+            <artifactId>infoq-plugin-oauth</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>cc.infoq</groupId>

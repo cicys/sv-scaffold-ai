@@ -5,6 +5,7 @@ import LoginView from '@/views/login.vue';
 const loginMocks = vi.hoisted(() => {
   return {
     getCodeImg: vi.fn(),
+    getOAuthProviders: vi.fn(),
     userLogin: vi.fn(),
     routerPush: vi.fn(),
     formValidate: vi.fn((cb: (valid: boolean, fields?: unknown) => void) => cb(true, {})),
@@ -20,7 +21,8 @@ const loginMocks = vi.hoisted(() => {
 });
 
 vi.mock('@/api/login', () => ({
-  getCodeImg: loginMocks.getCodeImg
+  getCodeImg: loginMocks.getCodeImg,
+  getOAuthProviders: loginMocks.getOAuthProviders
 }));
 
 vi.mock('@/store/modules/user', () => ({
@@ -87,6 +89,9 @@ describe('views/login', () => {
         uuid: 'uuid-1'
       }
     });
+    loginMocks.getOAuthProviders.mockResolvedValue({
+      data: []
+    });
     loginMocks.userLogin.mockResolvedValue(undefined);
     loginMocks.formValidate.mockImplementation((cb: (valid: boolean, fields?: unknown) => void) => cb(true, {}));
   });
@@ -105,6 +110,7 @@ describe('views/login', () => {
           'el-input': passthroughStub('ElInput'),
           'el-checkbox': passthroughStub('ElCheckbox'),
           'el-button': ElButtonStub,
+          'el-divider': passthroughStub('ElDivider'),
           'router-link': true,
           'lang-select': true,
           'svg-icon': true
@@ -176,5 +182,16 @@ describe('views/login', () => {
 
     expect(loginMocks.userLogin).not.toHaveBeenCalled();
     expect(loginMocks.routerPush).not.toHaveBeenCalled();
+  });
+
+  it('renders enabled oauth providers', async () => {
+    loginMocks.getOAuthProviders.mockResolvedValueOnce({
+      data: [{ providerCode: 'github', providerName: 'GitHub' }]
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('login.oauthProvider');
   });
 });

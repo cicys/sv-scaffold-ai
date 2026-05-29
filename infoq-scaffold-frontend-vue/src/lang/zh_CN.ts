@@ -14,6 +14,8 @@ export default {
     rememberPassword: '记住我',
     switchRegisterPage: '立即注册',
     switchForgotPasswordPage: '忘记密码',
+    oauthDivider: '第三方登录',
+    oauthProvider: '使用 {provider} 登录',
     rule: {
       username: {
         required: '请输入您的账号'
@@ -25,6 +27,13 @@ export default {
         required: '请输入验证码'
       }
     }
+  },
+  oauthCallback: {
+    processing: '正在完成第三方登录...',
+    failedTitle: '第三方登录失败',
+    failed: '第三方登录失败，请重新登录',
+    missingTicket: '登录凭据缺失，请重新登录',
+    backToLogin: '返回登录'
   },
   // 注册页面国际化
   register: {

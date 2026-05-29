@@ -13,6 +13,8 @@ const resources = {
         rememberPassword: '记住我',
         switchRegisterPage: '立即注册',
         switchForgotPasswordPage: '忘记密码',
+        oauthDivider: '第三方登录',
+        oauthProvider: '使用 {{provider}} 登录',
         login: '登 录',
         logging: '登 录 中...',
         rule: {
@@ -26,6 +28,13 @@ const resources = {
             required: '请输入验证码'
           }
         }
+      },
+      oauthCallback: {
+        processing: '正在完成第三方登录...',
+        failedTitle: '第三方登录失败',
+        failed: '第三方登录失败，请重新登录',
+        missingTicket: '登录凭据缺失，请重新登录',
+        backToLogin: '返回登录'
       },
       register: {
         inviteCode: '邀请码',
@@ -160,6 +169,8 @@ const resources = {
         rememberPassword: 'Remember me',
         switchRegisterPage: 'Sign up now',
         switchForgotPasswordPage: 'Forgot password',
+        oauthDivider: 'Third-party login',
+        oauthProvider: 'Continue with {{provider}}',
         login: 'Login',
         logging: 'Signing in...',
         rule: {
@@ -173,6 +184,13 @@ const resources = {
             required: 'Please enter a verification code'
           }
         }
+      },
+      oauthCallback: {
+        processing: 'Completing third-party login...',
+        failedTitle: 'Third-party login failed',
+        failed: 'Third-party login failed. Please sign in again',
+        missingTicket: 'Login credential is missing. Please sign in again',
+        backToLogin: 'Back to login'
       },
       register: {
         inviteCode: 'Invite Code',

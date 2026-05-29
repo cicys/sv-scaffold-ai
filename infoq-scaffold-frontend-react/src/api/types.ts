@@ -64,6 +64,17 @@ export interface LoginResult {
   access_token: string;
 }
 
+export interface OAuthProviderOption {
+  providerCode: string;
+  providerName: string;
+}
+
+export interface OAuthTicketData {
+  loginTicket: string;
+  clientId?: string;
+  grantType?: 'oauth';
+}
+
 /**
  * 验证码返回
  */

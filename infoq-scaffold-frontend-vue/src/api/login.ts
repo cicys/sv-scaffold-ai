@@ -1,5 +1,16 @@
 import request from '@/utils/request';
-import type { ApiResponse, ApiResult, ForgotPasswordForm, LoginData, LoginResult, RegisterForm, SendEmailCodeForm, VerifyCodeResult } from './types';
+import type {
+  ApiResponse,
+  ApiResult,
+  ForgotPasswordForm,
+  LoginData,
+  LoginResult,
+  OAuthProviderOption,
+  OAuthTicketData,
+  RegisterForm,
+  SendEmailCodeForm,
+  VerifyCodeResult
+} from './types';
 import { UserInfo } from '@/api/system/user/types';
 
 // pc端固定客户端授权id
@@ -17,6 +28,34 @@ export function login(data: LoginData): Promise<ApiResponse<LoginResult>> {
   };
   return request({
     url: '/auth/login',
+    headers: {
+      isToken: false,
+      isEncrypt: true,
+      repeatSubmit: false
+    },
+    method: 'post',
+    data: params
+  });
+}
+
+export function getOAuthProviders(): Promise<ApiResponse<OAuthProviderOption[]>> {
+  return request({
+    url: '/auth/oauth/providers',
+    headers: {
+      isToken: false
+    },
+    method: 'get'
+  });
+}
+
+export function exchangeOAuthTicket(data: OAuthTicketData): Promise<ApiResponse<LoginResult>> {
+  const params = {
+    ...data,
+    clientId: data.clientId || clientId,
+    grantType: data.grantType || 'oauth'
+  };
+  return request({
+    url: '/auth/oauth/ticket',
     headers: {
       isToken: false,
       isEncrypt: true,

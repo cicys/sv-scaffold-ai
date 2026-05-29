@@ -16,6 +16,7 @@
         <module>infoq-plugin-log</module>
         <module>infoq-plugin-mail</module>
         <module>infoq-plugin-mybatis</module>
+        <module>infoq-plugin-oauth</module>
         <module>infoq-plugin-oss</module>
         <module>infoq-plugin-redis</module>
         <module>infoq-plugin-security</module>

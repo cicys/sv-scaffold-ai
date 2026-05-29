@@ -93,6 +93,11 @@ public interface SystemConstants {
     String ACCOUNT_FORGOT_PASSWORD_CONFIG_KEY = "sys.account.forgotPassword";
 
     /**
+     * OAuth 授权类型
+     */
+    String GRANT_TYPE_OAUTH = "oauth";
+
+    /**
      * 系统管理员角色标识
      */
     String ADMIN_ROLE_KEY = "admin";
