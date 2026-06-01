@@ -1,6 +1,6 @@
 @echo off
 echo.
-echo [��Ϣ] ʹ�� Vite �������� Web ���̡�
+echo [信息] 使用 Vite 命令运行 Web 工程。
 echo.
 
 %~d0
