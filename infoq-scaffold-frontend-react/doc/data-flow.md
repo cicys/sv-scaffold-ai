@@ -57,10 +57,12 @@ LoginPage
 AuthGuard
 -> userStore.getInfo()
 -> permissionStore.generateRoutes()
+-> userStore.initializeRealtimeChannels()
 -> MainLayout / BackendRouteView
 ```
 
 因此当前 React admin 的登录闭环是“两段式”的：先拿 token，再由守卫补齐用户信息与动态路由。
+当浏览器刷新后本地已有 token 时，`AuthGuard` 也会沿用这条守卫启动路径，并在用户信息和动态路由恢复成功后重新初始化 SSE/WebSocket。若用户信息或动态路由初始化失败，守卫会提示错误、执行本地会话清理，并带当前路径 redirect 回到登录页，不继续渲染受保护布局。
 
 ## 1.1 登录前公开认证能力与自助认证页
 
@@ -159,6 +161,7 @@ userStore.logout()
 ```
 
 因此当前登录态相关的副作用资源都挂在 `user` store 生命周期上。
+登录成功与刷新后守卫启动共用 `userStore.initializeRealtimeChannels()`，避免登录路径和刷新路径出现不同的 SSE/WebSocket 行为。
 
 ## 6. 已知边界
 

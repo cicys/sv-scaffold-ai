@@ -13,7 +13,9 @@ describe('router/auth-permission', () => {
     useUserStore.setState({
       token: '',
       roles: [],
-      permissions: []
+      permissions: [],
+      initializeRealtimeChannels: vi.fn(),
+      logout: vi.fn(async () => undefined)
     });
     usePermissionStore.setState({
       routes: [],
@@ -47,11 +49,13 @@ describe('router/auth-permission', () => {
     localStorage.setItem('Admin-Token', 'token-1');
     const getInfo = vi.fn(async () => undefined);
     const generateRoutes = vi.fn(async () => []);
+    const initializeRealtimeChannels = vi.fn();
 
     useUserStore.setState({
       token: 'token-1',
       roles: [],
-      getInfo
+      getInfo,
+      initializeRealtimeChannels
     });
     usePermissionStore.setState({
       generateRoutes
@@ -76,6 +80,49 @@ describe('router/auth-permission', () => {
       expect(screen.getByText('Protected')).toBeInTheDocument();
       expect(getInfo).toHaveBeenCalledTimes(1);
       expect(generateRoutes).toHaveBeenCalledTimes(1);
+      expect(initializeRealtimeChannels).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('clears session and redirects to login when user bootstrap fails', async () => {
+    localStorage.setItem('Admin-Token', 'token-1');
+    const getInfo = vi.fn(async () => {
+      throw new Error('get-info-failed');
+    });
+    const logout = vi.fn(async () => undefined);
+    const generateRoutes = vi.fn(async () => []);
+
+    useUserStore.setState({
+      token: 'token-1',
+      roles: [],
+      getInfo,
+      logout
+    });
+    usePermissionStore.setState({
+      generateRoutes
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/system/user?page=1']}>
+        <Routes>
+          <Route path="/login" element={<div>Login Page</div>} />
+          <Route
+            path="*"
+            element={
+              <AuthGuard>
+                <div>Protected</div>
+              </AuthGuard>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Login Page')).toBeInTheDocument();
+      expect(getInfo).toHaveBeenCalledTimes(1);
+      expect(generateRoutes).not.toHaveBeenCalled();
+      expect(logout).toHaveBeenCalledTimes(1);
     });
   });
 

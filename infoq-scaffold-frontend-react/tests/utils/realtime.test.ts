@@ -50,6 +50,8 @@ describe('utils/realtime', () => {
 
     localStorage.setItem('Admin-Token', 'token-test');
     useNoticeStore.setState({ notices: [] });
+    MockEventSource.instances = [];
+    MockWebSocket.instances = [];
 
     vi.stubGlobal('EventSource', MockEventSource);
     vi.stubGlobal('WebSocket', MockWebSocket);
@@ -99,5 +101,15 @@ describe('utils/realtime', () => {
 
     closeWebSocket();
     expect(ws.close).toHaveBeenCalled();
+  });
+
+  it('reconnects websocket after an unexpected close', () => {
+    initWebSocket('/resource/ws');
+    expect(MockWebSocket.instances).toHaveLength(1);
+
+    MockWebSocket.instances[0].onclose?.();
+    vi.advanceTimersByTime(3000);
+
+    expect(MockWebSocket.instances).toHaveLength(2);
   });
 });

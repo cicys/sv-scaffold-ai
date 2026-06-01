@@ -24,15 +24,31 @@ export type UserState = {
   login: (userInfo: LoginData) => Promise<void>;
   loginByOAuthTicket: (loginTicket: string) => Promise<void>;
   getInfo: () => Promise<void>;
+  initializeRealtimeChannels: () => void;
   logout: () => Promise<void>;
   setAvatar: (value: string) => void;
+};
+
+const getRealtimeSSEUrl = () => `${import.meta.env.VITE_APP_BASE_API}/resource/sse`;
+
+const getRealtimeWebSocketUrl = () => {
+  const baseApi = import.meta.env.VITE_APP_BASE_API;
+  if (typeof window === 'undefined' || !window.location?.host) {
+    return `${baseApi}/resource/websocket`;
+  }
+  const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+  return `${protocol}${window.location.host}${baseApi}/resource/websocket`;
+};
+
+const initializeRealtimeChannels = () => {
+  initSSE(getRealtimeSSEUrl());
+  initWebSocket(getRealtimeWebSocketUrl());
 };
 
 const applyLoginToken = (token: string, set: (state: Partial<UserState>) => void) => {
   setToken(token);
   set({ token });
-  initSSE(import.meta.env.VITE_APP_BASE_API + '/resource/sse');
-  initWebSocket(import.meta.env.VITE_APP_BASE_API + '/resource/websocket');
+  initializeRealtimeChannels();
 };
 
 const clearLocalSession = (set: (state: Partial<UserState>) => void) => {
@@ -73,6 +89,7 @@ export const useUserStore = create<UserState>((set) => ({
       userId: user.userId
     });
   },
+  initializeRealtimeChannels,
   logout: async () => {
     closeSSE();
     closeWebSocket();

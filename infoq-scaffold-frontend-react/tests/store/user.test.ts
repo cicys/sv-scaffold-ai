@@ -56,7 +56,7 @@ describe('store/user', () => {
     expect(useUserStore.getState().token).toBe('token-1');
     expect(getToken()).toBe('token-1');
     expect(userStoreMocks.initSSE).toHaveBeenCalledWith('/test-api/resource/sse');
-    expect(userStoreMocks.initWebSocket).toHaveBeenCalledWith('/test-api/resource/websocket');
+    expect(userStoreMocks.initWebSocket).toHaveBeenCalledWith('ws://localhost:3000/test-api/resource/websocket');
   });
 
   it('oauth ticket login should exchange ticket and update token through same session path', async () => {
@@ -68,7 +68,19 @@ describe('store/user', () => {
     expect(useUserStore.getState().token).toBe('oauth-token');
     expect(getToken()).toBe('oauth-token');
     expect(userStoreMocks.initSSE).toHaveBeenCalledWith('/test-api/resource/sse');
-    expect(userStoreMocks.initWebSocket).toHaveBeenCalledWith('/test-api/resource/websocket');
+    expect(userStoreMocks.initWebSocket).toHaveBeenCalledWith('ws://localhost:3000/test-api/resource/websocket');
+  });
+
+  it('restores realtime channels when a persisted token is bootstrapped after refresh', () => {
+    setToken('persisted-token');
+    useUserStore.setState({
+      token: 'persisted-token'
+    });
+
+    useUserStore.getState().initializeRealtimeChannels();
+
+    expect(userStoreMocks.initSSE).toHaveBeenCalledWith('/test-api/resource/sse');
+    expect(userStoreMocks.initWebSocket).toHaveBeenCalledWith('ws://localhost:3000/test-api/resource/websocket');
   });
 
   it('logout should clear local session when logout api fails', async () => {

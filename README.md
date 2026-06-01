@@ -259,6 +259,13 @@ pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
 
 ## 常用命令
 
+### 仓库校验
+
+```bash
+node .codex/scripts/validate_utf8.mjs
+node .codex/scripts/validate_utf8.mjs AGENTS.md infoq-scaffold-frontend-react/src
+```
+
 ### 后端
 
 ```bash

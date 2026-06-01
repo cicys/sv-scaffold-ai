@@ -3,7 +3,7 @@
 |Scope:本文件适用于仓库根目录及未被更近 `AGENTS.md` 或 `AGENTS.override.md` 覆盖的路径。
 |Encoding:仓库文本文件必须使用 UTF-8；写入必须使用 UTF-8 without BOM；Windows PowerShell 5.1 是默认 shell 基线，读取源码、配置、文档等文本文件时，`Get-Content`/`Select-String` 等阅读命令必须显式指定 `-Encoding UTF8`。
 |PowerShell Encoding Guardrail:Windows PowerShell 5.1 禁止用 `>`、`>>`、`Out-File`、`Set-Content`、`Add-Content` 写入仓库文本文件；写入必须使用 `apply_patch`、Node.js `utf8`、或 `.NET UTF8Encoding(false)` 等明确 UTF-8 without BOM 的方式；PowerShell 7 可使用 `utf8NoBOM`，但不得作为默认假设。
-|Encoding Gate:提交或构建前执行仓库真实 UTF-8 校验命令；后端可用 `node .codex/scripts/backend_mvn.mjs -- validate`；不得引用不存在的校验脚本路径。
+|Encoding Gate:提交或构建前执行 `node .codex/scripts/validate_utf8.mjs`；可追加路径参数做定向校验；不得引用不存在的校验脚本路径。
 |Package Manager:前端默认使用 pnpm 执行 install/dev/lint/test/build；仅在 pnpm 不可用时退回 npm。
 |Backend Maven Runner:后端 Maven 命令优先使用 `node .codex/scripts/backend_mvn.mjs -- ...`；入口优先读取 `.idea`，要求 JDK 17 与 Maven 3.9.x，配置不可用时再搜索本机候选。
 |Temporary Artifacts:仓库内工具、skill、脚本、验证过程新增的临时文件、临时目录、调试输出与一次性运行产物统一放在 `doc/tmp/` 下；除非外部工具强制要求其他位置。|禁止把临时产物散落到仓库其他路径，便于后续统一清理。
