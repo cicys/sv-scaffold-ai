@@ -90,6 +90,7 @@ outline: [2, 3]
 /infoq/server/config
 /infoq/server/logs
 /infoq/server/temp
+/infoq/server/ip2region
 /infoq/nginx/cert
 /infoq/nginx/conf
 /infoq/nginx/log
@@ -106,6 +107,7 @@ outline: [2, 3]
 /infoq/server/config
 /infoq/server/logs
 /infoq/server/temp
+/infoq/server/ip2region
 /infoq/nginx/conf
 /infoq/nginx/html/vue
 /infoq/nginx/html/react
@@ -116,6 +118,7 @@ outline: [2, 3]
 
 - 后端日志目录
 - 后端临时文件目录
+- 后端 IPv6 地址库目录
 - Nginx 静态资源目录
 - Nginx 日志目录
 
@@ -131,6 +134,7 @@ outline: [2, 3]
 - `security.token.secret`，推荐通过 `SECURITY_TOKEN_SECRET` 环境变量或外部配置文件提供
 - `api-decrypt` 公私钥
 - `DEPLOY_ID` 是否为当前发布批次值；[application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 通过 `${DEPLOY_ID:}` 注入 `infoq.quartz.bootstrap.deploy-id`
+- IPv6 地址库外置路径。Compose 部署默认使用 `INFOQ_IP2REGION_V6_PATH=/infoq/server/ip2region/ip2region_v6.xdb`，宿主机文件来自 [script/docker/server/ip2region/ip2region_v6.xdb](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/script/docker/server/ip2region/ip2region_v6.xdb)
 - 邮件、OSS 或其他插件相关配置
 
 主要配置来源：

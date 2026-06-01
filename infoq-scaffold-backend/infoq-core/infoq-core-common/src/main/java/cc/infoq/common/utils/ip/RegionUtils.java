@@ -9,6 +9,8 @@ import org.lionsoul.ip2region.service.Ip2Region;
 import org.lionsoul.ip2region.xdb.Util;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 
 /**
@@ -28,6 +30,10 @@ public class RegionUtils {
     // 默认IPv6地址库文件路径
     // 下载地址：https://gitee.com/lionsoul/ip2region/blob/master/data/ip2region_v6.xdb
     public static final String DEFAULT_IPV6_XDB_PATH = "ip2region_v6.xdb";
+
+    public static final String IPV6_XDB_PATH_PROPERTY = "infoq.ip2region.v6.path";
+
+    public static final String IPV6_XDB_PATH_ENV = "INFOQ_IP2REGION_V6_PATH";
 
     // 默认缓存切片大小为15MB（仅针对BufferCache全量读取有效，如果你的xdb数据库很大，合理设置该值可以有效提升BufferCache模式下的查询效率，具体可以查看Ip2Region的README）
     // 注意：设置过大的值可能会申请内存时，因内存不足而导致OOM，请合理设置该值。
@@ -60,18 +66,7 @@ public class RegionUtils {
                 .asV4();
 
             // IPv6配置
-            Config v6Config = null;
-            InputStream v6XdbInputStream = ResourceUtil.getStreamSafe(DEFAULT_IPV6_XDB_PATH);
-            if (v6XdbInputStream == null) {
-                log.warn("未加载 IPv6 地址库：未在类路径下找到文件 {}。当前仅启用 IPv4 查询。如需启用 IPv6，请将 ip2region_v6.xdb 放置到 resources 目录", DEFAULT_IPV6_XDB_PATH);
-            } else {
-                v6Config = Config.custom()
-                    .setCachePolicy(Config.BufferCache)
-                    //.setXdbFile(v6TempXdb)
-                    .setXdbInputStream(v6XdbInputStream)
-                    .setCacheSliceBytes(DEFAULT_CACHE_SLICE_BYTES)
-                    .asV6();
-            }
+            Config v6Config = buildIpv6Config(resolveExternalIpv6XdbPath());
 
             // 初始化Ip2Region实例
             RegionUtils.ip2Region = Ip2Region.create(v4Config, v6Config);
@@ -79,6 +74,43 @@ public class RegionUtils {
         } catch (Exception e) {
             throw new ServiceException("RegionUtils初始化失败，原因：{}", e.getMessage());
         }
+    }
+
+    static String resolveExternalIpv6XdbPath() {
+        String systemProperty = System.getProperty(IPV6_XDB_PATH_PROPERTY);
+        if (StringUtils.isNotBlank(systemProperty)) {
+            return StringUtils.trim(systemProperty);
+        }
+        String envValue = System.getenv(IPV6_XDB_PATH_ENV);
+        if (StringUtils.isNotBlank(envValue)) {
+            return StringUtils.trim(envValue);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    static Config buildIpv6Config(String externalIpv6XdbPath) throws Exception {
+        if (StringUtils.isBlank(externalIpv6XdbPath)) {
+            log.warn("未配置 IPv6 地址库外置路径：请通过环境变量 {} 或 JVM 参数 -D{}=/infoq/server/ip2region/{} 启用 IPv6 查询。当前仅启用 IPv4 查询。",
+                IPV6_XDB_PATH_ENV, IPV6_XDB_PATH_PROPERTY, DEFAULT_IPV6_XDB_PATH);
+            return null;
+        }
+
+        Path xdbPath = Path.of(externalIpv6XdbPath).toAbsolutePath().normalize();
+        if (!Files.exists(xdbPath)) {
+            throw new IllegalStateException("IPv6地址库文件不存在：" + xdbPath);
+        }
+        if (!Files.isRegularFile(xdbPath)) {
+            throw new IllegalStateException("IPv6地址库路径不是普通文件：" + xdbPath);
+        }
+        if (!Files.isReadable(xdbPath)) {
+            throw new IllegalStateException("IPv6地址库文件不可读：" + xdbPath);
+        }
+
+        log.info("加载 IPv6 地址库外置文件：{}", xdbPath);
+        return Config.custom()
+            .setCachePolicy(Config.VIndexCache)
+            .setXdbPath(xdbPath.toString())
+            .asV6();
     }
 
     /**

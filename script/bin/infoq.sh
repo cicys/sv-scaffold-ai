@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 COMPOSE_FILE="${REPO_ROOT}/script/docker/docker-compose.yml"
 REDIS_CONF_SOURCE="${REPO_ROOT}/script/docker/redis/conf/redis.conf"
 SERVER_CONFIG_TEMPLATE="${REPO_ROOT}/script/docker/server/application-prod.yml"
+IP2REGION_V6_SOURCE="${REPO_ROOT}/script/docker/server/ip2region/ip2region_v6.xdb"
 SQL_DIR="${REPO_ROOT}/sql"
 SQL_INIT_FILE="${SQL_DIR}/infoq_scaffold_2.0.0.sql"
 BACKEND_DIR="${REPO_ROOT}/infoq-scaffold-backend"
@@ -84,6 +85,7 @@ prepare_dirs() {
     "${DEPLOY_ROOT}/server/config"
     "${DEPLOY_ROOT}/server/logs"
     "${DEPLOY_ROOT}/server/temp"
+    "${DEPLOY_ROOT}/server/ip2region"
   )
 
   for dir in "${dirs[@]}"; do
@@ -92,6 +94,18 @@ prepare_dirs() {
   done
 
   cp -f "${REDIS_CONF_SOURCE}" "${DEPLOY_ROOT}/redis/conf/redis.conf"
+
+  if [[ ! -f "${IP2REGION_V6_SOURCE}" ]]; then
+    echo "[backend] 缺少 IPv6 地址库源文件: ${IP2REGION_V6_SOURCE}" >&2
+    exit 1
+  fi
+  if [[ ! -f "${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb" ]]; then
+    cp -f "${IP2REGION_V6_SOURCE}" "${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb"
+    chmod 644 "${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb" || true
+    echo "[backend] 已同步 ${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb"
+  else
+    echo "[backend] 保留现有 ${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb"
+  fi
 
   if [[ ! -f "${DEPLOY_ROOT}/server/config/application-prod.yml" ]]; then
     cp -f "${SERVER_CONFIG_TEMPLATE}" "${DEPLOY_ROOT}/server/config/application-prod.yml"

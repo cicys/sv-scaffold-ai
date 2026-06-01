@@ -41,6 +41,7 @@ export INFOQ_DEPLOY_ROOT="$(pwd)/doc/tmp/infoq-deploy"
 /infoq/server/config
 /infoq/server/logs
 /infoq/server/temp
+/infoq/server/ip2region
 /infoq/nginx/cert
 /infoq/nginx/conf
 /infoq/nginx/log
@@ -49,6 +50,7 @@ export INFOQ_DEPLOY_ROOT="$(pwd)/doc/tmp/infoq-deploy"
 ```
 
 其中 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/config/application-prod.yml` 会在首次执行 `bash script/bin/infoq.sh prepare` 时自动生成一份 Docker Compose 默认模板。
+其中 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/ip2region/ip2region_v6.xdb` 会在 `prepare` 时从 [script/docker/server/ip2region/ip2region_v6.xdb](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/script/docker/server/ip2region/ip2region_v6.xdb) 初始化；如果目标文件已存在，脚本会保留外置磁盘上的现有文件。`infoq-admin` 容器会把 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/ip2region/` 只读挂载到 `/infoq/server/ip2region/`，并设置 `INFOQ_IP2REGION_V6_PATH=/infoq/server/ip2region/ip2region_v6.xdb`。
 `bash script/bin/infoq.sh deploy` 会在启动 MySQL / Redis 后等待依赖就绪，并校验基础表、Quartz 调度表、监控菜单、配置元数据列和 OAuth 表/授权类型；缺失时会按顺序补导 `sql/infoq_scaffold_2.0.0.sql` 与当前 `sql/infoq_scaffold_update_*.sql` 增量脚本。
 当前仓库的 Quartz bootstrap `deploy-id` 由 `DEPLOY_ID` 注入。脚本化 `deploy` 在未显式设置 `DEPLOY_ID` 时会生成一次当前批次号并写入 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/config/deploy-id`；同一批滚动发布的所有 backend 节点必须使用同一个值。
 
@@ -81,6 +83,7 @@ bash script/bin/infoq.sh stop
 - 首次空数据目录启动时，MySQL 容器会按顺序自动执行基础 SQL 与当前增量 SQL
 - 如果数据目录已存在，但 `infoq` 库表或增量结构未初始化，`deploy` / `start` 也会补导缺失 SQL 并做关键表/列校验
 - `deploy` 会生成或校验本次 `DEPLOY_ID`，然后准备宿主机目录、构建后端、启动依赖服务并拉起 `infoq-admin`
+- `prepare` / `deploy` / `start` 会确保 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/ip2region/ip2region_v6.xdb` 存在；如果后续单独替换该文件，需要重启 `infoq-admin` 才会生效
 - `start` 与 `restart` 会复用 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/config/deploy-id`；如果文件不存在，先执行 `deploy` 或显式设置 `DEPLOY_ID`
 - 如果同一版本在同一天需要再次发布，应使用新的 `DEPLOY_ID` 并重新执行 `deploy`，不要复用上一批次号
 - `infoq-admin` 容器 healthcheck 使用 `/monitor/health/readiness`；DB 或 Redis 不可用时容器会进入 unhealthy，而 `/monitor/health/liveness` 仅表示进程可响应 HTTP

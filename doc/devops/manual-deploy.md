@@ -36,6 +36,8 @@ infoq-release/
 │   └── infoq-admin.jar
 ├── config/
 │   └── application-prod.yml
+├── ip2region/
+│   └── ip2region_v6.xdb
 ├── frontend/
 │   ├── vue-dist/
 │   └── react-dist/
@@ -80,12 +82,15 @@ mkdir -p /infoq/server/app
 mkdir -p /infoq/server/config
 mkdir -p /infoq/server/logs
 mkdir -p /infoq/server/temp
+mkdir -p /infoq/server/ip2region
 ```
 
 复制 jar：
 
 ```bash
 cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
+cp script/docker/server/ip2region/ip2region_v6.xdb /infoq/server/ip2region/
+chmod 644 /infoq/server/ip2region/ip2region_v6.xdb
 ```
 
 准备生产配置文件时，建议以仓库默认生产配置为基础，再按环境修改：
@@ -102,6 +107,7 @@ cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
 - `spring.servlet.multipart.location`
 - `security.token.secret`，推荐通过 `SECURITY_TOKEN_SECRET` 环境变量或外部配置文件提供
 - `api-decrypt` 的示例密钥
+- `INFOQ_IP2REGION_V6_PATH`，推荐指向 `/infoq/server/ip2region/ip2region_v6.xdb`
 - 如启用邮件、OSS、SSE、WebSocket，对应配置也要同步确认
 - `DEPLOY_ID` 是否已设置为当前发布批次值；[application-prod.yml](../../infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 通过 `${DEPLOY_ID:}` 注入 `infoq.quartz.bootstrap.deploy-id`
 
@@ -142,6 +148,7 @@ SPRING_PROFILES_ACTIVE=prod \
 SPRING_CONFIG_ADDITIONAL_LOCATION=file:/infoq/server/config/ \
 DEPLOY_ID=2.1.4-20260531120000 \
 SECURITY_TOKEN_SECRET=replace-with-at-least-32-chars-secret \
+INFOQ_IP2REGION_V6_PATH=/infoq/server/ip2region/ip2region_v6.xdb \
 nohup java \
   -Dserver.port=9090 \
   -Xms512m -Xmx1024m \
@@ -155,6 +162,7 @@ nohup java \
 
 - `SPRING_CONFIG_ADDITIONAL_LOCATION` 的作用与 Compose 中的运行方式保持一致
 - `DEPLOY_ID` 是生产启动期 Quartz reconcile 的发布批次号；同一批多节点保持一致，新批次必须换新值
+- `INFOQ_IP2REGION_V6_PATH` 指向外置 IPv6 地址库文件；替换 `ip2region_v6.xdb` 后需要重启后端进程才会生效
 - 如果你不使用 `nohup`，也可以用 `systemd` 或 `supervisor` 托管
 
 ### 3.6 使用 systemd 托管

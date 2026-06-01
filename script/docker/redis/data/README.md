@@ -44,6 +44,7 @@ mkdir /infoq/nginx/log/
 mkdir /infoq/server/config/
 mkdir /infoq/server/logs/
 mkdir /infoq/server/temp/
+mkdir /infoq/server/ip2region/
 ```
 
 前端目录

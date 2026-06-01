@@ -16,7 +16,8 @@
 - `SysAdminApplication`：`@SpringBootApplication(scanBasePackages = "cc.infoq")`，把 `cc.infoq` 下所有模块统一纳入 Spring 容器。
 - `application*.yml`：定义 profile 分层、数据源、Redis、Quartz、mail、SSE、WebSocket、Springdoc 等运行开关。
 - `logback-plus.xml`：当前后端日志输出规则，默认把文件日志写到仓库根 `logs/`，容器场景通过 `INFOQ_LOG_PATH` 覆盖。
-- `banner.txt`、`i18n/*.properties`、`ip2region_v4.xdb`：启动展示、多语言消息与 IP 归属地资源。
+- `banner.txt`、`i18n/*.properties`、`ip2region_v4.xdb`：启动展示、多语言消息与 IPv4 归属地内置资源。
+- IPv6 归属地地址库不再打包进 `infoq-admin.jar`，部署源文件位于仓库根 [`script/docker/server/ip2region/ip2region_v6.xdb`](../../script/docker/server/ip2region/ip2region_v6.xdb)，运行时通过 `INFOQ_IP2REGION_V6_PATH` 指向外置挂载文件。
 
 ## 4. 上游依赖
 
@@ -56,4 +57,3 @@
 
 - 该模块只有一个 Java 源文件，不承载业务 Controller、Service、Mapper。
 - 启动后真正的业务逻辑请继续下钻 [`../infoq-modules/infoq-system/README.md`](../infoq-modules/infoq-system/README.md)。
-
