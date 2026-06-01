@@ -16,8 +16,8 @@ usage() {
 
 命令说明:
   prepare   创建前端与网关所需宿主机目录，并同步 nginx.conf
-  build     构建 Vue 与 React 前端镜像
-  deploy    prepare + Docker Compose up -d --build --no-deps infoq-frontend-vue infoq-frontend-react nginx-web
+  build     顺序构建 Vue 与 React 前端镜像
+  deploy    prepare + 顺序构建前端镜像 + 启动 Vue、React 与 nginx-web
   start     启动 Vue、React 与 nginx-web
   stop      停止 Vue、React 与 nginx-web
   restart   重启 Vue、React 与 nginx-web
@@ -55,7 +55,10 @@ resolve_compose_command() {
 
 compose() {
   resolve_compose_command
-  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" "$@"
+  # Compose interpolates every service before applying the requested service list.
+  # Frontend commands never start infoq-admin, so this placeholder only satisfies parsing.
+  local compose_security_token_secret="${SECURITY_TOKEN_SECRET:-frontend-compose-placeholder-token-secret-20260601}"
+  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" SECURITY_TOKEN_SECRET="${compose_security_token_secret}" "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" "$@"
 }
 
 resolve_deploy_root() {
@@ -91,13 +94,17 @@ prepare_dirs() {
 
 build_frontends() {
   resolve_compose_command
-  compose build infoq-frontend-vue infoq-frontend-react
+  echo "[frontend] 构建 Vue 前端镜像"
+  compose build infoq-frontend-vue
+  echo "[frontend] 构建 React 前端镜像"
+  compose build infoq-frontend-react
 }
 
 deploy_frontends() {
   resolve_compose_command
   prepare_dirs
-  compose up -d --build --no-deps "${FRONTEND_SERVICES[@]}"
+  build_frontends
+  compose up -d --no-deps "${FRONTEND_SERVICES[@]}"
   echo "[frontend] 部署完成"
   echo "[frontend] 网关入口: http://localhost/vue/ 和 http://localhost/react/"
   echo "[frontend] 直连端口: Vue=9091 React=9092"

@@ -311,14 +311,18 @@ pnpm run verify:local
 ### 后端与依赖服务
 
 ```bash
+export SECURITY_TOKEN_SECRET=replace-with-at-least-32-chars-secret
+# 可选：不设置时 deploy 会生成并持久化当前批次号
+# export DEPLOY_ID=2.1.4-20260531120000
 bash script/bin/infoq.sh deploy
 ```
 
 说明：
 
-- `bash script/bin/infoq.sh deploy` 直接使用后端生产配置里的 `infoq.quartz.bootstrap.deploy-id`；如果同一个版本不是多次发布，就保持这个值不变。
-- 如果同一个版本需要再次发布，先更新 `infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml` 里的 `infoq.quartz.bootstrap.deploy-id`，再重新构建和发布。
-- `bash script/bin/infoq.sh start` / `restart` 只会复用现有容器环境，不会改动生产配置中的 `infoq.quartz.bootstrap.deploy-id`。
+- `bash script/bin/infoq.sh deploy` 会生成或校验本次 `DEPLOY_ID`，并通过生产配置注入 `infoq.quartz.bootstrap.deploy-id`。
+- 同一批多节点滚动发布必须共享同一个 `DEPLOY_ID`；如果同一版本需要再次发布，应换新 `DEPLOY_ID` 并重新执行 `deploy`。
+- `bash script/bin/infoq.sh start` / `restart` 会复用 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/config/deploy-id`，不会生成新的部署批次。
+- `infoq-admin` readiness 路径为 `/monitor/health/readiness`，用于 Compose healthcheck 或负载均衡接流量门禁。
 
 ### 前端与网关
 
@@ -331,6 +335,8 @@ bash script/bin/deploy-frontend.sh deploy
 - `infoq-frontend-vue`
 - `infoq-frontend-react`
 - `nginx-web`
+
+`deploy-frontend.sh deploy` 会先同步前端网关目录与 `nginx.conf`，再顺序构建 Vue / React 镜像，最后启动两个前端容器与 `nginx-web`，避免本机 Docker 并行构建时的内存峰值。
 
 详见：
 

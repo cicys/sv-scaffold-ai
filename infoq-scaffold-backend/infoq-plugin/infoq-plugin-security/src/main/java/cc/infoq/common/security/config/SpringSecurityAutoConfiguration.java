@@ -48,6 +48,7 @@ public class SpringSecurityAutoConfiguration {
         "/auth/email/code",
         "/resource/email/code",
         SecurityConfig.HEALTH_CHECK_PATH,
+        SecurityConfig.HEALTH_CHECK_PATTERN,
         "/doc.html",
         "/webjars/**",
         "/swagger-ui.html",

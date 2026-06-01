@@ -5,6 +5,12 @@ LABEL maintainer="Pontus"
 
 WORKDIR /infoq/react
 
+RUN corepack enable pnpm
+
+COPY package.json pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile --network-concurrency=2
+
 # 允许在构建镜像时覆盖 Vite 生产环境变量
 ARG VITE_APP_CONTEXT_PATH=/
 ARG VITE_APP_BASE_API=/prod-api
@@ -12,25 +18,13 @@ ARG VITE_APP_PORT=80
 
 ENV VITE_APP_CONTEXT_PATH=${VITE_APP_CONTEXT_PATH} \
     VITE_APP_BASE_API=${VITE_APP_BASE_API} \
-    VITE_APP_PORT=${VITE_APP_PORT}
-
-RUN corepack enable pnpm >/dev/null 2>&1 || true
-
-COPY package.json ./
-
-RUN if command -v pnpm >/dev/null 2>&1; then \
-      pnpm install --no-frozen-lockfile; \
-    else \
-      npm install --no-audit --no-fund; \
-    fi
+    VITE_APP_PORT=${VITE_APP_PORT} \
+    CI=true \
+    NODE_OPTIONS=--max-old-space-size=1280
 
 COPY . ./
 
-RUN if command -v pnpm >/dev/null 2>&1; then \
-      pnpm run build:prod; \
-    else \
-      npm run build:prod; \
-    fi
+RUN pnpm run build:prod
 
 # 运行阶段：使用 nginx 1.28.2 构建
 FROM nginx:1.28.2

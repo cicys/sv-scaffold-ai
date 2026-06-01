@@ -32,6 +32,14 @@ pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli adm
 
 6. 只有在临时交互探索时才改用 Playwright MCP。
 7. 使用 `scripts/stop_admin_dev_stack.mjs` 时，只停止本技能启动的进程。
+8. 若任务要求验证 Docker 部署路径，先用仓库部署脚本构建并启动前端网关，再通过网关上下文路径验证 React admin：
+
+```bash
+bash script/bin/deploy-frontend.sh deploy
+pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe --backend-url "http://127.0.0.1:9090" --frontend-origin "http://127.0.0.1/react" --route "/index"
+```
+
+Docker 模式下不要用 dev server 默认端口 `5174` 作为部署验收入口；React 直连端口为 `9092`，网关入口为 `http://127.0.0.1/react/`。
 
 ## Weapp 工作流
 

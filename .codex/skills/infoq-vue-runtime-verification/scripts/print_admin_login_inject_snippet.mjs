@@ -6,7 +6,7 @@ import {normalizeForwardedArgs, resolveRepoRoot} from '../../../lib/skill_runtim
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolveRepoRoot(scriptDir);
-const verifyLoginPath = path.join(repoRoot, '.agents', 'skills', 'infoq-login-success-check', 'scripts', 'verify_login.mjs');
+const verifyLoginPath = path.join(repoRoot, '.codex', 'skills', 'infoq-login-success-check', 'scripts', 'verify_login.mjs');
 const args = normalizeForwardedArgs(process.argv.slice(2));
 
 function runVerifyLogin() {

@@ -113,7 +113,7 @@ cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
 - `security.token.secret`，推荐通过 `SECURITY_TOKEN_SECRET` 环境变量或外部配置文件提供
 - `api-decrypt` 的示例密钥
 - 如启用邮件、OSS、SSE、WebSocket，对应配置也要同步确认
-- `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`
+- `DEPLOY_ID` 是否已设置为当前发布批次值；[application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 通过 `${DEPLOY_ID:}` 注入 `infoq.quartz.bootstrap.deploy-id`
 
 如果服务器目录不是 `/infoq/server/temp`，同步修改：
 
@@ -121,21 +121,26 @@ cp infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar /infoq/server/app/
 spring.servlet.multipart.location: /your/path/server/temp
 ```
 
-如果同一版本需要再次发布，请直接更新 `infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml` 中的 `infoq.quartz.bootstrap.deploy-id`，再重新构建和发布；不要再通过环境变量单独拼接这一值。
+生产环境同一批滚动发布的所有 backend 节点必须共享同一个 `DEPLOY_ID`；新批次发布必须换新值。多节点还必须共享同一组 `SECURITY_TOKEN_SECRET`、`api-decrypt` keys、MySQL、Redis/Redisson 和 `redisson.keyPrefix`，否则会出现随机 401、接口加解密失败、缓存隔离或 Quartz marker 隔离。
 
 ### 3.4 初始化数据库
 
-首次部署导入初始化 SQL：
+首次部署导入初始化 SQL 和当前增量 SQL：
 
 ```bash
 mysql -u root -p < sql/infoq_scaffold_2.0.0.sql
+for file in sql/infoq_scaffold_update_*.sql; do
+  mysql -u root -p infoq < "$file"
+done
 ```
 
 SQL 文件：
 
 - [sql/infoq_scaffold_2.0.0.sql](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/sql/infoq_scaffold_2.0.0.sql)
+- `sql/infoq_scaffold_update_*.sql`
 
 如果目标库已经有业务数据，先做备份，不要直接覆盖导入。
+多节点滚动发布前必须先完成增量 SQL；当前版本至少应校验 `sys_job`、`QRTZ_LOCKS`、`sys_oauth_provider`、`sys_oauth_identity`，以及 `sys_client` 中 `e5cd7e4891bf95d1d19206ce24a7b32e` 客户端包含 `oauth` 授权类型。
 
 ### 3.5 启动后端
 
@@ -145,6 +150,8 @@ SQL 文件：
 cd /infoq/server/app
 SPRING_PROFILES_ACTIVE=prod \
 SPRING_CONFIG_ADDITIONAL_LOCATION=file:/infoq/server/config/ \
+DEPLOY_ID=2.1.4-20260531120000 \
+SECURITY_TOKEN_SECRET=replace-with-at-least-32-chars-secret \
 nohup java \
   -Dserver.port=9090 \
   -Xms512m -Xmx1024m \
@@ -157,7 +164,7 @@ nohup java \
 说明：
 
 - `SPRING_CONFIG_ADDITIONAL_LOCATION` 的作用与 Compose 中的运行方式保持一致
-- `infoq.quartz.bootstrap.deploy-id` 默认已经写在 `infoq-admin` 的生产配置里；如果同一版本在同一天需要再次部署，请先更新该值，再重新构建和发布
+- `DEPLOY_ID` 是生产启动期 Quartz reconcile 的发布批次号；同一批多节点保持一致，新批次必须换新值
 - 如果你不使用 `nohup`，也可以用 `systemd` 或 `supervisor` 托管
 
 ### 3.6 使用 systemd 托管
@@ -187,6 +194,7 @@ journalctl -u infoq-admin -n 200 --no-pager
 
 - `User` / `Group`
 - `ExecStart` 中的 Java 路径、JVM 参数和 jar 路径
+- `Environment="DEPLOY_ID=..."` 与 `Environment="SECURITY_TOKEN_SECRET=..."`
 
 ## 4. 前端部署
 
@@ -311,10 +319,11 @@ systemctl reload nginx
 2. 启动 Redis
 3. 如启用 OSS，启动 MinIO 或接入已有对象存储
 4. 导入初始化 SQL
-5. 启动后端 `infoq-admin.jar`
-6. 发布 Vue / React 静态资源
-7. 选择 HTTP 或 HTTPS 的 Nginx 配置文件
-8. 启动或重载 Nginx
+5. 按文件名顺序导入所有 `sql/infoq_scaffold_update_*.sql`
+6. 设置 `DEPLOY_ID`、`SECURITY_TOKEN_SECRET` 和必要密钥配置后启动后端 `infoq-admin.jar`
+7. 发布 Vue / React 静态资源
+8. 选择 HTTP 或 HTTPS 的 Nginx 配置文件
+9. 启动或重载 Nginx
 
 ## 7. 验收检查
 
@@ -325,15 +334,28 @@ systemctl reload nginx
 - `http://host/vue/` 可打开
 - `http://host/react/` 可打开
 - `http://host/prod-api/` 已能反代到后端
+- `http://host/prod-api/monitor/health/readiness` 返回 2xx；DB 或 Redis 不可用时该端点必须返回失败
 - 登录、菜单、基础接口可正常访问
 
 建议额外检查：
 
 - 后端日志是否有数据库连接失败、Redis 认证失败、密钥配置错误
+- Quartz bootstrap 日志是否显示当前 `DEPLOY_ID` 的 marker 执行或跳过行为符合预期
 - 前端浏览器控制台是否有接口 404、502、加密解密失败
 - 上传、字典、用户管理等基础功能是否正常
 
-## 8. 日志与排障
+## 8. 滚动更新与停机排空
+
+当前生产配置已启用 Spring Boot graceful shutdown。手动部署滚动更新建议顺序：
+
+1. 先从 Nginx upstream、SLB 或其他负载均衡器摘除旧节点。
+2. 确认负载均衡不再向旧节点转发新流量，或等待连接排空窗口结束。
+3. 停止旧节点进程；systemd 示例使用 `TimeoutStopSec=45` 给应用留出优雅停机时间。
+4. 启动新节点并确认 readiness 通过后，再纳入流量。
+
+WebSocket/SSE 客户端断线重连能力仍需按前端专项验证确认；如果重连能力不足，滚动更新期间可能出现长连接中断。
+
+## 9. 日志与排障
 
 推荐日志位置：
 
@@ -353,7 +375,7 @@ systemctl reload nginx
 - Nginx `/prod-api/` 是否反代到 `9090`
 - 后端是否实际启动在 `9090`
 
-## 9. 回滚建议
+## 10. 回滚建议
 
 手动部署不要只保留“当前版本”。
 

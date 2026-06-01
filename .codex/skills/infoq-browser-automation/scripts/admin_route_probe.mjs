@@ -5,7 +5,7 @@ import {runPlaywrightFlow} from './playwright_core.mjs';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..', '..', '..');
-const loginScript = path.join(repoRoot, '.agents', 'skills', 'infoq-login-success-check', 'scripts', 'login_check.mjs');
+const loginScript = path.join(repoRoot, '.codex', 'skills', 'infoq-login-success-check', 'scripts', 'login_check.mjs');
 
 function formatTimestamp(date = new Date()) {
   const pad = (value) => String(value).padStart(2, '0');

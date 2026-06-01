@@ -67,3 +67,24 @@ pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli adm
 ```
 
 4. 只有在需要临时交互探索或定位器发现时，才改用 Playwright MCP。
+
+## Docker 部署验证模式
+
+当验收目标是 Docker 部署产物时，使用仓库统一部署脚本，不要改用 `pnpm run dev` 或 `5174` 端口替代。
+
+```bash
+export INFOQ_DEPLOY_ROOT="$(pwd)/doc/tmp/infoq-deploy"
+export SECURITY_TOKEN_SECRET=replace-with-at-least-32-chars-secret
+bash script/bin/deploy-frontend.sh deploy
+```
+
+React admin Docker 入口：
+
+- 网关路径：`http://127.0.0.1/react/`
+- 直连端口：`http://127.0.0.1:9092/`
+
+受保护路由探测优先走网关上下文路径：
+
+```bash
+pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli admin-route-probe --backend-url "http://127.0.0.1:9090" --frontend-origin "http://127.0.0.1/react" --route "/index"
+```
