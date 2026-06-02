@@ -14,7 +14,7 @@
     </description>
 
     <properties>
-        <revision>2.1.4</revision>
+        <revision>2.1.5</revision>
     </properties>
 
     <dependencyManagement>
@@ -57,6 +57,13 @@
             <dependency>
                 <groupId>cc.infoq</groupId>
                 <artifactId>infoq-plugin-mybatis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- OAuth 登录 -->
+            <dependency>
+                <groupId>cc.infoq</groupId>
+                <artifactId>infoq-plugin-oauth</artifactId>
                 <version>${revision}</version>
             </dependency>
 

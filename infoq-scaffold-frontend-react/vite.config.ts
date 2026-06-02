@@ -135,8 +135,17 @@ export default defineConfig(({ mode }) => {
             if (!id.includes('node_modules')) {
               return;
             }
-            if (matchesNodeModulePackage(id, echartsVendorPackages)) {
-              return 'vendor-echarts';
+            if (id.includes('/node_modules/echarts/lib/chart/')) {
+              return 'vendor-echarts-charts';
+            }
+            if (id.includes('/node_modules/echarts/lib/component/')) {
+              return 'vendor-echarts-components';
+            }
+            if (id.includes('/node_modules/echarts/lib/coord/') || id.includes('/node_modules/echarts/lib/data/') || id.includes('/node_modules/echarts/lib/model/')) {
+              return 'vendor-echarts-core';
+            }
+            if (matchesNodeModulePackage(id, echartsVendorPackages) || id.includes('/node_modules/zrender/')) {
+              return 'vendor-echarts-render';
             }
             if (matchesNodeModulePackage(id, reactVendorPackages)) {
               return 'vendor-react';

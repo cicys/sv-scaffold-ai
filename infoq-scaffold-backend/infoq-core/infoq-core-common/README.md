@@ -16,7 +16,7 @@
 - `common/constant/*`：缓存名、系统常量、HTTP 状态码、正则常量。
 - `common/domain/dto/*`：跨模块传递的 DTO。
 - `common/exception/*`：业务异常、文件异常、用户异常。
-- `common/utils/*`：日期、字符串、MapStruct、Servlet、SQL、IP、树形构建等工具。
+- `common/utils/*`：日期、字符串、MapStruct、Servlet、SQL、IP、树形构建等工具；其中 IP 归属地查询由 `RegionUtils` 提供，IPv4 使用 `infoq-admin` classpath 中的 `ip2region_v4.xdb`，IPv6 使用 `INFOQ_IP2REGION_V6_PATH` 或 `-Dinfoq.ip2region.v6.path=...` 指向的外置 `ip2region_v6.xdb`。
 - `common/validate/*` 与 `common/xss/*`：参数分组校验和 XSS 注解校验。
 
 ## 4. 上游依赖
@@ -54,4 +54,3 @@
 
 - 不包含 Controller、Mapper XML 或业务 Service 实现。
 - 这里定义的是公共语义，不等于最终业务行为；真正的落地实现需要看 `infoq-system` 和相关插件。
-

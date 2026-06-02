@@ -36,7 +36,7 @@ export default function JobLogPage() {
     try {
       const response = await listJobLog(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }

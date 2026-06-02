@@ -2,7 +2,7 @@ import { DeptTreeVO } from './../dept/types';
 import { RoleVO } from '@/api/system/role/types';
 import request from '@/utils/request';
 import type { ApiResponse, TableResponse } from '@/api/types';
-import { UserForm, UserQuery, UserVO, UserInfoVO } from './types';
+import { UserForm, UserInfoVO, UserQuery, UserVO } from './types';
 import { parseStrEmpty } from '@/utils/scaffold';
 
 /**
@@ -158,7 +158,7 @@ export const updateUserPwd = (oldPassword: string, newPassword: string) => {
  * @param data 头像文件
  */
 export const uploadAvatar = (data: FormData) => {
-  return request<ApiResponse<{ imgUrl?: string }>>({
+  return request<ApiResponse<{ imgUrl: string }>>({
     url: '/system/user/profile/avatar',
     method: 'post',
     data: data

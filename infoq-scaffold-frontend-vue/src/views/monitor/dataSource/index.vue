@@ -119,13 +119,18 @@ const normalizePool = (pool?: Partial<DataSourcePoolVO>): DataSourcePoolVO => ({
   state: pool?.state ?? 'UNINITIALIZED'
 });
 
-const normalizeMonitor = (value?: Partial<DataSourceMonitorVO> | null): DataSourceMonitorVO => ({
-  summary: {
-    ...createDefaultSummary(),
-    ...(value?.summary ?? {})
-  },
-  items: (value?.items ?? []).map((item) => normalizePool(item))
-});
+const normalizeMonitor = (value?: Partial<DataSourceMonitorVO> | null): DataSourceMonitorVO => {
+  if (!Array.isArray(value?.items)) {
+    throw new Error('连接池监控响应 items 必须是数组');
+  }
+  return {
+    summary: {
+      ...createDefaultSummary(),
+      ...(value?.summary ?? {})
+    },
+    items: value.items.map((item) => normalizePool(item))
+  };
+};
 
 const monitor = ref<DataSourceMonitorVO>(createDefaultMonitor());
 const errorMessage = ref('');

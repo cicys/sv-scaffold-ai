@@ -9,13 +9,12 @@ import { parseTime } from '@/utils/scaffold';
 import modal from '@/utils/modal';
 
 type OnlineDeviceProps = {
-  devices?: OnlineVO[];
+  devices: OnlineVO[];
   onChanged?: () => void;
 };
 
 export default function OnlineDevice({ devices, onChanged }: OnlineDeviceProps) {
   const dict = useDictOptions('sys_device_type');
-  const dataSource = devices || [];
 
   const columns: ColumnsType<OnlineVO> = [
     {
@@ -81,5 +80,5 @@ export default function OnlineDevice({ devices, onChanged }: OnlineDeviceProps) 
     }
   ];
 
-  return <Table<OnlineVO> bordered rowKey="tokenId" dataSource={dataSource} columns={columns} pagination={false} />;
+  return <Table<OnlineVO> bordered rowKey="tokenId" dataSource={devices} columns={columns} pagination={false} />;
 }

@@ -363,8 +363,12 @@ LoginInfoEvent
 
 ### 7.3 `/monitor/health`
 
-`HealthController` 提供轻量级健康检查接口 `/monitor/health`，当前直接返回 `"ok"`。
-Spring Security public matcher 显式放行这个路径，因此它不依赖登录态，单独作为公开健康检查入口使用。
+`HealthController` 提供健康检查入口：
+
+- `/monitor/health` 与 `/monitor/health/liveness`：轻量返回 `"ok"`，只证明应用进程可响应 HTTP。
+- `/monitor/health/readiness`：检查 MySQL 与 Redis 关键依赖；任一依赖不可用时返回 `503` 和失败组件名称。
+
+Spring Security public matcher 显式放行 `/monitor/health` 及其子路径，因此它们不依赖登录态，可作为公开健康检查入口使用。部署接流量门禁应使用 readiness，不应只依赖 liveness。
 
 ## 8. 当前可确认的可选通知链路
 

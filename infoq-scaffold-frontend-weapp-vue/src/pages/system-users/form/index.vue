@@ -27,17 +27,17 @@
             <text class="form-label">登录账号</text>
             <input class="form-input-plain" v-model="form.userName" placeholder="请输入登录账号" :disabled="isEdit" placeholder-style="color: #94a3b8" />
           </view>
-          
+
           <view class="form-item-modern">
             <text class="form-label">用户昵称</text>
             <input class="form-input-plain" v-model="form.nickName" placeholder="请输入用户昵称" placeholder-style="color: #94a3b8" />
           </view>
-          
+
           <view class="form-item-modern" v-if="!isEdit">
             <text class="form-label">初始密码</text>
             <input class="form-input-plain" type="password" v-model="form.password" placeholder="请输入初始密码" placeholder-style="color: #94a3b8" />
           </view>
-          
+
           <view class="form-item-modern">
             <text class="form-label">手机号码</text>
             <input class="form-input-plain" v-model="form.phonenumber" placeholder="请输入手机号码" placeholder-style="color: #94a3b8" />
@@ -119,28 +119,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import {computed, reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
 import AppIcon from '@/components/AppIcon.vue';
-import { 
-  addUser, 
-  getUser, 
-  updateUser, 
-  getDicts, 
-  toDictOptions, 
-  deptTreeSelectForUser, 
-  flattenTree, 
+import {
+  addUser,
+  assertArrayData,
+  deptTreeSelectForUser,
+  type DeptTreeVO,
+  type DictOption,
+  flattenTree,
+  type FlatTreeItem,
+  getDicts,
+  getUser,
   optionSelectRoles,
-  type UserForm, 
-  type DictOption, 
-  type FlatTreeItem, 
-  type DeptTreeVO, 
-  type RoleVO 
+  type RoleVO,
+  toDictOptions,
+  updateUser,
+  type UserForm
 } from '@/api';
-import { ensureAuthenticated, ensurePermission } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {ensureAuthenticated, ensurePermission} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const userId = ref('');
@@ -202,7 +203,7 @@ const loadData = async () => {
     statusOptions.value = toDictOptions(statusRes.data);
     sexOptions.value = toDictOptions(sexRes.data);
     deptOptions.value = flattenTree(deptRes.data);
-    roleOptions.value = roleRes.data || [];
+    roleOptions.value = assertArrayData(roleRes.data, '角色选项响应 data');
 
     if (userId.value) {
       const response = await getUser(userId.value);
@@ -210,8 +211,8 @@ const loadData = async () => {
       Object.assign(form, {
         ...user,
         userId: String(user.userId),
-        roleIds: (roleIds || []).map(String),
-        postIds: (postIds || []).map(String)
+        roleIds: assertArrayData<string | number>(roleIds, '用户详情响应 data.roleIds').map(String),
+        postIds: assertArrayData<string | number>(postIds, '用户详情响应 data.postIds').map(String)
       });
     }
   } catch (error) {

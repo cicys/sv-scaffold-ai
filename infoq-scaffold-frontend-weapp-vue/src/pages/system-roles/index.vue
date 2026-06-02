@@ -24,7 +24,7 @@
     <view class="list-content">
       <EmptyNotice v-if="!canList" message="当前账号没有访问权限" />
       <EmptyNotice v-else-if="rows.length === 0" message="未查询到相关角色" />
-      
+
       <template v-if="canList">
         <RecordCard
           v-for="item in rows"
@@ -35,12 +35,12 @@
           :actions="getRoleActions(item)"
         >
           <template #extra>
-            <StatusTag 
-              :label="getDictLabel(statusOptions, item.status) || '未知'" 
-              :type="item.status === '0' ? 'success' : 'error'" 
+            <StatusTag
+              :label="getDictLabel(statusOptions, item.status) || '未知'"
+              :type="item.status === '0' ? 'success' : 'error'"
             />
           </template>
-          
+
           <KeyValueList
             :items="[
               { label: '权限字符', value: item.roleKey },
@@ -60,28 +60,28 @@
     </view>
 
     <FabButton v-if="canAdd" @click="openCreate" />
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { 
-  changeRoleStatus, 
-  delRole, 
-  getDictLabel, 
-  getDicts, 
-  listRole, 
-  toDictOptions, 
-  type DictOption, 
-  type RoleVO 
+import {computed, reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {
+  changeRoleStatus,
+  delRole,
+  type DictOption,
+  getDictLabel,
+  getDicts,
+  listRole,
+  type RoleVO,
+  toDictOptions
 } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {navigate, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -120,8 +120,8 @@ const loadData = async () => {
       canList.value ? listRole(query) : Promise.resolve({ rows: [], total: 0 })
     ]);
     statusOptions.value = toDictOptions(statusResponse.data);
-    rows.value = listResponse.rows || [];
-    total.value = listResponse.total || 0;
+    rows.value = listResponse.rows;
+    total.value = listResponse.total;
   } catch (error) {
     await handlePageError(error, '角色列表加载失败');
   }
@@ -158,7 +158,7 @@ const handleDelete = async (roleId: string | number) => {
     content: `确定删除角色 #${roleId} 吗？`
   });
   if (!res.confirm) return;
-  
+
   try {
     await delRole(roleId);
     await showSuccess('角色已删除');
@@ -183,16 +183,16 @@ const getRoleActions = (item: RoleVO) => {
   if (canEdit.value) {
     actions.push({ title: '编辑', onClick: () => openEdit(item.roleId) });
     if (!item.admin) {
-      actions.push({ 
-        title: item.status === '0' ? '停用' : '启用', 
+      actions.push({
+        title: item.status === '0' ? '停用' : '启用',
         onClick: () => handleToggleStatus(item),
         danger: item.status === '0'
       });
     }
   }
   if (canRemove.value && !item.admin) {
-    actions.push({ 
-      title: '删除', 
+    actions.push({
+      title: '删除',
       onClick: () => handleDelete(item.roleId),
       danger: true
     });

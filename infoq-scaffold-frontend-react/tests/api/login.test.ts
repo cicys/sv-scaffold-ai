@@ -67,6 +67,41 @@ describe('api/login', () => {
     );
   });
 
+  it('requests enabled oauth providers through public endpoint', async () => {
+    const { getOAuthProviders } = await import('@/api/login');
+    getOAuthProviders();
+
+    expect(loginApiMocks.request).toHaveBeenCalledWith({
+      url: '/auth/oauth/providers',
+      headers: {
+        isToken: false
+      },
+      method: 'get'
+    });
+  });
+
+  it('exchanges oauth ticket with encrypted public payload', async () => {
+    const { exchangeOAuthTicket } = await import('@/api/login');
+    exchangeOAuthTicket({
+      loginTicket: 'ticket-1'
+    });
+
+    expect(loginApiMocks.request).toHaveBeenCalledWith({
+      url: '/auth/oauth/ticket',
+      headers: {
+        isToken: false,
+        isEncrypt: true,
+        repeatSubmit: false
+      },
+      method: 'post',
+      data: {
+        loginTicket: 'ticket-1',
+        clientId: 'test-client-id',
+        grantType: 'oauth'
+      }
+    });
+  });
+
   it('sends register request with fixed clientId and password grant type', async () => {
     const { register } = await import('@/api/login');
     register({

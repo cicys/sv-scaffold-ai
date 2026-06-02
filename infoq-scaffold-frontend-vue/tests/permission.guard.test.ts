@@ -1,4 +1,4 @@
-import { ElMessage } from 'element-plus/es';
+import { ElMessage } from 'element-plus/es/components/message/index';
 
 type GuardSetupOptions = {
   token?: string;
@@ -17,8 +17,8 @@ type GuardRoute = {
   name: string;
 };
 
-type GuardNext = (location?: string | Record<string, unknown>) => void;
-type BeforeHook = (to: GuardRoute, from: GuardRoute, next: GuardNext) => Promise<void> | void;
+type NavigationResult = true | string | Record<string, unknown>;
+type BeforeHook = (to: GuardRoute, from: GuardRoute) => Promise<NavigationResult> | NavigationResult;
 
 const createToRoute = (path: string, fullPath?: string, title?: string) => {
   return {
@@ -128,73 +128,66 @@ describe('permission route guard', () => {
 
   it('redirects to login with encoded redirect when token is missing', async () => {
     const ctx = await loadPermissionGuard();
-    const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/system/user', '/system/user?page=1'), createToRoute('/'), next);
+    const result = await ctx.beforeHook(createToRoute('/system/user', '/system/user?page=1'), createToRoute('/'));
 
-    expect(next).toHaveBeenCalledWith('/login?redirect=%2Fsystem%2Fuser%3Fpage%3D1');
+    expect(result).toBe('/login?redirect=%2Fsystem%2Fuser%3Fpage%3D1');
     expect(ctx.nprogress.start).toHaveBeenCalled();
     expect(ctx.nprogress.done).toHaveBeenCalled();
   });
 
   it('allows whitelist route when token is missing', async () => {
     const ctx = await loadPermissionGuard();
-    const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/register/sub-page'), createToRoute('/'), next);
+    const result = await ctx.beforeHook(createToRoute('/oauth/callback'), createToRoute('/'));
 
-    expect(next).toHaveBeenCalledWith();
+    expect(result).toBe(true);
   });
 
   it('redirects authenticated user away from login page', async () => {
     const ctx = await loadPermissionGuard({ token: 'token-a', roles: ['admin'] });
-    const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/login'), createToRoute('/'), next);
+    const result = await ctx.beforeHook(createToRoute('/login'), createToRoute('/'));
 
-    expect(next).toHaveBeenCalledWith({ path: '/' });
+    expect(result).toEqual({ path: '/' });
     expect(ctx.nprogress.done).toHaveBeenCalled();
   });
 
   it('allows whitelist route directly when token exists', async () => {
     const ctx = await loadPermissionGuard({ token: 'token-a', roles: ['admin'] });
-    const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/register'), createToRoute('/'), next);
+    const result = await ctx.beforeHook(createToRoute('/register'), createToRoute('/'));
 
-    expect(next).toHaveBeenCalledWith();
+    expect(result).toBe(true);
     expect(ctx.userStore.getInfo).not.toHaveBeenCalled();
   });
 
   it('continues navigation directly when roles already exist', async () => {
     const ctx = await loadPermissionGuard({ token: 'token-a', roles: ['admin'] });
-    const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/system/user', '/system/user', '用户管理'), createToRoute('/'), next);
+    const result = await ctx.beforeHook(createToRoute('/system/user', '/system/user', '用户管理'), createToRoute('/'));
 
     expect(ctx.settingsStore.setTitle).toHaveBeenCalledWith('用户管理');
     expect(ctx.userStore.getInfo).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalledWith();
+    expect(result).toBe(true);
   });
 
   it('loads user info and dynamic routes when authenticated roles are empty', async () => {
     const ctx = await loadPermissionGuard({ token: 'token-a', roles: [] });
-    const next = vi.fn();
     const to = createToRoute('/system/menu', '/system/menu?type=1', '菜单管理');
 
-    await ctx.beforeHook(to, createToRoute('/'), next);
+    const result = await ctx.beforeHook(to, createToRoute('/'));
 
     expect(ctx.userStore.getInfo).toHaveBeenCalled();
     expect(ctx.permissionStore.generateRoutes).toHaveBeenCalled();
     expect(ctx.routerMock.addRoute).toHaveBeenCalledTimes(1);
     expect(ctx.routerMock.addRoute).toHaveBeenCalledWith(expect.objectContaining({ path: '/system/user' }));
     expect(ctx.isRelogin.show).toBe(false);
-    expect(next).toHaveBeenCalledWith('/system/menu?type=1');
+    expect(result).toBe('/system/menu?type=1');
   });
 
   it('handles getInfo failure by logout and fallback navigation', async () => {
     const ctx = await loadPermissionGuard({ token: 'token-a', roles: [], getInfoReject: true });
-    const next = vi.fn();
-    await ctx.beforeHook(createToRoute('/system/dept'), createToRoute('/'), next);
+    const result = await ctx.beforeHook(createToRoute('/system/dept'), createToRoute('/'));
 
     expect(ctx.userStore.logout).toHaveBeenCalled();
     expect(messageMock.error).toHaveBeenCalled();
-    expect(next).toHaveBeenCalledWith({ path: '/' });
+    expect(result).toEqual({ path: '/' });
     expect(ctx.isRelogin.show).toBe(false);
   });
 

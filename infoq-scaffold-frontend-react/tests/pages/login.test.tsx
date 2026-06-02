@@ -5,11 +5,13 @@ import type { LoginData } from '@/api/types';
 import { useUserStore } from '@/store/modules/user';
 
 const loginPageMocks = vi.hoisted(() => ({
-  getCodeImg: vi.fn()
+  getCodeImg: vi.fn(),
+  getOAuthProviders: vi.fn()
 }));
 
 vi.mock('@/api/login', () => ({
-  getCodeImg: loginPageMocks.getCodeImg
+  getCodeImg: loginPageMocks.getCodeImg,
+  getOAuthProviders: loginPageMocks.getOAuthProviders
 }));
 
 const { default: LoginPage } = await import('@/pages/login');
@@ -29,6 +31,9 @@ describe('pages/login', () => {
         forgotPasswordEnabled: true,
         mailEnabled: true
       }
+    });
+    loginPageMocks.getOAuthProviders.mockResolvedValue({
+      data: []
     });
     useUserStore.setState({
       login: loginMock
@@ -124,5 +129,21 @@ describe('pages/login', () => {
       expect(localStorage.getItem('username')).toBe('demo');
       expect(localStorage.getItem('rememberMe')).toBe('true');
     });
+  });
+
+  it('renders enabled oauth providers', async () => {
+    loginPageMocks.getOAuthProviders.mockResolvedValueOnce({
+      data: [{ providerCode: 'github', providerName: 'GitHub' }]
+    });
+
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="*" element={<LoginPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('button', { name: /使用 GitHub 登录/ })).toBeInTheDocument();
   });
 });

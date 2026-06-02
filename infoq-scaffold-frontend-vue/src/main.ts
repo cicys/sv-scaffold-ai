@@ -34,7 +34,7 @@ import { initDevToolsProtection } from '@/utils/devtools-protection';
 import i18n from '@/lang/index';
 
 // 修改 el-dialog 默认点击遮照为不关闭
-import { ElDialog } from 'element-plus';
+import { ElDialog } from 'element-plus/es/components/dialog/index';
 
 ElDialog.props.closeOnClickModal.default = false;
 

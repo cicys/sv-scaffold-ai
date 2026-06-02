@@ -1,5 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Checkbox, Col, DatePicker, Form, Input, InputNumber, Modal, Radio, Row, Select, Space, Switch, Table, Tooltip, Tree } from 'antd';
+import {
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Radio,
+  Row,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tooltip,
+  Tree
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import {
@@ -57,8 +75,7 @@ const dataScopeOptions = [
   { value: '6', label: '部门及以下或本人数据权限' }
 ];
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 const toTreeData = (nodes: TreeOption[] | RoleDeptTree['depts']) =>
   nodes.map((node) => ({
@@ -90,16 +107,19 @@ export default function RolePage() {
   const currentDataScope = Form.useWatch('dataScope', form) ?? initialForm.dataScope;
   const dict = useDictOptions('sys_normal_disable');
 
-  const loadList = useCallback(async (nextQuery: RoleQuery = query, nextRange: [Dayjs, Dayjs] | null = dateRange) => {
-    setLoading(true);
-    try {
-      const response = await listRole(addDateRange({ ...nextQuery }, formatRange(nextRange)));
-      setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange, query]);
+  const loadList = useCallback(
+    async (nextQuery: RoleQuery = query, nextRange: [Dayjs, Dayjs] | null = dateRange) => {
+      setLoading(true);
+      try {
+        const response = await listRole(addDateRange({ ...nextQuery }, formatRange(nextRange)));
+        setList(response.rows);
+        setTotal(response.total);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dateRange, query]
+  );
 
   const loadMenuTree = async (roleId?: string | number) => {
     if (roleId) {
@@ -348,7 +368,13 @@ export default function RolePage() {
             >
               修改
             </Button>
-            <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0} style={{ borderColor: '#ffccc7' }}>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete()}
+              disabled={selectedIds.length === 0}
+              style={{ borderColor: '#ffccc7' }}
+            >
               删除
             </Button>
             <Button
@@ -412,10 +438,7 @@ export default function RolePage() {
             <Radio.Group options={(dict.sys_normal_disable || []).map((item) => ({ label: item.label, value: item.value }))} />
           </Form.Item>
           <Space style={{ marginBottom: 12 }} wrap>
-            <Checkbox
-              checked={Boolean(menuCheckStrictly)}
-              onChange={(event) => form.setFieldValue('menuCheckStrictly', event.target.checked)}
-            >
+            <Checkbox checked={Boolean(menuCheckStrictly)} onChange={(event) => form.setFieldValue('menuCheckStrictly', event.target.checked)}>
               父子联动
             </Checkbox>
           </Space>
@@ -464,10 +487,7 @@ export default function RolePage() {
           </Form.Item>
           {currentDataScope === '2' && (
             <>
-              <Checkbox
-                checked={Boolean(deptCheckStrictly)}
-                onChange={(event) => form.setFieldValue('deptCheckStrictly', event.target.checked)}
-              >
+              <Checkbox checked={Boolean(deptCheckStrictly)} onChange={(event) => form.setFieldValue('deptCheckStrictly', event.target.checked)}>
                 父子联动
               </Checkbox>
               <Tree

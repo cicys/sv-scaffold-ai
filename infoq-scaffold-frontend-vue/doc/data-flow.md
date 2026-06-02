@@ -32,6 +32,20 @@ LoginView
 -> setToken()
 ```
 
+OAuth 登录沿用同一个 token 落地路径，但授权发起和回调多两段公开接口：
+
+```text
+LoginView
+-> getOAuthProviders()
+-> GET /auth/oauth/providers
+-> browser redirect /auth/oauth/{provider}/authorize
+-> OAuthCallbackView
+-> exchangeOAuthTicket()
+-> POST /auth/oauth/ticket
+-> userStore.loginByOAuthTicket()
+-> setToken()
+```
+
 登录成功后，真正把用户资料和动态菜单装进前端状态的动作由全局守卫 `permission.ts` 完成：
 
 ```text
@@ -94,7 +108,7 @@ API 模块本身主要负责：
 -> router.replace('/login?redirect=...')
 ```
 
-这条链路说明当前 Vue admin 不会静默吞掉过期会话，而是显式提示并跳回登录页。
+这条链路说明当前 Vue admin 不会静默吞掉过期会话，而是显式提示并跳回登录页。若 token 已被后端撤销，`userStore.logout()` 仍会在 `/auth/logout` 失败后清理本地会话，避免继续携带旧 token 请求受保护接口。
 
 ## 5. 登出与副作用清理
 
@@ -104,8 +118,8 @@ API 模块本身主要负责：
 userStore.logout()
 -> closeSSE()
 -> POST /auth/logout
--> removeToken()
--> 清空 roles / permissions / token
+-> finally removeToken()
+-> 清空用户状态 / roles / permissions / token
 ```
 
 因此登录态的主动清理动作挂在 `user` store 上，而不是分散在各个页面。

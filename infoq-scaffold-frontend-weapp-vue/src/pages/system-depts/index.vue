@@ -18,7 +18,7 @@
     <view class="list-content">
       <EmptyNotice v-if="!canList" message="暂无访问权限" />
       <EmptyNotice v-else-if="filteredRows.length === 0" message="未查询到相关部门" />
-      
+
       <template v-if="canList">
         <RecordCard
           v-for="item in filteredRows"
@@ -28,12 +28,12 @@
           :actions="getActions(item)"
         >
           <template #extra>
-            <StatusTag 
-              :label="item.status === '0' ? '正常' : '停用'" 
-              :type="item.status === '0' ? 'success' : 'error'" 
+            <StatusTag
+              :label="item.status === '0' ? '正常' : '停用'"
+              :type="item.status === '0' ? 'success' : 'error'"
             />
           </template>
-          
+
           <KeyValueList
             :items="[
               { label: '负责人', value: item.leader || '-' },
@@ -46,19 +46,19 @@
     </view>
 
     <FabButton v-if="canAdd" @click="openCreate" />
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { delDept, listDept, type DeptVO } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {assertArrayData, delDept, type DeptVO, listDept} from '@/api';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {navigate, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -90,7 +90,7 @@ const loadData = async () => {
   try {
     await sessionStore.loadSession();
     const response = await listDept();
-    rows.value = response.data || [];
+    rows.value = assertArrayData(response.data, '部门列表响应 data');
   } catch (error) {
     await handlePageError(error, '部门加载失败');
   }

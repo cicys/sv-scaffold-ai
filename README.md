@@ -6,13 +6,13 @@
 
 > 一个以 AI 为主力研发者的全栈工程脚手架。仓库通过 `AGENTS.md` 约束协作规则，通过 `.codex/skills` 固化自动化 SOP，并以 `OpenSpec` 管理长期规格与变更，将能力落到 Spring Boot 3 后端、Vue/React 管理端、Vue/React 小程序端、脚本、SQL、MCP 与文档工作区中。社区：[Linux DO](https://linux.do)
 
-![Version](https://img.shields.io/badge/Version-2.1.4-f66a39)
+![Version](https://img.shields.io/badge/Version-2.1.5-f66a39)
 ![JDK](https://img.shields.io/badge/JDK-17-1677FF)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-6DB33F)
-![Vue](https://img.shields.io/badge/Vue-3.5.30-42B883)
-![Element Plus](https://img.shields.io/badge/Element%20Plus-2.11.9-409EFF)
-![React](https://img.shields.io/badge/React-19.2.4-61DAFB)
-![Ant Design](https://img.shields.io/badge/Ant%20Design-6.3.3-1677FF)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.14-6DB33F)
+![Vue](https://img.shields.io/badge/Vue-3.5.35-42B883)
+![Element Plus](https://img.shields.io/badge/Element%20Plus-2.14.1-409EFF)
+![React](https://img.shields.io/badge/React-19.2.7-61DAFB)
+![Ant Design](https://img.shields.io/badge/Ant%20Design-6.4.3-1677FF)
 ![License](https://img.shields.io/badge/License-MIT-F7C948)
 
 </div>
@@ -73,9 +73,9 @@ infoq-scaffold-ai
 | 维度 | 技术栈 |
 | --- | --- |
 | AI 协作层 | Codex、`AGENTS.md`、`.codex/skills`、`OpenSpec`、`.codex/config.toml` |
-| 后端 | Spring Boot `3.5.10`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
-| Vue 管理端 | Vue `3.5.30`、TypeScript、Vite `6.4.1`、Element Plus `2.11.9`、Vitest |
-| React 管理端 | React `19.2.4`、TypeScript、Vite `7.3.1`、Ant Design `6.3.3`、React Router `7.13.1`、Vitest |
+| 后端 | Spring Boot `3.5.14`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
+| Vue 管理端 | Vue `3.5.35`、TypeScript `6.0.3`、Vite `8.0.16`、Element Plus `2.14.1`、Vue Router `5.1.0`、Vitest `4.1.8` |
+| React 管理端 | React `19.2.7`、TypeScript `6.0.3`、Vite `8.0.16`、Ant Design `6.4.3`、React Router `7.16.0`、Vitest `4.1.8` |
 | Vue 小程序端 | uni-app 3、Vue 3、TypeScript、Pinia、WeChat Mini Program |
 | React 小程序端 | Taro 4、React 18、TypeScript、Zustand、WeChat Mini Program |
 | 存储与中间件 | MySQL 8、Redis 7、MinIO |
@@ -185,7 +185,7 @@ node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id
 | --- | --- |
 | JDK | 17 |
 | Maven | 3.9+ |
-| Node.js | `>= 20.19.0` |
+| Node.js | `^20.19.0 || ^22.13.0 || >=24.0.0` |
 | pnpm | `>= 10.0.0` |
 | MySQL | 8.x |
 | Redis | 7.x |
@@ -259,6 +259,13 @@ pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
 
 ## 常用命令
 
+### 仓库校验
+
+```bash
+node .codex/scripts/validate_utf8.mjs
+node .codex/scripts/validate_utf8.mjs AGENTS.md infoq-scaffold-frontend-react/src
+```
+
 ### 后端
 
 ```bash
@@ -311,14 +318,18 @@ pnpm run verify:local
 ### 后端与依赖服务
 
 ```bash
+export SECURITY_TOKEN_SECRET=replace-with-at-least-32-chars-secret
+# 可选：不设置时 deploy 会生成并持久化当前批次号
+# export DEPLOY_ID=2.1.5-20260602120000
 bash script/bin/infoq.sh deploy
 ```
 
 说明：
 
-- `bash script/bin/infoq.sh deploy` 直接使用后端生产配置里的 `infoq.quartz.bootstrap.deploy-id`；如果同一个版本不是多次发布，就保持这个值不变。
-- 如果同一个版本需要再次发布，先更新 `infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml` 里的 `infoq.quartz.bootstrap.deploy-id`，再重新构建和发布。
-- `bash script/bin/infoq.sh start` / `restart` 只会复用现有容器环境，不会改动生产配置中的 `infoq.quartz.bootstrap.deploy-id`。
+- `bash script/bin/infoq.sh deploy` 会生成或校验本次 `DEPLOY_ID`，并通过生产配置注入 `infoq.quartz.bootstrap.deploy-id`。
+- 同一批多节点滚动发布必须共享同一个 `DEPLOY_ID`；如果同一版本需要再次发布，应换新 `DEPLOY_ID` 并重新执行 `deploy`。
+- `bash script/bin/infoq.sh start` / `restart` 会复用 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/config/deploy-id`，不会生成新的部署批次。
+- `infoq-admin` readiness 路径为 `/monitor/health/readiness`，用于 Compose healthcheck 或负载均衡接流量门禁。
 
 ### 前端与网关
 
@@ -331,6 +342,8 @@ bash script/bin/deploy-frontend.sh deploy
 - `infoq-frontend-vue`
 - `infoq-frontend-react`
 - `nginx-web`
+
+`deploy-frontend.sh deploy` 会先同步前端网关目录与 `nginx.conf`，再顺序构建 Vue / React 镜像，最后启动两个前端容器与 `nginx-web`，避免本机 Docker 并行构建时的内存峰值。
 
 详见：
 

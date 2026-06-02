@@ -43,19 +43,20 @@ class InjectionMetaObjectHandlerTest {
     }
 
     @Test
-    @DisplayName("insertFill: should fallback to default user id when login user is unavailable")
-    void insertFillShouldFallbackToDefaultUserIdWhenLoginUserMissing() {
+    @DisplayName("insertFill: should fail when login user is unavailable")
+    void insertFillShouldFailWhenLoginUserMissing() {
         BaseEntity entity = new BaseEntity();
 
         try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             loginHelper.when(LoginUserContext::getLoginUser).thenThrow(new SecurityAuthenticationException("no session"));
 
-            handler.insertFill(SystemMetaObject.forObject(entity));
+            ServiceException exception = assertThrows(ServiceException.class, () -> handler.insertFill(SystemMetaObject.forObject(entity)));
+            assertTrue(exception.getMessage().contains("no session"));
         }
 
-        assertEquals(-1L, entity.getCreateBy());
-        assertEquals(-1L, entity.getUpdateBy());
-        assertEquals(-1L, entity.getCreateDept());
+        assertNull(entity.getCreateBy());
+        assertNull(entity.getUpdateBy());
+        assertNull(entity.getCreateDept());
     }
 
     @Test
@@ -91,16 +92,17 @@ class InjectionMetaObjectHandlerTest {
     }
 
     @Test
-    @DisplayName("updateFill: should fallback to default user id when security context is unavailable")
-    void updateFillShouldFallbackToDefaultWhenSecurityContextUnavailable() {
+    @DisplayName("updateFill: should fail when security context is unavailable")
+    void updateFillShouldFailWhenSecurityContextUnavailable() {
         BaseEntity entity = new BaseEntity();
 
         try (MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
             loginHelper.when(LoginUserContext::getUserId).thenThrow(new SecurityAuthenticationException("no session"));
-            handler.updateFill(SystemMetaObject.forObject(entity));
+            ServiceException exception = assertThrows(ServiceException.class, () -> handler.updateFill(SystemMetaObject.forObject(entity)));
+            assertTrue(exception.getMessage().contains("no session"));
         }
 
-        assertEquals(-1L, entity.getUpdateBy());
+        assertNull(entity.getUpdateBy());
         assertNotNull(entity.getUpdateTime());
     }
 
@@ -111,4 +113,3 @@ class InjectionMetaObjectHandlerTest {
         assertThrows(ServiceException.class, () -> handler.updateFill(null));
     }
 }
-

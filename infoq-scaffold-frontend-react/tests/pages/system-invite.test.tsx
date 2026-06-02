@@ -1,6 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithRouter } from '../helpers/renderWithRouter';
+import type { ChangeEvent, ReactElement } from 'react';
+
+type MockFormInstance = {
+  __store: Record<string, unknown>;
+  setFieldsValue: (values: Record<string, unknown>) => void;
+  setFieldValue: (name: string, value: unknown) => void;
+  getFieldValue: (name: string) => unknown;
+  resetFields: () => void;
+  validateFields: () => Promise<Record<string, unknown>>;
+};
 
 vi.mock('antd', async () => {
   const React = await vi.importActual<typeof import('react')>('react');
@@ -10,7 +20,7 @@ vi.mock('antd', async () => {
     initialValues
   }: {
     children?: unknown;
-    form?: Record<string, unknown>;
+    form?: MockFormInstance;
     initialValues?: Record<string, unknown>;
   }) => {
     if (form?.__store && initialValues) {
@@ -22,9 +32,9 @@ vi.mock('antd', async () => {
     }
     return <form>{children as never}</form>;
   }) as unknown as {
-    Item: ({ children, label }: { children?: unknown; label?: string }) => JSX.Element;
-    useForm: () => Array<Record<string, unknown>>;
-    useWatch: (name: string, form?: Record<string, unknown>) => unknown;
+    Item: ({ children, label }: { children?: unknown; label?: string }) => ReactElement;
+    useForm: () => [MockFormInstance];
+    useWatch: (name: string, form?: MockFormInstance) => unknown;
   };
 
   Form.Item = ({ children, label }: { children?: unknown; label?: string }) => (
@@ -34,7 +44,7 @@ vi.mock('antd', async () => {
     </div>
   );
   Form.useForm = () => {
-    const ref = React.useRef<Record<string, unknown>>();
+    const ref = React.useRef<MockFormInstance | null>(null);
     if (!ref.current) {
       const store: Record<string, unknown> = {};
       ref.current = {
@@ -60,35 +70,45 @@ vi.mock('antd', async () => {
     }
     return [ref.current];
   };
-  Form.useWatch = (name: string, form?: Record<string, unknown>) => form?.__store?.[name];
+  Form.useWatch = (name: string, form?: MockFormInstance) => form?.__store?.[name];
 
   const Button = ({
     children,
     onClick,
-    disabled,
-    ...rest
+    disabled
   }: {
     children?: unknown;
     onClick?: () => void;
     disabled?: boolean;
   }) => (
-    <button disabled={disabled} onClick={onClick} {...(rest as never)}>
+    <button disabled={disabled} onClick={onClick}>
       {children as never}
     </button>
   );
 
-  const Input = Object.assign(({ value, onChange, placeholder }: Record<string, unknown>) => (
-    <input value={(value as string | number | readonly string[] | undefined) ?? ''} onChange={onChange as never} placeholder={placeholder as string | undefined} />
+  const Input = Object.assign(({ value, onChange, placeholder }: {
+    value?: string | number | readonly string[];
+    onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string;
+  }) => (
+    <input value={value ?? ''} onChange={onChange} placeholder={placeholder} />
   ), {
-    TextArea: ({ value, onChange, placeholder }: Record<string, unknown>) => (
-      <textarea value={(value as string | number | readonly string[] | undefined) ?? ''} onChange={onChange as never} placeholder={placeholder as string | undefined} />
+    TextArea: ({ value, onChange, placeholder }: {
+      value?: string | number | readonly string[];
+      onChange?: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+      placeholder?: string;
+    }) => (
+      <textarea value={value ?? ''} onChange={onChange} placeholder={placeholder} />
     )
   });
 
-  const InputNumber = ({ value, onChange }: Record<string, unknown>) => (
+  const InputNumber = ({ value, onChange }: {
+    value?: number | string;
+    onChange?: (value: number) => void;
+  }) => (
     <input
       type="number"
-      value={(value as number | string | undefined) ?? ''}
+      value={value ?? ''}
       onChange={(event) => onChange?.(Number((event.target as HTMLInputElement).value))}
     />
   );

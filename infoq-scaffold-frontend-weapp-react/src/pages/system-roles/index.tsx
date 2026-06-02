@@ -1,23 +1,23 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
   changeRoleStatus,
   delRole,
+  type DictOption,
   getDictLabel,
   getDicts,
   listRole,
-  toDictOptions,
-  type DictOption,
   type RoleQuery,
-  type RoleVO
+  type RoleVO,
+  toDictOptions
 } from '@/api';
-import { useState } from 'react';
-import { AtInput, AtButton } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { navigate, routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, PaginationBar, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {navigate, routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): RoleQuery => ({
@@ -53,8 +53,8 @@ export default function SystemRolesPage() {
         canList ? listRole(nextQuery) : Promise.resolve({ rows: [] as RoleVO[], total: 0 })
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '角色列表加载失败');
     }
@@ -156,22 +156,22 @@ export default function SystemRolesPage() {
             title={item.roleName}
             statusColor={item.status === '0' ? '#52c41a' : '#ff4d4f'}
             extra={
-              <StatusTag 
-                label={getDictLabel(statusOptions, item.status) || '未知'} 
-                type={item.status === '0' ? 'success' : 'error'} 
+              <StatusTag
+                label={getDictLabel(statusOptions, item.status) || '未知'}
+                type={item.status === '0' ? 'success' : 'error'}
               />
             }
             actions={[
               ...(canEdit ? [{ onClick: () => void openEdit(item.roleId), title: '编辑' }] : []),
-              ...(canEdit && !item.admin ? [{ 
-                onClick: () => void handleToggleStatus(item), 
+              ...(canEdit && !item.admin ? [{
+                onClick: () => void handleToggleStatus(item),
                 title: item.status === '0' ? '停用' : '启用',
                 danger: item.status === '0'
               }] : []),
-              ...(canRemove && !item.admin ? [{ 
-                onClick: () => void handleDelete(item.roleId), 
+              ...(canRemove && !item.admin ? [{
+                onClick: () => void handleDelete(item.roleId),
                 title: '删除',
-                danger: true 
+                danger: true
               }] : [])
             ]}
           >
@@ -200,7 +200,7 @@ export default function SystemRolesPage() {
       </View>
 
       {canAdd && <FabButton onClick={openCreate} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

@@ -9,6 +9,7 @@ const AuthGuard = lazy(() => import('@/router/AuthGuard'));
 const MainLayout = lazy(() => import('@/layouts/MainLayout'));
 const BackendRouteView = lazy(() => import('@/router/BackendRouteView'));
 const LoginPage = lazy(() => import('@/pages/login'));
+const OAuthCallbackPage = lazy(() => import('@/pages/oauth-callback'));
 const RegisterPage = lazy(() => import('@/pages/register'));
 const ForgotPasswordPage = lazy(() => import('@/pages/forgot-password'));
 const RedirectPage = lazy(() => import('@/pages/redirect/index'));
@@ -47,6 +48,7 @@ export default function AppRouter() {
       <Suspense fallback={<Spin />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/401" element={<Error401Page />} />

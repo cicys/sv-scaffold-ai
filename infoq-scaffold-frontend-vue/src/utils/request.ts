@@ -5,7 +5,7 @@ import { blobValidate, tansParams } from '@/utils/scaffold';
 import cache from '@/plugins/cache';
 import { HttpStatus } from '@/enums/RespEnum';
 import { errorCode } from '@/utils/errorCode';
-import { LoadingInstance } from 'element-plus/es/components/loading/src/loading';
+import type { LoadingInstance } from 'element-plus/es/components/loading/src/loading';
 import FileSaver from 'file-saver';
 import { getLanguage } from '@/lang';
 import { decryptBase64, decryptWithAes, encryptBase64, encryptWithAes, generateAesKey } from '@/utils/crypto';
@@ -14,6 +14,42 @@ import router from '@/router';
 
 const encryptHeader = 'encrypt-key';
 let downloadLoadingInstance: LoadingInstance | undefined;
+
+const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object';
+
+const requirePayloadRecord = (payload: unknown) => {
+  if (!isRecord(payload)) {
+    throw new Error('响应契约错误：响应体必须是对象');
+  }
+  return payload;
+};
+
+const readPayloadCode = (payload: unknown) => {
+  const record = requirePayloadRecord(payload);
+  if (!Object.prototype.hasOwnProperty.call(record, 'code')) {
+    throw new Error('响应契约错误：缺少状态码 code');
+  }
+  const { code } = record;
+  if (typeof code !== 'number' || !Number.isFinite(code)) {
+    throw new Error('响应契约错误：状态码 code 必须是有限数字');
+  }
+  return code;
+};
+
+const validatePaginationPayload = (payload: unknown) => {
+  const record = requirePayloadRecord(payload);
+  const hasRows = Object.prototype.hasOwnProperty.call(record, 'rows');
+  const hasTotal = Object.prototype.hasOwnProperty.call(record, 'total');
+  if (!hasRows && !hasTotal) {
+    return;
+  }
+  if (!Array.isArray(record.rows)) {
+    throw new Error('响应契约错误：分页响应 rows 必须是数组');
+  }
+  if (typeof record.total !== 'number' || !Number.isFinite(record.total)) {
+    throw new Error('响应契约错误：分页响应 total 必须是有限数字');
+  }
+};
 
 type RequestConfig<D = unknown> = AxiosRequestConfig<D>;
 
@@ -157,14 +193,23 @@ service.interceptors.response.use(
         res.data = JSON.parse(decryptData);
       }
     }
-    // 未设置状态码则默认成功状态
-    const code = res.data.code || HttpStatus.SUCCESS;
-    // 获取错误信息
-    const msg = errorCode[code] || res.data.msg || errorCode['default'];
     // 二进制数据则直接返回
     if (res.request.responseType === 'blob' || res.request.responseType === 'arraybuffer') {
       return res.data;
     }
+
+    let code: number;
+    try {
+      code = readPayloadCode(res.data);
+      validatePaginationPayload(res.data);
+    } catch (error) {
+      const message = getResponseErrorMessage(error) || '响应契约错误';
+      ElMessage({ message, type: 'error' });
+      return Promise.reject(error);
+    }
+
+    // 获取错误信息
+    const msg = errorCode[code] || res.data.msg || errorCode['default'];
     if (code === 401) {
       // prettier-ignore
       if (!isRelogin.show) {

@@ -9,7 +9,10 @@ const whiteList = [
   '/register/*',
   '/forgot-password',
   '/forgot-password*',
-  '/forgot-password/*'
+  '/forgot-password/*',
+  '/oauth/callback',
+  '/oauth/callback*',
+  '/oauth/callback/*'
 ];
 
 export const isWhiteListRoute = (path: string) => {

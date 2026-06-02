@@ -307,7 +307,7 @@ MyBatis 层由 `MybatisPlusConfig` 注入 `PlusDataPermissionInterceptor` 和 `D
 - `/monitor/job`
 - `/monitor/jobLog`
 
-此外 `HealthController` 暴露了轻量级 `/monitor/health` 健康检查接口，并由 Spring Security public matcher 显式放行。
+此外 `HealthController` 暴露了 `/monitor/health`、`/monitor/health/liveness` 与 `/monitor/health/readiness`。其中 readiness 会探测 MySQL 与 Redis，失败时返回非 2xx；Spring Security public matcher 显式放行 `/monitor/health` 及其子路径。
 
 ## 9. 当前可确认的可选链路
 

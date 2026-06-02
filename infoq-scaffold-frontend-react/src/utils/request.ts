@@ -16,6 +16,44 @@ const encryptHeader = 'encrypt-key';
 
 export const isRelogin = { show: false };
 
+const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object';
+
+const requirePayloadRecord = (payload: unknown) => {
+  if (!isRecord(payload)) {
+    throw new Error('响应契约错误：响应体必须是对象');
+  }
+  return payload;
+};
+
+const readPayloadCode = (payload: unknown) => {
+  const record = requirePayloadRecord(payload);
+  if (!Object.prototype.hasOwnProperty.call(record, 'code')) {
+    throw new Error('响应契约错误：缺少状态码 code');
+  }
+  const { code } = record;
+  if (typeof code !== 'number' || !Number.isFinite(code)) {
+    throw new Error('响应契约错误：状态码 code 必须是有限数字');
+  }
+  return code;
+};
+
+const validatePaginationPayload = (payload: unknown) => {
+  const record = requirePayloadRecord(payload);
+  const hasRows = Object.prototype.hasOwnProperty.call(record, 'rows');
+  const hasTotal = Object.prototype.hasOwnProperty.call(record, 'total');
+  if (!hasRows && !hasTotal) {
+    return;
+  }
+  if (!Array.isArray(record.rows)) {
+    throw new Error('响应契约错误：分页响应 rows 必须是数组');
+  }
+  if (typeof record.total !== 'number' || !Number.isFinite(record.total)) {
+    throw new Error('响应契约错误：分页响应 total 必须是有限数字');
+  }
+};
+
+const getErrorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error || '响应契约错误'));
+
 type RequestInstance = {
   <T = unknown, D = unknown>(config: AxiosRequestConfig<D>): Promise<T>;
   request<T = unknown, D = unknown>(config: AxiosRequestConfig<D>): Promise<T>;
@@ -111,12 +149,21 @@ service.interceptors.response.use(
       }
     }
 
-    const code = res.data.code || HttpStatus.SUCCESS;
-    const msg = errorCode[code] || res.data.msg || errorCode.default;
-
     if (res.request.responseType === 'blob' || res.request.responseType === 'arraybuffer') {
       return res.data;
     }
+
+    let code: number;
+    try {
+      code = readPayloadCode(res.data);
+      validatePaginationPayload(res.data);
+    } catch (error) {
+      const message = getErrorMessage(error);
+      modal.msgError(message);
+      return Promise.reject(error);
+    }
+
+    const msg = errorCode[code] || res.data.msg || errorCode.default;
 
     if (code === 401) {
       if (!isRelogin.show) {

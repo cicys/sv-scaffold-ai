@@ -51,7 +51,7 @@ pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli adm
 
 该命令会：
 
-1. 通过现有 `login_check.mjs` 获取 backend token。
+1. 通过 `.codex/skills/infoq-login-success-check/scripts/login_check.mjs` 获取 backend token。
 2. 在页面加载前写入 `Admin-Token`。
 3. 打开目标前端路由。
 4. 输出截图与 console 日志路径。

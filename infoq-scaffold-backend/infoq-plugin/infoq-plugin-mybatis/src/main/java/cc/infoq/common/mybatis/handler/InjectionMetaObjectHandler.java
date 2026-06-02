@@ -22,11 +22,6 @@ import java.util.Date;
 public class InjectionMetaObjectHandler implements MetaObjectHandler {
 
     /**
-     * 如果用户不存在默认注入-1代表无用户
-     */
-    private static final Long DEFAULT_USER_ID = -1L;
-
-    /**
      * 插入填充方法，用于在插入数据时自动填充实体对象中的创建时间、更新时间、创建人、更新人等信息
      *
      * @param metaObject 元对象，用于获取原始对象并进行填充
@@ -43,24 +38,19 @@ public class InjectionMetaObjectHandler implements MetaObjectHandler {
                 // 如果创建人为空，则填充当前登录用户的信息
                 if (ObjectUtil.isNull(baseEntity.getCreateBy())) {
                     LoginUser loginUser = getLoginUser();
-                    if (ObjectUtil.isNotNull(loginUser)) {
-                        Long userId = loginUser.getUserId();
-                        // 填充创建人、更新人和创建部门信息
-                        baseEntity.setCreateBy(userId);
-                        baseEntity.setUpdateBy(userId);
-                        baseEntity.setCreateDept(ObjectUtils.notNull(baseEntity.getCreateDept(), loginUser.getDeptId()));
-                    } else {
-                        // 填充创建人、更新人和创建部门信息
-                        baseEntity.setCreateBy(DEFAULT_USER_ID);
-                        baseEntity.setUpdateBy(DEFAULT_USER_ID);
-                        baseEntity.setCreateDept(ObjectUtils.notNull(baseEntity.getCreateDept(), DEFAULT_USER_ID));
-                    }
+                    Long userId = loginUser.getUserId();
+                    // 填充创建人、更新人和创建部门信息
+                    baseEntity.setCreateBy(userId);
+                    baseEntity.setUpdateBy(userId);
+                    baseEntity.setCreateDept(ObjectUtils.notNull(baseEntity.getCreateDept(), loginUser.getDeptId()));
                 }
             } else {
                 Date date = new Date();
                 this.strictInsertFill(metaObject, "createTime", Date.class, date);
                 this.strictInsertFill(metaObject, "updateTime", Date.class, date);
             }
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServiceException("自动注入异常 => " + e.getMessage(), HttpStatus.HTTP_UNAUTHORIZED);
         }
@@ -81,14 +71,12 @@ public class InjectionMetaObjectHandler implements MetaObjectHandler {
 
                 // 获取当前登录用户的ID，并填充更新人信息
                 Long userId = getUserId();
-                if (ObjectUtil.isNotNull(userId)) {
-                    baseEntity.setUpdateBy(userId);
-                } else {
-                    baseEntity.setUpdateBy(DEFAULT_USER_ID);
-                }
+                baseEntity.setUpdateBy(userId);
             } else {
                 this.strictUpdateFill(metaObject, "updateTime", Date.class, new Date());
             }
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServiceException("自动注入异常 => " + e.getMessage(), HttpStatus.HTTP_UNAUTHORIZED);
         }
@@ -97,14 +85,12 @@ public class InjectionMetaObjectHandler implements MetaObjectHandler {
     /**
      * 获取当前登录用户信息
      *
-     * @return 当前登录用户的信息，如果用户未登录则返回 null
+     * @return 当前登录用户的信息
      */
     private LoginUser getLoginUser() {
-        LoginUser loginUser;
-        try {
-            loginUser = LoginUserContext.getLoginUser();
-        } catch (Exception e) {
-            return null;
+        LoginUser loginUser = LoginUserContext.getLoginUser();
+        if (ObjectUtil.isNull(loginUser) || ObjectUtil.isNull(loginUser.getUserId())) {
+            throw new ServiceException("自动注入异常 => 当前登录用户缺失", HttpStatus.HTTP_UNAUTHORIZED);
         }
         return loginUser;
     }
@@ -112,14 +98,14 @@ public class InjectionMetaObjectHandler implements MetaObjectHandler {
     /**
      * 获取当前登录用户ID
      *
-     * @return 当前用户ID，如果用户未登录则返回 null
+     * @return 当前用户ID
      */
     private Long getUserId() {
-        try {
-            return LoginUserContext.getUserId();
-        } catch (Exception e) {
-            return null;
+        Long userId = LoginUserContext.getUserId();
+        if (ObjectUtil.isNull(userId)) {
+            throw new ServiceException("自动注入异常 => 当前登录用户ID缺失", HttpStatus.HTTP_UNAUTHORIZED);
         }
+        return userId;
     }
 
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DeleteOutlined, DownloadOutlined, ReloadOutlined, SearchOutlined, UnlockOutlined } from '@ant-design/icons';
 import { Button, Card, Col, DatePicker, Form, Input, Row, Select, Space, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { SortOrder, SorterResult } from 'antd/es/table/interface';
+import type { SorterResult, SortOrder } from 'antd/es/table/interface';
 import type { Dayjs } from 'dayjs';
 import useDictOptions from '@/hooks/useDictOptions';
 import { cleanLoginInfo, delLoginInfo, list, unlockLoginInfo } from '@/api/monitor/loginInfo';
@@ -51,8 +51,7 @@ const toAntSortOrder = (value?: string): SortOrder | undefined => {
   return undefined;
 };
 
-const formatRange = (range: [Dayjs, Dayjs] | null) =>
-  range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : [];
+const formatRange = (range: [Dayjs, Dayjs] | null) => (range ? [range[0].format('YYYY-MM-DD HH:mm:ss'), range[1].format('YYYY-MM-DD HH:mm:ss')] : []);
 
 export default function LoginInfoPage() {
   const [query, setQuery] = useState<LoginInfoQuery>(initialQuery);
@@ -70,7 +69,7 @@ export default function LoginInfoPage() {
     try {
       const response = await list(addDateRange({ ...nextQuery }, formatRange(nextRange)));
       setListData(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -308,11 +307,7 @@ export default function LoginInfoPage() {
               className="btn-plain-warning"
               icon={<DownloadOutlined />}
               onClick={() =>
-                download(
-                  '/monitor/loginInfo/export',
-                  addDateRange({ ...query }, formatRange(dateRange)),
-                  `loginInfo_${Date.now()}.xlsx`
-                )
+                download('/monitor/loginInfo/export', addDateRange({ ...query }, formatRange(dateRange)), `loginInfo_${Date.now()}.xlsx`)
               }
             >
               导出

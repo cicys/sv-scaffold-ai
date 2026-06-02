@@ -1,24 +1,24 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
   delNotice,
+  type DictOption,
   formatDateTime,
   getDictLabel,
   getDicts,
   listNotice,
-  stripHtml,
-  toDictOptions,
-  type DictOption,
   type NoticeQuery,
-  type NoticeVO
+  type NoticeVO,
+  stripHtml,
+  toDictOptions
 } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { navigate, routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, PaginationBar, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {navigate, routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): NoticeQuery => ({
@@ -59,8 +59,8 @@ export default function NoticesPage() {
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
       setTypeOptions(toDictOptions(typeResponse.data));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '公告列表加载失败');
     }
@@ -133,18 +133,18 @@ export default function NoticesPage() {
             title={item.noticeTitle}
             statusColor={item.noticeType === '1' ? '#1677ff' : '#faad14'}
             extra={
-              <StatusTag 
-                label={getDictLabel(typeOptions, item.noticeType) || '公告'} 
-                type={item.noticeType === '1' ? 'info' : 'warning'} 
+              <StatusTag
+                label={getDictLabel(typeOptions, item.noticeType) || '公告'}
+                type={item.noticeType === '1' ? 'info' : 'warning'}
               />
             }
             actions={[
               ...(canQuery ? [{ onClick: () => navigate(`${routes.noticeDetail}?noticeId=${item.noticeId}`), title: '详情' }] : []),
               ...(canEdit ? [{ onClick: () => navigate(`${routes.noticeForm}?noticeId=${item.noticeId}`), title: '编辑' }] : []),
-              ...(canRemove ? [{ 
-                onClick: () => void handleDelete(item.noticeId), 
+              ...(canRemove ? [{
+                onClick: () => void handleDelete(item.noticeId),
                 title: '删除',
-                danger: true 
+                danger: true
               }] : [])
             ]}
           >
@@ -174,7 +174,7 @@ export default function NoticesPage() {
       </View>
 
       {canAdd && <FabButton onClick={() => navigate(routes.noticeForm)} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

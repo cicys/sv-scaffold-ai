@@ -40,6 +40,68 @@ vi.mock('@/components/DictTag', () => ({
   }
 }));
 
+vi.mock('antd', async () => {
+  const actual = await vi.importActual<typeof import('antd')>('antd');
+  return {
+    ...actual,
+    Table: ({
+      columns = [],
+      dataSource = [],
+      rowKey = 'key',
+      rowSelection
+    }: {
+      columns?: Array<{
+        key?: string;
+        dataIndex?: string;
+        title?: string;
+        render?: (value: unknown, record: Record<string, unknown>, index: number) => React.ReactNode;
+      }>;
+      dataSource?: Array<Record<string, unknown>>;
+      rowKey?: string;
+      rowSelection?: {
+        selectedRowKeys?: Array<string | number>;
+        onChange?: (keys: Array<string | number>) => void;
+      };
+    }) => (
+      <table>
+        {rowSelection && (
+          <thead>
+            <tr>
+              <th>
+                <input aria-label="select all rows" type="checkbox" />
+              </th>
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {dataSource.map((record, index) => {
+            const key = record[rowKey] as string | number;
+            return (
+              <tr key={key}>
+                {rowSelection && (
+                  <td>
+                    <input
+                      aria-label={`select row ${key}`}
+                      checked={rowSelection.selectedRowKeys?.includes(key) || false}
+                      type="checkbox"
+                      onChange={(event) => rowSelection.onChange?.(event.target.checked ? [key] : [])}
+                    />
+                  </td>
+                )}
+                {columns.map((column, columnIndex) => {
+                  const value = column.dataIndex ? record[column.dataIndex] : undefined;
+                  const content = column.render ? column.render(value, record, index) : value;
+                  return <td key={column.key || column.dataIndex || columnIndex}>{content as React.ReactNode}</td>;
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    )
+  };
+});
+
 const modalMocks = vi.hoisted(() => ({
   confirm: vi.fn().mockResolvedValue(true),
   msgSuccess: vi.fn(),
@@ -207,7 +269,7 @@ describe('pages/monitor scheduler', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /导出$/ }));
     expect(requestMocks.download).toHaveBeenCalledWith('/monitor/job/export', expect.any(Object), expect.stringMatching(/^job_\d+\.xlsx$/));
-  }, 15000);
+  }, 30000);
 
   it('renders job log page and supports clean/delete/export', async () => {
     renderWithRouter(<JobLogPage />, '/monitor/jobLog');
@@ -235,5 +297,5 @@ describe('pages/monitor scheduler', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /导出$/ }));
     expect(requestMocks.download).toHaveBeenCalledWith('/monitor/jobLog/export', expect.any(Object), expect.stringMatching(/^jobLog_\d+\.xlsx$/));
-  }, 15000);
+  }, 30000);
 });

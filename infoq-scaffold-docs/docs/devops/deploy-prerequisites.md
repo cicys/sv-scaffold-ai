@@ -39,7 +39,7 @@ outline: [2, 3]
 | --- | --- |
 | JDK | 17 |
 | Maven | 3.9+ |
-| Node.js | >= 20.15.0 |
+| Node.js | ^20.19.0 || ^22.13.0 || >=24.0.0 |
 | pnpm | >= 10.0.0 |
 | MySQL | 8.x |
 | Redis | 7.x |
@@ -90,6 +90,7 @@ outline: [2, 3]
 /infoq/server/config
 /infoq/server/logs
 /infoq/server/temp
+/infoq/server/ip2region
 /infoq/nginx/cert
 /infoq/nginx/conf
 /infoq/nginx/log
@@ -106,6 +107,7 @@ outline: [2, 3]
 /infoq/server/config
 /infoq/server/logs
 /infoq/server/temp
+/infoq/server/ip2region
 /infoq/nginx/conf
 /infoq/nginx/html/vue
 /infoq/nginx/html/react
@@ -116,6 +118,7 @@ outline: [2, 3]
 
 - 后端日志目录
 - 后端临时文件目录
+- 后端 IPv6 地址库目录
 - Nginx 静态资源目录
 - Nginx 日志目录
 
@@ -130,7 +133,8 @@ outline: [2, 3]
 - `spring.servlet.multipart.location`
 - `security.token.secret`，推荐通过 `SECURITY_TOKEN_SECRET` 环境变量或外部配置文件提供
 - `api-decrypt` 公私钥
-- `infoq.quartz.bootstrap.deploy-id` 是否已固定为当前发布批次值，当前仓库默认写在 [infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 中，例如 `2.1.0-20260427-001`
+- `DEPLOY_ID` 是否为当前发布批次值；[application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml) 通过 `${DEPLOY_ID:}` 注入 `infoq.quartz.bootstrap.deploy-id`
+- IPv6 地址库外置路径。Compose 部署默认使用 `INFOQ_IP2REGION_V6_PATH=/infoq/server/ip2region/ip2region_v6.xdb`，宿主机文件来自 [script/docker/server/ip2region/ip2region_v6.xdb](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/script/docker/server/ip2region/ip2region_v6.xdb)
 - 邮件、OSS 或其他插件相关配置
 
 主要配置来源：
@@ -140,9 +144,19 @@ outline: [2, 3]
 - Compose 覆盖模板：[script/docker/server/application-prod.yml](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/script/docker/server/application-prod.yml)
 
 生产环境不要直接保留仓库内默认密钥、默认数据库密码和示例邮箱配置。
-如果同一版本需要再次发布，请直接更新 `infoq-scaffold-backend/infoq-admin/src/main/resources/application-prod.yml` 中的 `infoq.quartz.bootstrap.deploy-id`，再重新构建和发布；不要再通过环境变量临时拼接同名值。
+生产 `prod` profile 开启 Quartz bootstrap guard 时，`DEPLOY_ID` 不能为空；同一批滚动发布的所有 backend 节点必须使用同一个 `DEPLOY_ID`，新批次发布必须换新值，禁止复用上一批值。
 
-### 5.2 前端配置
+### 5.2 集群配置一致性检查
+
+多节点部署前，至少逐项核对：
+
+- 所有 backend 节点的 `SECURITY_TOKEN_SECRET` 完全一致，token TTL、issuer、clientId 规则也保持一致。
+- 所有 backend 节点的 `api-decrypt.enabled`、`api-decrypt.publicKey`、`api-decrypt.privateKey` 与前端加密配置匹配；滚动切换 key 时必须按同一批次统一发布。
+- 所有 backend 节点连接同一组 MySQL、Redis/Redisson 与 OSS 配置；`redisson.keyPrefix` 不得因节点不同而隔离 token、缓存、Quartz marker、WebSocket/SSE 注册表。
+- 所有 backend 节点共享同一个 `DEPLOY_ID`，同一批次只允许 Quartz reconcile 执行一次。
+- 如使用外部配置中心或密钥系统，发布前确认所有节点读取到同一配置版本。
+
+### 5.3 前端配置
 
 重点检查：
 
@@ -157,7 +171,7 @@ outline: [2, 3]
 - Vue：[infoq-scaffold-frontend-vue/.env.production](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-vue/.env.production)
 - React：[infoq-scaffold-frontend-react/.env.production](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/infoq-scaffold-frontend-react/.env.production)
 
-### 5.3 网关配置
+### 5.4 网关配置
 
 如果采用统一 Nginx 网关，需要确认：
 
@@ -182,12 +196,18 @@ outline: [2, 3]
 
 - [sql/infoq_scaffold_2.0.0.sql](https://github.com/luckykuang/infoq-scaffold-ai/blob/main/sql/infoq_scaffold_2.0.0.sql)
 
+当前仓库增量 SQL 文件统一匹配：
+
+- `sql/infoq_scaffold_update_*.sql`
+
 部署前需要确认：
 
 - 目标数据库字符集支持 `utf8mb4`
 - 目标库名是否使用 `infoq`
 - 如果是已有库，是否允许导入初始化 SQL
 - 如果不是首次部署，是否已经有可用备份与回滚点
+- 多节点滚动发布前，数据库增量必须先完成；禁止让新旧节点跨迁移前后混跑。
+- 当前部署完成后应能查到 `sys_job`、`QRTZ_LOCKS`、`sys_oauth_provider`、`sys_oauth_identity`，且 `sys_client` 的 `e5cd7e4891bf95d1d19206ce24a7b32e` 客户端包含 `oauth` 授权类型。
 
 ## 7. 构建产物准备
 
@@ -217,6 +237,9 @@ Vue 与 React 生产构建后都会产出 `dist/` 目录：
 - 生产配置已替换默认值
 - 证书、域名、端口策略已确认
 - 初始化 SQL 使用策略已确认
+- `DEPLOY_ID`、`SECURITY_TOKEN_SECRET`、`api-decrypt` keys、Redis/Redisson 配置一致性已确认
+- `/monitor/health/readiness` 在待接流量节点上返回 2xx，DB/Redis 不可用时能返回失败
+- 滚动更新顺序已确认：先摘流量，再确认负载均衡不再转发到旧节点或连接排空，再停止旧节点
 - 回滚方案已准备：上一个 jar、上一个前端静态包、数据库备份
 - 日志查看路径已明确
 

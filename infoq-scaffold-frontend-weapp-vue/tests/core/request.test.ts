@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 
 type SetupOptions = {
   token?: string;
@@ -594,19 +594,48 @@ describe('request', () => {
     ).rejects.toBeInstanceOf(AppError);
   });
 
-  it('should treat non-object success payload as pass-through result', async () => {
+  it('should reject non-object success payloads as response contract errors', async () => {
     const { request, mocks } = await setupRequestModule();
     mocks.requestMock.mockResolvedValueOnce({
       data: 'raw-text-success',
       header: {}
     });
 
-    const payload = await request<string>({
+    await expect(request<string>({
       url: '/monitor/cache',
       method: 'GET'
+    })).rejects.toThrow('响应体必须是对象');
+  });
+
+  it('should reject response payloads without code or pagination total', async () => {
+    const { request, mocks } = await setupRequestModule();
+
+    mocks.requestMock.mockResolvedValueOnce({
+      data: {
+        data: {
+          ok: true
+        }
+      },
+      header: {}
     });
 
-    expect(payload).toBe('raw-text-success');
+    await expect(request({
+      url: '/monitor/cache',
+      method: 'GET'
+    })).rejects.toThrow('缺少状态码 code');
+
+    mocks.requestMock.mockResolvedValueOnce({
+      data: {
+        code: 200,
+        rows: []
+      },
+      header: {}
+    });
+
+    await expect(request({
+      url: '/system/user/list',
+      method: 'GET'
+    })).rejects.toThrow('分页响应 total 必须是有限数字');
   });
 
   it('should map non-numeric response code to AppError', async () => {
@@ -840,18 +869,26 @@ describe('request', () => {
     ).rejects.toBeInstanceOf(AppError);
   });
 
-  it('uploadFile should handle empty string response payload as successful default object', async () => {
+  it('uploadFile should reject empty or invalid json response payloads', async () => {
     const { uploadFile, mocks } = await setupRequestModule();
     mocks.uploadFileMock.mockResolvedValue({
       data: '',
       header: {}
     });
 
-    const payload = await uploadFile<Record<string, unknown>>({
+    await expect(uploadFile<Record<string, unknown>>({
       url: '/system/user/profile/avatar',
       filePath: '/tmp/avatar.png'
+    })).rejects.toThrow('上传响应契约错误：响应体不能为空');
+
+    mocks.uploadFileMock.mockResolvedValueOnce({
+      data: 'not-json',
+      header: {}
     });
 
-    expect(payload).toEqual({});
+    await expect(uploadFile<Record<string, unknown>>({
+      url: '/system/user/profile/avatar',
+      filePath: '/tmp/avatar.png'
+    })).rejects.toThrow('上传响应契约错误：响应体必须是合法 JSON');
   });
 });

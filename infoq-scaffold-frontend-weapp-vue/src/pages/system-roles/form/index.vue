@@ -60,13 +60,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { addRole, getRole, updateRole, getDicts, toDictOptions, type RoleForm, type DictOption } from '@/api';
-import { ensureAuthenticated, ensurePermission } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
+import {
+  addRole,
+  assertObjectData,
+  type DictOption,
+  getDicts,
+  getRole,
+  type RoleForm,
+  toDictOptions,
+  updateRole
+} from '@/api';
+import {ensureAuthenticated, ensurePermission} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const roleId = ref('');
@@ -92,7 +101,7 @@ const loadData = async () => {
 
     if (roleId.value) {
       const response = await getRole(roleId.value);
-      Object.assign(form, response.data || {});
+      Object.assign(form, assertObjectData(response.data, '角色详情响应 data'));
     }
   } catch (error) {
     await handlePageError(error, '角色信息加载失败');

@@ -41,7 +41,7 @@ export default function AuthUserPage() {
     try {
       const response = await allocatedUserList(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -237,13 +237,13 @@ export default function AuthUserPage() {
 
       <SelectUser
         open={selectOpen}
-      roleId={roleId}
-      onClose={() => setSelectOpen(false)}
-      onOk={() => {
-        setSelectOpen(false);
-        loadList(query);
-      }}
-    />
+        roleId={roleId}
+        onClose={() => setSelectOpen(false)}
+        onOk={() => {
+          setSelectOpen(false);
+          loadList(query);
+        }}
+      />
     </Space>
   );
 }

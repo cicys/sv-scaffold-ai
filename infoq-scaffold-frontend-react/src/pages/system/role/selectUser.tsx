@@ -42,7 +42,7 @@ export default function SelectUser({ roleId, open, onClose, onOk }: SelectUserPr
     try {
       const response = await unallocatedUserList(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -178,9 +178,7 @@ export default function SelectUser({ roleId, open, onClose, onOk }: SelectUserPr
         onRow={(record) => ({
           onClick: () => {
             setSelectedIds((current) =>
-              current.includes(record.userId)
-                ? current.filter((item) => item !== record.userId)
-                : [...current, record.userId]
+              current.includes(record.userId) ? current.filter((item) => item !== record.userId) : [...current, record.userId]
             );
           }
         })}

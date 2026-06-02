@@ -54,7 +54,7 @@ export default function ClientPage() {
     try {
       const response = await listClient(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -263,13 +263,22 @@ export default function ClientPage() {
             <Button className="btn-plain-primary" icon={<PlusOutlined />} onClick={handleAdd}>
               新增
             </Button>
-            <Button className="btn-plain-success" icon={<EditOutlined />} onClick={() => handleEdit(selectedIds[0])} disabled={selectedIds.length !== 1}>
+            <Button
+              className="btn-plain-success"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(selectedIds[0])}
+              disabled={selectedIds.length !== 1}
+            >
               修改
             </Button>
             <Button className="btn-plain-danger" icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0}>
               删除
             </Button>
-            <Button className="btn-plain-warning" icon={<DownloadOutlined />} onClick={() => download('/system/client/export', { ...query }, `client_${Date.now()}.xlsx`)}>
+            <Button
+              className="btn-plain-warning"
+              icon={<DownloadOutlined />}
+              onClick={() => download('/system/client/export', { ...query }, `client_${Date.now()}.xlsx`)}
+            >
               导出
             </Button>
           </Space>

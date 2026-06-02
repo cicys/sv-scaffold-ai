@@ -6,15 +6,16 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 COMPOSE_FILE="${REPO_ROOT}/script/docker/docker-compose.yml"
 REDIS_CONF_SOURCE="${REPO_ROOT}/script/docker/redis/conf/redis.conf"
 SERVER_CONFIG_TEMPLATE="${REPO_ROOT}/script/docker/server/application-prod.yml"
-SQL_INIT_FILE="${REPO_ROOT}/sql/infoq_scaffold_2.0.0.sql"
-SQL_UPDATE_20260425_FILE="${REPO_ROOT}/sql/infoq_scaffold_update_20260425.sql"
-SQL_UPDATE_20260429_FILE="${REPO_ROOT}/sql/infoq_scaffold_update_20260429.sql"
-SQL_UPDATE_20260526_FILE="${REPO_ROOT}/sql/infoq_scaffold_update_20260526.sql"
+IP2REGION_V6_SOURCE="${REPO_ROOT}/script/docker/server/ip2region/ip2region_v6.xdb"
+SQL_DIR="${REPO_ROOT}/sql"
+SQL_INIT_REL="sql/infoq_scaffold_2.0.0.sql"
+SQL_INIT_FILE="${REPO_ROOT}/${SQL_INIT_REL}"
 BACKEND_DIR="${REPO_ROOT}/infoq-scaffold-backend"
 BACKEND_SERVICES=(mysql redis minio infoq-admin)
 DEFAULT_DEPLOY_ROOT="/infoq"
 DEPLOY_ROOT=""
 COMPOSE_CMD=()
+DEPLOY_ID="${DEPLOY_ID:-}"
 
 usage() {
   cat <<'EOF'
@@ -62,7 +63,7 @@ resolve_compose_command() {
 
 compose() {
   resolve_compose_command
-  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" "$@"
+  INFOQ_DEPLOY_ROOT="${DEPLOY_ROOT}" DEPLOY_ID="${DEPLOY_ID:-}" "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" "$@"
 }
 
 resolve_deploy_root() {
@@ -85,6 +86,7 @@ prepare_dirs() {
     "${DEPLOY_ROOT}/server/config"
     "${DEPLOY_ROOT}/server/logs"
     "${DEPLOY_ROOT}/server/temp"
+    "${DEPLOY_ROOT}/server/ip2region"
   )
 
   for dir in "${dirs[@]}"; do
@@ -93,6 +95,18 @@ prepare_dirs() {
   done
 
   cp -f "${REDIS_CONF_SOURCE}" "${DEPLOY_ROOT}/redis/conf/redis.conf"
+
+  if [[ ! -f "${IP2REGION_V6_SOURCE}" ]]; then
+    echo "[backend] 缺少 IPv6 地址库源文件: ${IP2REGION_V6_SOURCE}" >&2
+    exit 1
+  fi
+  if [[ ! -f "${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb" ]]; then
+    cp -f "${IP2REGION_V6_SOURCE}" "${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb"
+    chmod 644 "${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb" || true
+    echo "[backend] 已同步 ${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb"
+  else
+    echo "[backend] 保留现有 ${DEPLOY_ROOT}/server/ip2region/ip2region_v6.xdb"
+  fi
 
   if [[ ! -f "${DEPLOY_ROOT}/server/config/application-prod.yml" ]]; then
     cp -f "${SERVER_CONFIG_TEMPLATE}" "${DEPLOY_ROOT}/server/config/application-prod.yml"
@@ -103,6 +117,60 @@ prepare_dirs() {
 
   echo "[backend] 使用部署根目录: ${DEPLOY_ROOT}"
   echo "[backend] 目录和配置已同步完成"
+}
+
+backend_revision() {
+  local revision
+  revision="$(sed -n 's/.*<revision>\(.*\)<\/revision>.*/\1/p' "${BACKEND_DIR}/pom.xml" | head -n 1)"
+  if [[ -z "${revision}" ]]; then
+    revision="unknown"
+  fi
+  printf '%s' "${revision}"
+}
+
+generate_deploy_id() {
+  printf '%s-%s' "$(backend_revision)" "$(date +%Y%m%d%H%M%S)"
+}
+
+validate_deploy_id() {
+  if [[ -z "${DEPLOY_ID//[[:space:]]/}" ]]; then
+    echo "[backend] DEPLOY_ID 不能为空。生产同一批 backend 节点必须使用同一个 DEPLOY_ID" >&2
+    exit 1
+  fi
+}
+
+persist_deploy_id() {
+  local deploy_id_file="${DEPLOY_ROOT}/server/config/deploy-id"
+  printf '%s\n' "${DEPLOY_ID}" > "${deploy_id_file}"
+  echo "[backend] 当前部署批次 DEPLOY_ID=${DEPLOY_ID}"
+}
+
+load_existing_deploy_id() {
+  local deploy_id_file="${DEPLOY_ROOT}/server/config/deploy-id"
+  if [[ ! -f "${deploy_id_file}" ]]; then
+    echo "[backend] 缺少 ${deploy_id_file}，请先执行 deploy 或显式设置 DEPLOY_ID" >&2
+    exit 1
+  fi
+  IFS= read -r DEPLOY_ID < "${deploy_id_file}"
+  validate_deploy_id
+}
+
+prepare_new_deploy_id() {
+  if [[ -z "${DEPLOY_ID//[[:space:]]/}" ]]; then
+    DEPLOY_ID="$(generate_deploy_id)"
+  fi
+  validate_deploy_id
+  persist_deploy_id
+}
+
+prepare_existing_deploy_id() {
+  if [[ -n "${DEPLOY_ID//[[:space:]]/}" ]]; then
+    validate_deploy_id
+    echo "[backend] 使用外部 DEPLOY_ID=${DEPLOY_ID}"
+    return
+  fi
+  load_existing_deploy_id
+  echo "[backend] 复用部署批次 DEPLOY_ID=${DEPLOY_ID}"
 }
 
 package_backend() {
@@ -166,6 +234,24 @@ mysql_exec_infoq_file() {
   compose exec -T mysql mysql -uroot -proot infoq < "${sql_file}"
 }
 
+discover_sql_update_files() {
+  local files=()
+  local file
+
+  shopt -s nullglob
+  for file in "${SQL_DIR}"/infoq_scaffold_update_*.sql; do
+    files+=("${file}")
+  done
+  shopt -u nullglob
+
+  if (( ${#files[@]} == 0 )); then
+    echo "[backend] 未发现 SQL 增量脚本: ${SQL_DIR}/infoq_scaffold_update_*.sql" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "${files[@]}"
+}
+
 table_exists() {
   local table_name="$1"
   mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name)=LOWER('${table_name}');"
@@ -177,9 +263,8 @@ column_count() {
   mysql_query "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='infoq' AND LOWER(table_name)=LOWER('${table_name}') AND column_name IN (${column_list});"
 }
 
-menu_exists() {
-  local menu_id="$1"
-  mysql_query "SELECT COUNT(*) FROM infoq.sys_menu WHERE menu_id=${menu_id};"
+menu_count() {
+  mysql_query "SELECT COUNT(*) FROM infoq.sys_menu WHERE menu_id IN (2026042910,2026042911,2026042920,2026042921);"
 }
 
 ensure_base_schema() {
@@ -201,15 +286,15 @@ ensure_scheduler_schema() {
     return
   fi
 
-  mysql_exec_infoq_file "${SQL_UPDATE_20260425_FILE}" "定时任务与 Quartz 表"
+  mysql_exec_infoq_file "${SQL_DIR}/infoq_scaffold_update_20260425.sql" "定时任务与 Quartz 表"
 }
 
 ensure_monitor_menu_data() {
-  if [[ "$(menu_exists 2026042910)" == "1" ]]; then
+  if [[ "$(menu_count)" == "4" ]]; then
     return
   fi
 
-  mysql_exec_infoq_file "${SQL_UPDATE_20260429_FILE}" "监控菜单数据"
+  mysql_exec_infoq_file "${SQL_DIR}/infoq_scaffold_update_20260429.sql" "监控菜单数据"
 }
 
 ensure_config_metadata_columns() {
@@ -227,19 +312,84 @@ ensure_config_metadata_columns() {
     exit 1
   fi
 
-  mysql_exec_infoq_file "${SQL_UPDATE_20260526_FILE}" "配置元数据列"
+  mysql_exec_infoq_file "${SQL_DIR}/infoq_scaffold_update_20260526.sql" "配置元数据列"
+}
+
+oauth_schema_ready() {
+  local oauth_tables_count
+  local oauth_dict_count
+  local oauth_client_count
+
+  oauth_tables_count="$(mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name) IN ('sys_oauth_provider','sys_oauth_identity');")"
+  oauth_dict_count="$(mysql_query "SELECT COUNT(*) FROM infoq.sys_dict_data WHERE dict_type='sys_grant_type' AND dict_value='oauth';")"
+  oauth_client_count="$(mysql_query "SELECT COUNT(*) FROM infoq.sys_client WHERE client_id='e5cd7e4891bf95d1d19206ce24a7b32e' AND FIND_IN_SET('oauth', REPLACE(COALESCE(grant_type, ''), ' ', '')) > 0;")"
+
+  [[ "${oauth_tables_count}" == "2" && "${oauth_dict_count}" == "1" && "${oauth_client_count}" == "1" ]]
+}
+
+ensure_oauth_schema() {
+  if oauth_schema_ready; then
+    return
+  fi
+
+  mysql_exec_infoq_file "${SQL_DIR}/infoq_scaffold_update_20260529.sql" "OAuth 登录表与授权类型"
+
+  if ! oauth_schema_ready; then
+    echo "[backend] OAuth 增量 SQL 校验失败，请检查 sys_oauth_provider、sys_oauth_identity、sys_grant_type=oauth 与 sys_client.grant_type" >&2
+    exit 1
+  fi
+}
+
+ensure_sql_update_applied() {
+  local sql_file="$1"
+
+  case "${sql_file##*/}" in
+    infoq_scaffold_update_20260425.sql)
+      ensure_scheduler_schema
+      ;;
+    infoq_scaffold_update_20260429.sql)
+      ensure_monitor_menu_data
+      ;;
+    infoq_scaffold_update_20260526.sql)
+      ensure_config_metadata_columns
+      ;;
+    infoq_scaffold_update_20260529.sql)
+      ensure_oauth_schema
+      ;;
+    *)
+      echo "[backend] 发现未接入校验逻辑的 SQL 增量脚本: ${sql_file##${REPO_ROOT}/}" >&2
+      echo "[backend] 请先在 script/bin/infoq.sh 增加幂等执行和执行后校验规则，避免部分迁移状态" >&2
+      exit 1
+      ;;
+  esac
+}
+
+ensure_sql_updates() {
+  local sql_file
+
+  while IFS= read -r sql_file; do
+    ensure_sql_update_applied "${sql_file}"
+  done < <(discover_sql_update_files)
 }
 
 validate_database_initialized() {
   local required_tables_count
+  local monitor_menu_count
   local metadata_columns_count
+  local oauth_tables_count
+  local oauth_dict_count
+  local oauth_client_count
   local metadata_columns="'value_type','default_value','group_key','display_order','options_json','ui_props_json'"
 
-  required_tables_count="$(mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name) IN ('sys_oss_config','sys_job','qrtz_locks');")"
+  required_tables_count="$(mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name) IN ('sys_oss_config','sys_job','qrtz_locks','sys_oauth_provider','sys_oauth_identity');")"
+  monitor_menu_count="$(menu_count)"
   metadata_columns_count="$(column_count sys_config "${metadata_columns}")"
+  oauth_tables_count="$(mysql_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infoq' AND LOWER(table_name) IN ('sys_oauth_provider','sys_oauth_identity');")"
+  oauth_dict_count="$(mysql_query "SELECT COUNT(*) FROM infoq.sys_dict_data WHERE dict_type='sys_grant_type' AND dict_value='oauth';")"
+  oauth_client_count="$(mysql_query "SELECT COUNT(*) FROM infoq.sys_client WHERE client_id='e5cd7e4891bf95d1d19206ce24a7b32e' AND FIND_IN_SET('oauth', REPLACE(COALESCE(grant_type, ''), ' ', '')) > 0;")"
 
-  if [[ "${required_tables_count}" != "3" || "${metadata_columns_count}" != "6" ]]; then
-    echo "[backend] 数据库初始化校验失败: required_tables=${required_tables_count}, sys_config_metadata_columns=${metadata_columns_count}" >&2
+  if [[ "${required_tables_count}" != "5" || "${monitor_menu_count}" != "4" || "${metadata_columns_count}" != "6" || "${oauth_tables_count}" != "2" || "${oauth_dict_count}" != "1" || "${oauth_client_count}" != "1" ]]; then
+    echo "[backend] 数据库初始化校验失败: required_tables=${required_tables_count}, monitor_menus=${monitor_menu_count}, sys_config_metadata_columns=${metadata_columns_count}, oauth_tables=${oauth_tables_count}, oauth_dict=${oauth_dict_count}, oauth_client_grant=${oauth_client_count}" >&2
     exit 1
   fi
 }
@@ -252,9 +402,7 @@ ensure_database_initialized() {
 
   compose exec -T mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS infoq CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
   ensure_base_schema
-  ensure_scheduler_schema
-  ensure_monitor_menu_data
-  ensure_config_metadata_columns
+  ensure_sql_updates
   validate_database_initialized
   echo "[backend] 数据库初始化和增量 SQL 校验完成"
 }
@@ -269,6 +417,7 @@ start_dependencies() {
 deploy_backend() {
   resolve_compose_command
   prepare_dirs
+  prepare_new_deploy_id
   package_backend
   start_dependencies
   compose up -d --build infoq-admin
@@ -278,6 +427,7 @@ deploy_backend() {
 start_backend() {
   resolve_compose_command
   prepare_dirs
+  prepare_existing_deploy_id
   start_dependencies
   compose start infoq-admin
   echo "[backend] 服务已启动，访问端口: 9090"
@@ -290,6 +440,7 @@ stop_backend() {
 
 restart_backend() {
   resolve_compose_command
+  prepare_existing_deploy_id
   compose restart infoq-admin
 }
 

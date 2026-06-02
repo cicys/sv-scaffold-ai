@@ -217,6 +217,34 @@ sse:
   enabled: true
   path: /resource/sse
 
+--- # OAuth 登录
+oauth:
+  enabled: false
+  state-ttl: 10m
+  ticket-ttl: 2m
+  auto-register-enabled: true
+  require-invite-when-invite-register-enabled: true
+  frontend-callback-path: /oauth/callback
+  providers:
+    github:
+      client-id: ${OAUTH_GITHUB_CLIENT_ID:}
+      client-secret: ${OAUTH_GITHUB_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_GITHUB_REDIRECT_URI:}
+      scopes:
+        - read:user
+        - user:email
+      pkce-enabled: true
+    linuxdo:
+      client-id: ${OAUTH_LINUXDO_CLIENT_ID:}
+      client-secret: ${OAUTH_LINUXDO_CLIENT_SECRET:}
+      redirect-uri: ${OAUTH_LINUXDO_REDIRECT_URI:}
+      authorize-uri: https://connect.linux.do/oauth2/authorize
+      token-uri: https://connect.linux.do/oauth2/token
+      user-info-uri: https://connect.linux.do/api/user
+      scopes:
+        - user
+      pkce-enabled: true
+
 --- # websocket
 websocket:
   # 如果关闭 需要和前端开关一起关闭
@@ -242,7 +270,7 @@ infoq:
       marker-enabled: false
       # 启动期 reconcile 执行完成后的 Redis 部署级 marker key 前缀
       marker-prefix: infoq:quartz:bootstrap:applied
-      # 当前部署批次唯一标识；推荐格式为 版本号-日期-序号，例如 2.1.0-20260427-001
+      # 当前部署批次唯一标识；推荐格式为 版本号-日期-序号，例如 2.1.5-20260602120000
       # 生产环境开启受控 reconcile 时必须给同一批部署节点注入同一个 deploy-id
       deploy-id:
       # 启动期 reconcile 使用的全局分布式锁 key 前缀

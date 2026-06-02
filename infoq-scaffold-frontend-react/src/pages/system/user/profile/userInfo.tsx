@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Button, Form, Input, Radio, Space } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserProfile, updateUserProfile } from '@/api/system/user';
+import { assertUserProfileData } from '@/api/system/user/guards';
 import type { UserVO } from '@/api/system/user/types';
 import { useTagsViewStore } from '@/store/modules/tagsView';
 import modal from '@/utils/modal';
@@ -24,7 +25,7 @@ export default function UserInfo({ user, onUpdated }: UserInfoProps) {
     }
     const loadProfile = async () => {
       const response = await getUserProfile();
-      form.setFieldsValue(response.data?.user || {});
+      form.setFieldsValue(assertUserProfileData(response.data).user);
     };
     loadProfile();
   }, [form, user]);

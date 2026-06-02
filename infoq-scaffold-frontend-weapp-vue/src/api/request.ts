@@ -1,9 +1,9 @@
-import { getToken, removeToken } from '@/utils/auth';
-import { decryptBase64, decryptWithAes, encryptBase64, encryptWithAes, generateAesKey } from '@/utils/crypto';
-import { mobileEnv } from '@/utils/env';
-import { AppError, AuthError, errorCode } from '@/utils/errors';
-import { tansParams } from '@/utils/helpers';
-import { decrypt, encrypt } from '@/utils/rsa';
+import {getToken, removeToken} from '@/utils/auth';
+import {decryptBase64, decryptWithAes, encryptBase64, encryptWithAes, generateAesKey} from '@/utils/crypto';
+import {mobileEnv} from '@/utils/env';
+import {AppError, AuthError, errorCode} from '@/utils/errors';
+import {tansParams} from '@/utils/helpers';
+import {decrypt, encrypt} from '@/utils/rsa';
 
 const encryptHeader = 'encrypt-key';
 const runtimeClientKeyHeader = 'x-client-key';
@@ -137,20 +137,41 @@ const decryptPayloadIfNeeded = (payload: unknown, headers?: Record<string, unkno
   return JSON.parse(decrypted);
 };
 
-const toObjectRecord = (value: unknown): Record<string, unknown> =>
-  (value && typeof value === 'object') ? (value as Record<string, unknown>) : {};
+const toObjectRecord = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== 'object') {
+    throw new AppError('响应契约错误：响应体必须是对象。', 'api');
+  }
+  return value as Record<string, unknown>;
+};
 
 const resolveStatusCode = (value: unknown) => {
-  if (value === undefined || value === null || value === '') {
-    return 200;
+  if (value === undefined) {
+    throw new AppError('响应契约错误：缺少状态码 code。', 'api');
   }
-  const numericCode = Number(value);
-  return Number.isFinite(numericCode) ? numericCode : -1;
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new AppError('响应契约错误：状态码 code 必须是有限数字。', 'api');
+  }
+  return value;
+};
+
+const validatePaginationPayload = (payloadRecord: Record<string, unknown>) => {
+  const hasRows = Object.prototype.hasOwnProperty.call(payloadRecord, 'rows');
+  const hasTotal = Object.prototype.hasOwnProperty.call(payloadRecord, 'total');
+  if (!hasRows && !hasTotal) {
+    return;
+  }
+  if (!Array.isArray(payloadRecord.rows)) {
+    throw new AppError('响应契约错误：分页响应 rows 必须是数组。', 'api');
+  }
+  if (typeof payloadRecord.total !== 'number' || !Number.isFinite(payloadRecord.total)) {
+    throw new AppError('响应契约错误：分页响应 total 必须是有限数字。', 'api');
+  }
 };
 
 const ensureSuccess = <T>(payload: unknown): T => {
   const payloadRecord = toObjectRecord(payload);
   const code = resolveStatusCode(payloadRecord.code);
+  validatePaginationPayload(payloadRecord);
   const message = typeof payloadRecord.msg === 'string' ? payloadRecord.msg : '';
   if (code === 401) {
     removeToken();
@@ -160,6 +181,17 @@ const ensureSuccess = <T>(payload: unknown): T => {
     throw new AppError(errorCode[String(code)] || message || errorCode.default, 'api', code);
   }
   return payload as T;
+};
+
+const parseUploadPayload = (rawData: unknown) => {
+  if (typeof rawData !== 'string' || !rawData.trim()) {
+    throw new AppError('上传响应契约错误：响应体不能为空。', 'api');
+  }
+  try {
+    return JSON.parse(rawData) as unknown;
+  } catch {
+    throw new AppError('上传响应契约错误：响应体必须是合法 JSON。', 'api');
+  }
 };
 
 const messageKeys = ['errMsg', 'message', 'msg'] as const;
@@ -337,7 +369,7 @@ export const uploadFile = async <T>(options: UploadOptions) => {
       formData: options.formData || {}
     });
 
-    const rawPayload = JSON.parse(response.data || '{}');
+    const rawPayload = parseUploadPayload(response.data);
     const payload = decryptPayloadIfNeeded(rawPayload, (response as unknown as { header?: Record<string, unknown>; headers?: Record<string, unknown> }).header
       || (response as unknown as { headers?: Record<string, unknown> }).headers);
 

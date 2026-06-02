@@ -16,11 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.PropertyAccessor;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +24,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 @Tag("dev")
 class PlusDataPermissionHandlerTest {
@@ -223,29 +218,25 @@ class PlusDataPermissionHandlerTest {
     }
 
     @Test
-    @DisplayName("NullSafePropertyAccessor: should delegate canWrite/write to original accessor")
-    void nullSafePropertyAccessorShouldDelegateWriteOperations() throws Exception {
-        Class<?> accessorClass = Class.forName(
-            "cc.infoq.common.mybatis.handler.PlusDataPermissionHandler$NullSafePropertyAccessor");
-        Constructor<?> constructor = accessorClass.getDeclaredConstructor(PropertyAccessor.class, Object.class);
-        constructor.setAccessible(true);
-        Method canWrite = accessorClass.getDeclaredMethod(
-            "canWrite", EvaluationContext.class, Object.class, String.class);
-        Method write = accessorClass.getDeclaredMethod(
-            "write", EvaluationContext.class, Object.class, String.class, Object.class);
+    @DisplayName("getSqlSegment: should throw when required dept variable is missing")
+    void getSqlSegmentShouldThrowWhenRequiredDeptVariableMissing() throws Exception {
+        DataPermission dataPermission = getDataPermissionAnnotation("query");
+        LoginUser loginUser = loginUser("3", Set.of());
+        loginUser.setDeptId(null);
+        PlusDataPermissionHandler handler = new PlusDataPermissionHandler();
+        Map<String, Object> context = new HashMap<>();
+        context.put("user", loginUser);
 
-        PropertyAccessor delegate = mock(PropertyAccessor.class);
-        EvaluationContext context = mock(EvaluationContext.class);
-        Object target = new Object();
-        when(delegate.canWrite(eq(context), eq(target), eq("deptId"))).thenReturn(true);
+        try (MockedStatic<DataPermissionHelper> helper = mockStatic(DataPermissionHelper.class);
+             MockedStatic<LoginUserContext> loginHelper = mockStatic(LoginUserContext.class)) {
+            helper.when(DataPermissionHelper::getPermission).thenReturn(dataPermission);
+            helper.when(() -> DataPermissionHelper.getVariable("user", LoginUser.class)).thenReturn(loginUser);
+            helper.when(DataPermissionHelper::getContext).thenReturn(context);
+            loginHelper.when(() -> LoginUserContext.isSuperAdmin(loginUser.getUserId())).thenReturn(false);
 
-        Object accessor = constructor.newInstance(delegate, "-1");
-        boolean writable = (boolean) canWrite.invoke(accessor, context, target, "deptId");
-        write.invoke(accessor, context, target, "deptId", 100L);
-
-        assertTrue(writable);
-        verify(delegate).canWrite(context, target, "deptId");
-        verify(delegate).write(context, target, "deptId", 100L);
+            ServiceException exception = assertThrows(ServiceException.class, () -> handler.getSqlSegment(null, true));
+            assertTrue(exception.getMessage().contains("用户部门ID缺失"));
+        }
     }
 
     private static LoginUser loginUser(String dataScope, Set<String> menuPermissions) {

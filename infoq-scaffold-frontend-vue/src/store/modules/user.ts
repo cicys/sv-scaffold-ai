@@ -1,11 +1,18 @@
 import { to } from 'await-to-js';
 import { getToken, removeToken, setToken } from '@/utils/auth';
-import { login as loginApi, logout as logoutApi, getInfo as getUserInfo } from '@/api/login';
+import { exchangeOAuthTicket, getInfo as getUserInfo, login as loginApi, logout as logoutApi } from '@/api/login';
 import { LoginData } from '@/api/types';
 import defAva from '@/assets/images/profile.jpg';
 import { closeSSE } from '@/utils/sse';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+
+const ensureStringArray = (value: unknown, label: string) => {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error(`${label} 必须是字符串数组`);
+  }
+  return value;
+};
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken());
@@ -32,6 +39,17 @@ export const useUserStore = defineStore('user', () => {
     return Promise.reject(err);
   };
 
+  const loginByOAuthTicket = async (loginTicket: string): Promise<void> => {
+    const [err, res] = await to(exchangeOAuthTicket({ loginTicket }));
+    if (res) {
+      const data = res.data;
+      setToken(data.access_token);
+      token.value = data.access_token;
+      return Promise.resolve();
+    }
+    return Promise.reject(err);
+  };
+
   // 获取用户信息
   const getInfo = async (): Promise<void> => {
     const [err, res] = await to(getUserInfo());
@@ -39,14 +57,10 @@ export const useUserStore = defineStore('user', () => {
       const data = res.data;
       const user = data.user;
       const profile = user.avatar == '' || user.avatar == null ? defAva : user.avatar;
-
-      if (data.roles && data.roles.length > 0) {
-        // 验证返回的roles是否是一个非空数组
-        roles.value = data.roles;
-        permissions.value = data.permissions;
-      } else {
-        roles.value = ['ROLE_DEFAULT'];
-      }
+      const nextRoles = ensureStringArray(data.roles, '用户角色');
+      const nextPermissions = ensureStringArray(data.permissions, '用户权限');
+      roles.value = nextRoles;
+      permissions.value = nextPermissions;
       name.value = user.userName;
       nickname.value = user.nickName;
       avatar.value = profile;
@@ -56,15 +70,26 @@ export const useUserStore = defineStore('user', () => {
     return Promise.reject(err);
   };
 
+  const clearLocalSession = () => {
+    token.value = '';
+    roles.value = [];
+    permissions.value = [];
+    name.value = '';
+    nickname.value = '';
+    avatar.value = '';
+    userId.value = '';
+    removeToken();
+  };
+
   // 注销
   const logout = async (): Promise<void> => {
     // 先关闭前端SSE连接，防止旧连接在退出后继续重连
     closeSSE();
-    await logoutApi();
-    token.value = '';
-    roles.value = [];
-    permissions.value = [];
-    removeToken();
+    try {
+      await logoutApi();
+    } finally {
+      clearLocalSession();
+    }
   };
 
   const setAvatar = (value: string) => {
@@ -80,6 +105,7 @@ export const useUserStore = defineStore('user', () => {
     roles,
     permissions,
     login,
+    loginByOAuthTicket,
     getInfo,
     logout,
     setAvatar

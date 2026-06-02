@@ -53,7 +53,7 @@ export default function OssConfigPage() {
     try {
       const response = await listOssConfig(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -282,10 +282,21 @@ export default function OssConfigPage() {
             >
               新增
             </Button>
-            <Button icon={<EditOutlined />} style={{ color: '#67c23a', borderColor: '#b7eb8f' }} onClick={() => handleEdit(selectedIds[0])} disabled={selectedIds.length !== 1}>
+            <Button
+              icon={<EditOutlined />}
+              style={{ color: '#67c23a', borderColor: '#b7eb8f' }}
+              onClick={() => handleEdit(selectedIds[0])}
+              disabled={selectedIds.length !== 1}
+            >
               修改
             </Button>
-            <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0} style={{ borderColor: '#ffccc7' }}>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete()}
+              disabled={selectedIds.length === 0}
+              style={{ borderColor: '#ffccc7' }}
+            >
               删除
             </Button>
           </Space>

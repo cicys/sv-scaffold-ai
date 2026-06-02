@@ -1,23 +1,23 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
   changeUserStatus,
   delUser,
+  type DictOption,
   getDictLabel,
   getDicts,
   listUser,
   toDictOptions,
-  type DictOption,
   type UserQuery,
   type UserVO
 } from '@/api';
-import { useState } from 'react';
-import { AtInput, AtButton } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { navigate, routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, PaginationBar, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {navigate, routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): UserQuery => ({
@@ -54,8 +54,8 @@ export default function SystemUsersPage() {
         canList ? listUser(nextQuery) : Promise.resolve({ rows: [] as UserVO[], total: 0 })
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '用户列表加载失败');
     }
@@ -157,22 +157,22 @@ export default function SystemUsersPage() {
             title={item.nickName || item.userName || '未知用户'}
             statusColor={item.status === '0' ? '#52c41a' : '#ff4d4f'}
             extra={
-              <StatusTag 
-                label={getDictLabel(statusOptions, item.status) || '未知'} 
-                type={item.status === '0' ? 'success' : 'error'} 
+              <StatusTag
+                label={getDictLabel(statusOptions, item.status) || '未知'}
+                type={item.status === '0' ? 'success' : 'error'}
               />
             }
             actions={[
               ...(canEdit ? [{ onClick: () => void openEdit(String(item.userId)), title: '编辑' }] : []),
-              ...(canEdit && !item.admin ? [{ 
-                onClick: () => void handleToggleStatus(item), 
+              ...(canEdit && !item.admin ? [{
+                onClick: () => void handleToggleStatus(item),
                 title: item.status === '0' ? '停用' : '启用',
                 danger: item.status === '0'
               }] : []),
-              ...(canRemove && !item.admin ? [{ 
-                onClick: () => void handleDelete(String(item.userId)), 
+              ...(canRemove && !item.admin ? [{
+                onClick: () => void handleDelete(String(item.userId)),
                 title: '删除',
-                danger: true 
+                danger: true
               }] : [])
             ]}
           >
@@ -202,7 +202,7 @@ export default function SystemUsersPage() {
       </View>
 
       {canAdd && <FabButton onClick={() => openCreate()} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

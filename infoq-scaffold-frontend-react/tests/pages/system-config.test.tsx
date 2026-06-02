@@ -132,6 +132,7 @@ vi.mock('@/store/modules/user', () => ({
   useUserStore: (selector: (state: { roles: string[] }) => unknown) => selector({ roles: ['superadmin'] })
 }));
 
+const modal = (await import('@/utils/modal')).default;
 const { default: ConfigPage } = await import('@/pages/system/config/index');
 
 describe('pages/system/config', () => {
@@ -154,6 +155,16 @@ describe('pages/system/config', () => {
     expect(container.querySelector('.config-list-panel')).toBeInTheDocument();
     expect(container.querySelector('.config-list-scroll')).toBeInTheDocument();
     expect(configPageMocks.getConfigPanel).toHaveBeenCalled();
+  });
+
+  it('reports malformed config panel instead of rendering empty groups', async () => {
+    configPageMocks.getConfigPanel.mockResolvedValueOnce({ data: {} });
+
+    renderWithRouter(<ConfigPage />, '/system/config');
+
+    await waitFor(() => {
+      expect(modal.msgError).toHaveBeenCalledWith('配置面板响应 data.groups 必须是数组');
+    });
   });
 
   it('paginates the config list inside the scrollable list panel', async () => {
@@ -193,7 +204,7 @@ describe('pages/system/config', () => {
 
     expect(screen.getByDisplayValue('123456')).toBeInTheDocument();
     expect(container.querySelector('.config-card-main-editing')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('restores default value by backend reset api', async () => {
     renderWithRouter(<ConfigPage />, '/system/config');

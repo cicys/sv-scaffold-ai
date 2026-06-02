@@ -14,6 +14,8 @@ export default {
     rememberPassword: 'Remember me',
     switchRegisterPage: 'Sign up now',
     switchForgotPasswordPage: 'Forgot password',
+    oauthDivider: 'Third-party login',
+    oauthProvider: 'Continue with {provider}',
     rule: {
       username: {
         required: 'Please enter your account'
@@ -25,6 +27,13 @@ export default {
         required: 'Please enter a verification code'
       }
     }
+  },
+  oauthCallback: {
+    processing: 'Completing third-party login...',
+    failedTitle: 'Third-party login failed',
+    failed: 'Third-party login failed. Please sign in again',
+    missingTicket: 'Login credential is missing. Please sign in again',
+    backToLogin: 'Back to login'
   },
   // 注册页面国际化
   register: {

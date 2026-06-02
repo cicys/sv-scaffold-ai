@@ -5,7 +5,8 @@ import modal from '@/utils/modal';
 let ws: WebSocket | null = null;
 let heartBeatTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let activeUrl = '';
+let activeBaseUrl = '';
+let activeTargetUrl = '';
 
 const clearTimers = () => {
   if (heartBeatTimer) {
@@ -19,7 +20,7 @@ const clearTimers = () => {
 };
 
 const scheduleReconnect = () => {
-  if (!activeUrl) {
+  if (!activeBaseUrl) {
     return;
   }
   if (reconnectTimer) {
@@ -27,13 +28,20 @@ const scheduleReconnect = () => {
   }
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
-    initWebSocket(activeUrl);
+    initWebSocket(activeBaseUrl);
   }, 3000);
 };
 
 const closeSocket = () => {
   clearTimers();
-  ws?.close();
+  const socket = ws;
+  if (socket) {
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
+    socket.close();
+  }
   ws = null;
 };
 
@@ -43,15 +51,20 @@ export const initWebSocket = (url: string) => {
     return;
   }
 
-  activeUrl = url;
   const token = getToken();
   if (!token) {
     closeSocket();
     return;
   }
 
-  closeSocket();
   const targetUrl = `${url}?Authorization=Bearer ${token}&clientid=${import.meta.env.VITE_APP_CLIENT_ID}`;
+  if (activeTargetUrl === targetUrl && ws) {
+    return;
+  }
+
+  activeBaseUrl = url;
+  activeTargetUrl = targetUrl;
+  closeSocket();
   ws = new WebSocket(targetUrl);
 
   ws.onopen = () => {
@@ -82,11 +95,14 @@ export const initWebSocket = (url: string) => {
 
   ws.onclose = () => {
     clearTimers();
+    ws = null;
+    activeTargetUrl = '';
     scheduleReconnect();
   };
 };
 
 export const closeWebSocket = () => {
-  activeUrl = '';
+  activeBaseUrl = '';
+  activeTargetUrl = '';
   closeSocket();
 };

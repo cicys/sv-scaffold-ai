@@ -84,13 +84,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { asCaptchaImage, getCodeImg, getRememberedLogin, mobileEnv, setRememberedLogin } from '@/api';
+import {reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
+import {asCaptchaImage, getCodeImg, getRememberedLogin, mobileEnv, setRememberedLogin} from '@/api';
 import AppIcon from '@/components/AppIcon.vue';
-import { routes } from '@/utils/navigation';
-import { handlePageError } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {routes} from '@/utils/navigation';
+import {handlePageError} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const submitting = ref(false);
@@ -119,7 +119,6 @@ const loadCaptcha = async () => {
       codeUrl.value = '';
     }
   } catch (error) {
-    captchaEnabled.value = false;
     codeUrl.value = '';
     await handlePageError(error, '验证码获取失败。');
   }

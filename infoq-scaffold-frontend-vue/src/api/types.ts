@@ -1,5 +1,5 @@
 export interface ApiResult {
-  code?: number;
+  code: number;
   msg?: string;
 }
 
@@ -9,7 +9,7 @@ export interface ApiResponse<T> extends ApiResult {
 
 export interface TableResponse<T> extends ApiResult {
   rows: T[];
-  total?: number;
+  total: number;
 }
 
 /**
@@ -62,6 +62,17 @@ export interface LoginData {
  */
 export interface LoginResult {
   access_token: string;
+}
+
+export interface OAuthProviderOption {
+  providerCode: string;
+  providerName: string;
+}
+
+export interface OAuthTicketData {
+  loginTicket: string;
+  clientId?: string;
+  grantType?: 'oauth';
 }
 
 /**

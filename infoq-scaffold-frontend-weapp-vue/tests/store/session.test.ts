@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createPinia, setActivePinia } from 'pinia';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {createPinia, setActivePinia} from 'pinia';
+import {useSessionStore} from '../../src/store/session';
 
 const {
   mockGetInfo,
@@ -31,8 +32,6 @@ vi.mock('@/api', () => ({
   removeToken: mockRemoveToken,
   setToken: mockSetToken
 }));
-
-import { useSessionStore } from '../../src/store/session';
 
 describe('store/session', () => {
   beforeEach(() => {
@@ -101,7 +100,7 @@ describe('store/session', () => {
     expect(store.initialized).toBe(true);
   });
 
-  it('signIn should fallback to empty permissions when backend omits permissions', async () => {
+  it('signIn should reject when backend omits permissions', async () => {
     const store = useSessionStore();
     mockLogin.mockResolvedValue({ data: { access_token: 'token-4' } });
     mockGetInfo.mockResolvedValue({
@@ -111,11 +110,9 @@ describe('store/session', () => {
         permissions: undefined
       }
     });
-    mockNormalizePermissions.mockReturnValue([]);
+    await expect(store.signIn({ username: 'tester2', password: 'pwd2' })).rejects.toThrow('用户权限必须是字符串数组');
 
-    await store.signIn({ username: 'tester2', password: 'pwd2' });
-
-    expect(mockNormalizePermissions).toHaveBeenCalledWith([]);
+    expect(mockNormalizePermissions).not.toHaveBeenCalled();
     expect(store.permissions).toEqual([]);
   });
 
@@ -187,7 +184,7 @@ describe('store/session', () => {
     expect(store.initialized).toBe(true);
   });
 
-  it('loadSession(force=true) should normalize empty permissions to [] when backend omits permissions', async () => {
+  it('loadSession(force=true) should reject when backend omits permissions', async () => {
     const store = useSessionStore();
     mockGetToken.mockReturnValue('force-token-empty-permissions');
     mockGetInfo.mockResolvedValue({
@@ -197,14 +194,11 @@ describe('store/session', () => {
         permissions: undefined
       }
     });
-    mockNormalizePermissions.mockReturnValue([]);
+    await expect(store.loadSession(true)).rejects.toThrow('用户权限必须是字符串数组');
 
-    const result = await store.loadSession(true);
-
-    expect(mockNormalizePermissions).toHaveBeenCalledWith([]);
-    expect(result?.permissions).toEqual(undefined);
+    expect(mockNormalizePermissions).not.toHaveBeenCalled();
     expect(store.permissions).toEqual([]);
-    expect(store.initialized).toBe(true);
+    expect(store.initialized).toBe(false);
   });
 
   it('signOut should skip remote logout when token is missing', async () => {

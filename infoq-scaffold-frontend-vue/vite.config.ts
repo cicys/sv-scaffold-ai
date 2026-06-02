@@ -19,7 +19,80 @@ const vueEcosystemPackages = [
   '@vue/reactivity'
 ];
 
-const elementPlusPackages = ['element-plus', '@element-plus/hooks', '@element-plus/utils', '@element-plus/constants', '@element-plus/directives'];
+const elementPlusBasePackages = ['@element-plus/hooks', '@element-plus/utils', '@element-plus/constants', '@element-plus/directives'];
+const elementPlusFormPackages = [
+  'button',
+  'checkbox',
+  'checkbox-button',
+  'checkbox-group',
+  'color-picker',
+  'form',
+  'form-item',
+  'input',
+  'input-number',
+  'option',
+  'radio',
+  'radio-button',
+  'radio-group',
+  'select',
+  'switch',
+  'upload'
+];
+const elementPlusDataPackages = [
+  'avatar',
+  'badge',
+  'card',
+  'col',
+  'descriptions',
+  'descriptions-item',
+  'empty',
+  'image',
+  'link',
+  'pagination',
+  'popover',
+  'progress',
+  'row',
+  'scrollbar',
+  'table',
+  'table-column',
+  'tag',
+  'tooltip',
+  'tree',
+  'tree-select'
+];
+const elementPlusPickerPackages = ['date-picker-panel', 'time-picker'];
+const elementPlusOverlayPackages = ['collection', 'focus-trap', 'overlay', 'popper', 'roving-focus-group', 'scrollbar', 'tooltip'];
+const elementPlusBasicPackages = [
+  'autocomplete',
+  'breadcrumb',
+  'button',
+  'collapse-transition',
+  'color-picker-panel',
+  'divider',
+  'icon',
+  'image-viewer',
+  'text'
+];
+const elementPlusFeedbackPackages = [
+  'alert',
+  'config-provider',
+  'date-picker',
+  'dialog',
+  'drawer',
+  'dropdown',
+  'dropdown-item',
+  'dropdown-menu',
+  'loading',
+  'menu',
+  'menu-item',
+  'message',
+  'message-box',
+  'notification',
+  'result',
+  'sub-menu',
+  'tab-pane',
+  'tabs'
+];
 
 const elementPlusDependencyPackages = [
   '@ctrl/tinycolor',
@@ -37,7 +110,13 @@ const elementPlusDependencyPackages = [
 ];
 
 function matchesNodeModulePackage(id: string, packages: string[]) {
-  return packages.some((pkg) => id.includes(`/node_modules/${pkg}/`));
+  const normalizedId = id.replace(/\\/g, '/');
+  return packages.some((pkg) => normalizedId.includes(`/node_modules/${pkg}/`));
+}
+
+function matchesElementPlusComponent(id: string, packages: string[]) {
+  const normalizedId = id.replace(/\\/g, '/');
+  return packages.some((pkg) => normalizedId.includes(`/node_modules/element-plus/es/components/${pkg}/`));
 }
 
 /**
@@ -113,14 +192,48 @@ export default defineConfig(({ mode, command }) => {
             if (matchesNodeModulePackage(id, vueEcosystemPackages)) {
               return 'vendor-vue';
             }
-            if (matchesNodeModulePackage(id, elementPlusPackages)) {
-              return 'vendor-element-plus';
+            if (matchesNodeModulePackage(id, elementPlusBasePackages)) {
+              return 'vendor-element-plus-base';
+            }
+            if (matchesElementPlusComponent(id, elementPlusFormPackages)) {
+              return 'vendor-element-plus-form';
+            }
+            if (matchesElementPlusComponent(id, elementPlusDataPackages)) {
+              return 'vendor-element-plus-data';
+            }
+            if (matchesElementPlusComponent(id, elementPlusPickerPackages)) {
+              return 'vendor-element-plus-picker';
+            }
+            if (matchesElementPlusComponent(id, elementPlusOverlayPackages)) {
+              return 'vendor-element-plus-overlay';
+            }
+            if (matchesElementPlusComponent(id, elementPlusBasicPackages)) {
+              return 'vendor-element-plus-basic';
+            }
+            if (matchesElementPlusComponent(id, elementPlusFeedbackPackages) || id.includes('/node_modules/element-plus/es/directives/')) {
+              return 'vendor-element-plus-feedback';
+            }
+            if (id.includes('/node_modules/element-plus/')) {
+              return 'vendor-element-plus-core';
             }
             if (matchesNodeModulePackage(id, elementPlusDependencyPackages)) {
               return 'vendor-element-plus-deps';
             }
-            if (id.includes('echarts')) {
-              return 'vendor-echarts';
+            if (id.includes('/node_modules/echarts/lib/chart/')) {
+              return 'vendor-echarts-charts';
+            }
+            if (id.includes('/node_modules/echarts/lib/component/')) {
+              return 'vendor-echarts-components';
+            }
+            if (
+              id.includes('/node_modules/echarts/lib/coord/') ||
+              id.includes('/node_modules/echarts/lib/data/') ||
+              id.includes('/node_modules/echarts/lib/model/')
+            ) {
+              return 'vendor-echarts-core';
+            }
+            if (id.includes('/node_modules/echarts/') || id.includes('/node_modules/zrender/')) {
+              return 'vendor-echarts-render';
             }
             if (id.includes('@vueup/vue-quill') || id.includes('/quill/')) {
               return 'vendor-quill';

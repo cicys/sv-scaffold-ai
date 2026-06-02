@@ -98,7 +98,7 @@ export default function PostPage() {
     try {
       const response = await listPost(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -358,12 +358,7 @@ export default function PostPage() {
                 >
                   修改
                 </Button>
-                <Button
-                  className="btn-plain-danger"
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDelete()}
-                  disabled={selectedIds.length === 0}
-                >
+                <Button className="btn-plain-danger" icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0}>
                   删除
                 </Button>
                 <Button

@@ -16,6 +16,7 @@ ENV TZ=Asia/Shanghai \
 RUN mkdir -p /infoq/server/logs \
     /infoq/server/temp \
     /infoq/server/config \
+    /infoq/server/ip2region \
     && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo ${TZ} > /etc/timezone
 

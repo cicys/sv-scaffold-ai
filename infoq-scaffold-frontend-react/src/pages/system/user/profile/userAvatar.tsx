@@ -5,6 +5,7 @@ import { MinusOutlined, PlusOutlined, RedoOutlined, UndoOutlined, UploadOutlined
 import Cropper, { type Area } from 'react-easy-crop';
 import 'react-easy-crop/react-easy-crop.css';
 import { uploadAvatar } from '@/api/system/user';
+import { assertAvatarUploadData } from '@/api/system/user/guards';
 import { useUserStore } from '@/store/modules/user';
 import modal from '@/utils/modal';
 import '@/pages/system/user/profile/user-avatar.css';
@@ -193,15 +194,14 @@ export default function UserAvatar({ avatar, onUploaded }: UserAvatarProps) {
       const formData = new FormData();
       formData.append('avatarfile', blob, fileName || 'avatar.png');
       const response = await uploadAvatar(formData);
-      const imgUrl = response.data?.imgUrl || '';
+      const { imgUrl } = assertAvatarUploadData(response.data);
 
-      if (imgUrl) {
-        setAvatar(imgUrl);
-        onUploaded?.(imgUrl);
-      }
-
+      setAvatar(imgUrl);
+      onUploaded?.(imgUrl);
       modal.msgSuccess('修改成功');
       setOpen(false);
+    } catch (error) {
+      modal.msgError(error instanceof Error ? error.message : '头像上传失败');
     } finally {
       setSubmitting(false);
     }

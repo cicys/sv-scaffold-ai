@@ -18,7 +18,7 @@
     <view class="list-content">
       <EmptyNotice v-if="!canList" message="暂无访问权限" />
       <EmptyNotice v-else-if="rows.length === 0" message="未查询到相关岗位" />
-      
+
       <template v-if="canList">
         <RecordCard
           v-for="item in rows"
@@ -29,12 +29,12 @@
           :actions="getActions(item)"
         >
           <template #extra>
-            <StatusTag 
-              :label="item.status === '0' ? '正常' : '停用'" 
-              :type="item.status === '0' ? 'success' : 'error'" 
+            <StatusTag
+              :label="item.status === '0' ? '正常' : '停用'"
+              :type="item.status === '0' ? 'success' : 'error'"
             />
           </template>
-          
+
           <KeyValueList
             :items="[
               { label: '岗位编码', value: item.postCode || '-' },
@@ -47,19 +47,19 @@
     </view>
 
     <FabButton v-if="canAdd" @click="openCreate" />
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { delPost, listPost, type PostQuery, type PostVO } from '@/api';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {computed, reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {delPost, listPost, type PostQuery, type PostVO} from '@/api';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {navigate, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -89,7 +89,7 @@ const loadData = async () => {
   try {
     await sessionStore.loadSession();
     const response = await listPost(query);
-    rows.value = response.rows || [];
+    rows.value = response.rows;
   } catch (error) {
     await handlePageError(error, '岗位加载失败');
   }

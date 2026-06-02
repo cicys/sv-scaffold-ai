@@ -1,23 +1,23 @@
-import { View } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
+import {View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
 import {
   cleanOperLog,
   delOperLog,
+  type DictOption,
   getDictLabel,
   getDicts,
   listOperLog,
-  toDictOptions,
-  type DictOption,
   type OperLogQuery,
-  type OperLogVO
+  type OperLogVO,
+  toDictOptions
 } from '@/api';
-import { useState } from 'react';
-import { AtButton, AtInput, AtModal, AtModalHeader, AtModalContent } from 'taro-ui';
+import {useState} from 'react';
+import {AtButton, AtInput, AtModal, AtModalContent, AtModalHeader} from 'taro-ui';
 import BottomNav from '../../components/bottom-nav';
-import { EmptyNotice, KeyValueList, PaginationBar, RecordCard, StatusTag, FabButton } from '../../components/taro-ui-kit';
-import { routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
-import { useSessionStore } from '../../store/session';
+import {EmptyNotice, FabButton, KeyValueList, PaginationBar, RecordCard, StatusTag} from '../../components/taro-ui-kit';
+import {routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
+import {useSessionStore} from '../../store/session';
 import './index.scss';
 
 const createQuery = (pageNum = 1): OperLogQuery => ({
@@ -62,8 +62,8 @@ export default function MonitorOperLogPage() {
       ]);
       setStatusOptions(toDictOptions(statusResponse.data));
       setTypeOptions(toDictOptions(typeResponse.data));
-      setList(listResponse.rows || []);
-      setTotal(listResponse.total || 0);
+      setList(listResponse.rows);
+      setTotal(listResponse.total);
     } catch (error) {
       await handlePageError(error, '操作日志加载失败');
     }
@@ -162,9 +162,9 @@ export default function MonitorOperLogPage() {
             title={item.title || '操作日志'}
             statusColor={item.status === 0 ? '#52c41a' : '#ff4d4f'}
             extra={
-              <StatusTag 
-                label={getDictLabel(statusOptions, String(item.status)) || '未知'} 
-                type={item.status === 0 ? 'success' : 'error'} 
+              <StatusTag
+                label={getDictLabel(statusOptions, String(item.status)) || '未知'}
+                type={item.status === 0 ? 'success' : 'error'}
               />
             }
             actions={[
@@ -225,7 +225,7 @@ export default function MonitorOperLogPage() {
       </AtModal>
 
       {canRemove && <FabButton icon="trash" onClick={() => void handleClean()} />}
-      
+
       <BottomNav active="admin" />
     </View>
   );

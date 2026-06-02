@@ -28,6 +28,7 @@ class SpringSecurityAutoConfigurationTest {
         assertTrue(matchers.contains("/auth/register"));
         assertTrue(matchers.contains("/auth/forgot-password"));
         assertTrue(matchers.contains(SecurityConfig.HEALTH_CHECK_PATH));
+        assertTrue(matchers.contains(SecurityConfig.HEALTH_CHECK_PATTERN));
         assertTrue(matchers.contains("/doc.html"));
         assertFalse(matchers.contains(""));
     }

@@ -6,7 +6,7 @@ import {fetchJson, normalizeForwardedArgs, resolveRepoRoot} from '../../../lib/s
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolveRepoRoot(scriptDir);
-const verifyLoginPath = path.join(repoRoot, '.agents', 'skills', 'infoq-login-success-check', 'scripts', 'verify_login.mjs');
+const verifyLoginPath = path.join(repoRoot, '.codex', 'skills', 'infoq-login-success-check', 'scripts', 'verify_login.mjs');
 const args = normalizeForwardedArgs(process.argv.slice(2));
 const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:8080';
 const clientId = process.env.CLIENT_ID || 'e5cd7e4891bf95d1d19206ce24a7b32e';

@@ -75,27 +75,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import {computed, reactive, ref} from 'vue';
+import {onLoad} from '@dcloudio/uni-app';
 import AppIcon from '@/components/AppIcon.vue';
 import {
   addDept,
-  getDept,
-  updateDept,
-  listDept,
-  getDicts,
-  toDictOptions,
-  flattenTree,
+  assertArrayData,
+  assertObjectData,
   type DeptForm,
-  type DictOption,
   type DeptVO,
-  type FlatTreeItem
+  type DictOption,
+  flattenTree,
+  type FlatTreeItem,
+  getDept,
+  getDicts,
+  listDept,
+  toDictOptions,
+  updateDept
 } from '@/api';
-import { handleDeptTree } from '@/utils/helpers';
-import { ensureAuthenticated, ensurePermission } from '@/composables/use-auth-guard';
-import { backOr, routes } from '@/utils/navigation';
-import { handlePageError, showSuccess } from '@/utils/ui';
-import { useSessionStore } from '@/store/session';
+import {handleDeptTree} from '@/utils/helpers';
+import {ensureAuthenticated, ensurePermission} from '@/composables/use-auth-guard';
+import {backOr, routes} from '@/utils/navigation';
+import {handlePageError, showSuccess} from '@/utils/ui';
+import {useSessionStore} from '@/store/session';
 
 type PickerChangeEvent = { detail?: { value?: string | number } };
 type RawDeptNode = {
@@ -156,9 +158,9 @@ const loadData = async () => {
     ]);
 
     statusOptions.value = toDictOptions(statusRes.data);
-    
+
     // Add a virtual root node for "None" or "Root"
-    const depts = (deptRes.data || []) as DeptVO[];
+    const depts = assertArrayData(deptRes.data, '部门列表响应 data') as DeptVO[];
     const tree = handleDeptTree(depts as Array<Record<string, unknown>>)
       .map((node) => normalizeDeptNode(node as unknown as RawDeptNode));
     deptTreeOptions.value = [
@@ -168,7 +170,7 @@ const loadData = async () => {
 
     if (deptId.value) {
       const response = await getDept(deptId.value);
-      Object.assign(form, response.data || {});
+      Object.assign(form, assertObjectData(response.data, '部门详情响应 data'));
     }
   } catch (error) {
     await handlePageError(error, '部门数据加载失败');

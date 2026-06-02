@@ -4,15 +4,15 @@
 
 ## 当前实现概览
 
-`infoq-scaffold-frontend-vue` 是当前仓库的 Vue 管理端工作区，基于 Vue 3、Vite 6、Element Plus 2.x、Vue Router 4 与 Pinia。应用入口是 `src/main.ts -> src/App.vue`；固定路由写在 `src/router/index.ts`，登录后动态菜单路由由 `usePermissionStore().generateRoutes()` 注入到 Vue Router。
+`infoq-scaffold-frontend-vue` 是当前仓库的 Vue 管理端工作区，基于 Vue 3.5、Vite 8、Element Plus 2.14、Vue Router 5 与 Pinia。应用入口是 `src/main.ts -> src/App.vue`；固定路由写在 `src/router/index.ts`，登录后动态菜单路由由 `usePermissionStore().generateRoutes()` 注入到 Vue Router。
 
 当前代码能直接确认的几个关键事实：
 
 - `main.ts` 负责注册 router、Pinia、i18n、自定义指令、插件和开发者工具保护。
 - `permission.ts` 是全局前置守卫，负责 token 检查、`getInfo()`、`generateRoutes()` 和白名单跳转。
 - `src/store/modules/permission.ts` 通过 `import.meta.glob('./../../views/**/*.vue')` 把后端菜单组件名解析为真实页面组件。
-- `src/api/login.ts` 的登录和注册请求默认携带 `clientId`，并通过 `utils/request.ts` 统一加密、401 和重复提交处理。
-- `src/store/modules/user.ts` 负责登录态与用户资料；SSE 关闭动作也挂在登出流程里。
+- `src/api/login.ts` 的登录、OAuth ticket 和注册请求默认携带 `clientId`，并通过 `utils/request.ts` 统一加密、401 和重复提交处理。
+- `src/store/modules/user.ts` 负责 password/OAuth ticket 登录态与用户资料；SSE 关闭动作也挂在登出流程里，并且 `/auth/logout` 失败也会清理本地会话。
 
 ## 模块导航
 

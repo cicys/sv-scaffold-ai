@@ -1,6 +1,6 @@
 @echo off
 echo.
-echo [ะลฯข] สนำร Vite รüม๎ิหะะ Web นคณฬกฃ
+echo [ไฟกๆฏ] ไฝฟ็”จ Vite ๅ‘ฝไปค่ฟ่ก Web ๅทฅ็จใ€
 echo.
 
 %~d0

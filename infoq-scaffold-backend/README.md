@@ -18,7 +18,7 @@
 - 配置按 `application.yml + application-{dev,prod,local}.yml` 叠加：
   - `application.yml` 承载通用运行时行为配置，包括 Undertow、captcha、Spring Security token、`api-decrypt`、SpringDoc、SSE、WebSocket、`infoq.quartz`、MyBatis-Plus、Jackson、XSS、lock4j、security excludes 等。
   - `application-dev.yml` 是默认激活 profile，主要补充/覆写 datasource、Redis、Redisson、Quartz 开发环境差异、`infoq.quartz.bootstrap` 和 mail。
-  - `application-prod.yml` 补充/覆写 datasource、Redis、Redisson、Quartz 生产环境差异、`infoq.quartz.bootstrap` 和 mail；`application-local.yml` 补充/覆写 datasource、Redis、Redisson、mail，但不重写 Quartz。
+  - `application-prod.yml` 补充/覆写 datasource、Redis、Redisson、Quartz 生产环境差异、`infoq.quartz.bootstrap`、graceful shutdown 和 mail；`application-local.yml` 补充/覆写 datasource、Redis、Redisson、mail，但不重写 Quartz。
 
 ## 模块导航
 

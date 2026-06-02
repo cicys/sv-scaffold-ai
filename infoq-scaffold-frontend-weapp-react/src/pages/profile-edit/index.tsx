@@ -1,22 +1,23 @@
-import { View, Text } from '@tarojs/components';
-import Taro, { useDidShow } from '@tarojs/taro';
-import { AtAvatar, AtButton, AtInput, AtIcon } from 'taro-ui';
+import {Text, View} from '@tarojs/components';
+import Taro, {useDidShow} from '@tarojs/taro';
+import {AtAvatar, AtButton, AtIcon, AtInput} from 'taro-ui';
 import {
+  assertAvatarUploadData,
+  type DictOption,
   getDicts,
   getUserProfile,
   toDictOptions,
-  type DictOption,
-  type UserForm,
-  type UserProfileUpdatePayload,
   updateUserProfile,
-  uploadAvatar
+  uploadAvatar,
+  type UserForm,
+  type UserProfileUpdatePayload
 } from '@/api';
 import defaultAvatar from '@/assets/images/profile.jpg';
-import { useState } from 'react';
-import { useSessionStore } from '../../store/session';
-import { resolveAvatarUrl } from '../../utils/avatar';
-import { backOr, routes } from '../../utils/navigation';
-import { handlePageError, showSuccess } from '../../utils/ui';
+import {useState} from 'react';
+import {useSessionStore} from '../../store/session';
+import {resolveAvatarUrl} from '../../utils/avatar';
+import {backOr, routes} from '../../utils/navigation';
+import {handlePageError, showSuccess} from '../../utils/ui';
 import './index.scss';
 
 type ProfileFormState = UserForm & { avatar?: string };
@@ -111,7 +112,7 @@ export default function ProfileEditPage() {
         return;
       }
       const response = await uploadAvatar(filePath);
-      const imgUrl = response.data?.imgUrl || '';
+      const { imgUrl } = assertAvatarUploadData(response.data);
       setForm((prev) => ({ ...prev, avatar: imgUrl }));
       patchUser({ avatar: imgUrl });
       await showSuccess('头像已更新');

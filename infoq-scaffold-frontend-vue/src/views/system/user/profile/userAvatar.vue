@@ -60,7 +60,7 @@ import 'vue-cropper/dist/index.css';
 import { VueCropper } from 'vue-cropper';
 import { uploadAvatar } from '@/api/system/user';
 import { useUserStore } from '@/store/modules/user';
-import { UploadRawFile } from 'element-plus';
+import type { UploadRawFile } from 'element-plus/es/components/upload';
 
 interface CropperPreviewData {
   url: string;
@@ -144,17 +144,37 @@ const beforeUpload = (file: UploadRawFile): boolean | void => {
     };
   }
 };
+
+const assertAvatarUploadData = (value: unknown): { imgUrl: string } => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('头像上传响应 data 必须是对象');
+  }
+  const imgUrl = (value as { imgUrl?: unknown }).imgUrl;
+  if (typeof imgUrl !== 'string') {
+    throw new Error('头像上传响应 data.imgUrl 必须是字符串');
+  }
+  if (!imgUrl.trim()) {
+    throw new Error('头像上传响应 data.imgUrl 不能为空');
+  }
+  return { imgUrl };
+};
+
 /** 上传图片 */
 const uploadImg = async () => {
   cropper.value?.getCropBlob(async (data: Blob) => {
-    const formData = new FormData();
-    formData.append('avatarfile', data, options.fileName);
-    const res = await uploadAvatar(formData);
-    open.value = false;
-    options.img = res.data.imgUrl;
-    userStore.setAvatar(options.img);
-    proxy?.$modal.msgSuccess('修改成功');
-    visible.value = false;
+    try {
+      const formData = new FormData();
+      formData.append('avatarfile', data, options.fileName);
+      const res = await uploadAvatar(formData);
+      const { imgUrl } = assertAvatarUploadData(res.data);
+      options.img = imgUrl;
+      userStore.setAvatar(options.img);
+      proxy?.$modal.msgSuccess('修改成功');
+      open.value = false;
+      visible.value = false;
+    } catch (error) {
+      proxy?.$modal.msgError(error instanceof Error ? error.message : '头像上传失败');
+    }
   });
 };
 /** 实时预览 */

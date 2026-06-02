@@ -23,7 +23,7 @@
 
     <view class="list-content">
       <EmptyNotice v-if="rows.length === 0" message="未查询到相关字典" />
-      
+
       <RecordCard
         v-for="item in rows"
         :key="item.dictId"
@@ -32,12 +32,12 @@
         :actions="[{ title: '数据列表', onClick: () => openData(item.dictType) }]"
       >
         <template #extra>
-          <StatusTag 
-            :label="item.status === '0' ? '正常' : '停用'" 
-            :type="item.status === '0' ? 'success' : 'error'" 
+          <StatusTag
+            :label="item.status === '0' ? '正常' : '停用'"
+            :type="item.status === '0' ? 'success' : 'error'"
           />
         </template>
-        
+
         <KeyValueList
           :items="[
             { label: '字典类型', value: item.dictType },
@@ -47,18 +47,18 @@
         />
       </RecordCard>
     </view>
-    
+
     <BottomNav active="admin" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
-import { listType, type DictTypeQuery, type DictTypeVO } from '@/api';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError } from '@/utils/ui';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
+import {reactive, ref} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
+import {type DictTypeQuery, type DictTypeVO, listType} from '@/api';
+import {navigate, routes} from '@/utils/navigation';
+import {handlePageError} from '@/utils/ui';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
 
 import BottomNav from '@/components/BottomNav.vue';
 import EmptyNotice from '@/components/EmptyNotice.vue';
@@ -78,7 +78,7 @@ const loadData = async () => {
   if (!ensureAuthenticated()) return;
   try {
     const response = await listType(query);
-    rows.value = response.rows || [];
+    rows.value = response.rows;
   } catch (error) {
     await handlePageError(error, '字典数据加载失败');
   }

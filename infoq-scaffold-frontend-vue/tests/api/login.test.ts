@@ -6,7 +6,18 @@ vi.mock('@/utils/request', () => ({
   default: loginApiMocks.request
 }));
 
-import { checkInviteCode, forgotPassword, getCodeImg, getInfo, login, logout, register, sendEmailCode } from '@/api/login';
+import {
+  checkInviteCode,
+  exchangeOAuthTicket,
+  forgotPassword,
+  getCodeImg,
+  getInfo,
+  getOAuthProviders,
+  login,
+  logout,
+  register,
+  sendEmailCode
+} from '@/api/login';
 import type { LoginData } from '@/api/types';
 
 describe('api/login', () => {
@@ -60,6 +71,39 @@ describe('api/login', () => {
         })
       })
     );
+  });
+
+  it('requests enabled oauth providers through public endpoint', () => {
+    getOAuthProviders();
+
+    expect(loginApiMocks.request).toHaveBeenCalledWith({
+      url: '/auth/oauth/providers',
+      headers: {
+        isToken: false
+      },
+      method: 'get'
+    });
+  });
+
+  it('exchanges oauth ticket with encrypted public payload', () => {
+    exchangeOAuthTicket({
+      loginTicket: 'ticket-1'
+    });
+
+    expect(loginApiMocks.request).toHaveBeenCalledWith({
+      url: '/auth/oauth/ticket',
+      headers: {
+        isToken: false,
+        isEncrypt: true,
+        repeatSubmit: false
+      },
+      method: 'post',
+      data: {
+        loginTicket: 'ticket-1',
+        clientId: 'test-client-id',
+        grantType: 'oauth'
+      }
+    });
   });
 
   it('sends register request with fixed clientId and password grant type', () => {

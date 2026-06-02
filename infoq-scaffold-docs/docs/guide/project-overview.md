@@ -57,9 +57,9 @@ infoq-scaffold-ai
 
 | 维度 | 技术栈 |
 | --- | --- |
-| 后端 | JDK 17、Spring Boot 3.5.10、Spring Security、MyBatis-Plus 3.5.16、Springdoc |
-| Vue 管理端 | Vue 3.5、Vite 6、Element Plus 2.11、Pinia、Vitest |
-| React 管理端 | React 19、Vite 7、Ant Design 6、Zustand、Vitest |
+| 后端 | JDK 17、Spring Boot 3.5.14、Spring Security、MyBatis-Plus 3.5.16、Springdoc |
+| Vue 管理端 | Vue 3.5.35、Vite 8.0.16、Element Plus 2.14.1、Vue Router 5.1.0、Pinia、Vitest 4.1.8 |
+| React 管理端 | React 19.2.7、Vite 8.0.16、Ant Design 6.4.3、React Router 7.16.0、Zustand、Vitest 4.1.8 |
 | Vue 小程序端 | uni-app 3、Vue 3、Pinia、Vitest、微信开发者工具 |
 | React 小程序端 | Taro 4、React 18、Zustand、Vitest、微信开发者工具 |
 | 中间件 | MySQL 8、Redis 7、MinIO |

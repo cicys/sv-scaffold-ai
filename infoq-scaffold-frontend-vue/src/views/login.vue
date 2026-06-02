@@ -48,9 +48,24 @@
             proxy.$t('login.switchForgotPasswordPage')
           }}</router-link>
           <span v-if="register && forgotPasswordEnabled" class="auth-links__divider">|</span>
-          <router-link class="link-type" :to="'/register'">{{ proxy.$t('login.switchRegisterPage') }}</router-link>
+          <router-link v-if="register" class="link-type" :to="'/register'">{{ proxy.$t('login.switchRegisterPage') }}</router-link>
         </div>
       </el-form-item>
+      <template v-if="oauthProviders.length > 0">
+        <el-divider class="oauth-divider">{{ proxy.$t('login.oauthDivider') }}</el-divider>
+        <div class="oauth-buttons">
+          <el-button
+            v-for="provider in oauthProviders"
+            :key="provider.providerCode"
+            :icon="resolveOAuthIcon(provider.providerCode)"
+            :loading="oauthLoadingProvider === provider.providerCode"
+            class="oauth-button"
+            @click.prevent="handleOAuthAuthorize(provider)"
+          >
+            {{ proxy.$t('login.oauthProvider', { provider: provider.providerName }) }}
+          </el-button>
+        </div>
+      </template>
     </el-form>
     <!--  底部  -->
     <div class="el-login-footer">
@@ -60,9 +75,9 @@
 </template>
 
 <script setup lang="ts">
-import { getCodeImg } from '@/api/login';
+import { getCodeImg, getOAuthProviders } from '@/api/login';
 import { useUserStore } from '@/store/modules/user';
-import { LoginData } from '@/api/types';
+import { LoginData, OAuthProviderOption } from '@/api/types';
 import { to } from 'await-to-js';
 import { useI18n } from 'vue-i18n';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
@@ -96,6 +111,8 @@ const captchaEnabled = ref(true);
 // 注册开关
 const register = ref(false);
 const forgotPasswordEnabled = ref(false);
+const oauthProviders = ref<OAuthProviderOption[]>([]);
+const oauthLoadingProvider = ref('');
 const redirect = ref('/');
 const loginRef = ref<ElFormInstance>();
 
@@ -140,6 +157,19 @@ const handleLogin = () => {
   });
 };
 
+const handleOAuthAuthorize = (provider: OAuthProviderOption) => {
+  const params = new URLSearchParams({
+    clientId: import.meta.env.VITE_APP_CLIENT_ID,
+    redirect: redirect.value || '/index'
+  });
+  oauthLoadingProvider.value = provider.providerCode;
+  window.location.assign(`${import.meta.env.VITE_APP_BASE_API}/auth/oauth/${provider.providerCode}/authorize?${params.toString()}`);
+};
+
+const resolveOAuthIcon = (providerCode: string) => {
+  return providerCode === 'github' ? 'Platform' : 'Connection';
+};
+
 /**
  * 获取验证码
  */
@@ -161,6 +191,11 @@ const getCode = async () => {
   }
 };
 
+const loadOAuthProviders = async () => {
+  const [err, res] = await to(getOAuthProviders());
+  oauthProviders.value = !err && Array.isArray(res?.data) ? res.data : [];
+};
+
 const getLoginData = () => {
   const username = localStorage.getItem('username');
   const password = localStorage.getItem('password');
@@ -174,6 +209,7 @@ const getLoginData = () => {
 
 onMounted(() => {
   getCode();
+  loadOAuthProviders();
   getLoginData();
 });
 </script>
@@ -275,6 +311,20 @@ onMounted(() => {
 
 .auth-links__divider {
   color: var(--el-text-color-placeholder);
+}
+
+.oauth-divider {
+  margin: 6px 0 14px;
+}
+
+.oauth-buttons {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.oauth-button {
+  width: 100%;
 }
 
 .el-login-footer {

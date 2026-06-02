@@ -69,6 +69,7 @@ class PageAndTableDataInfoTest {
 
         assertEquals(200, data.getCode());
         assertEquals("查询成功", data.getMsg());
-        assertNull(data.getRows());
+        assertEquals(List.of(), data.getRows());
+        assertEquals(0, data.getTotal());
     }
 }

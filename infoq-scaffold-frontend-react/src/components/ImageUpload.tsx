@@ -51,20 +51,22 @@ export default function ImageUpload({
         setFileList(value);
         return;
       }
-      let response: Awaited<ReturnType<typeof listByIds>> | undefined;
       try {
-        response = await listByIds(value);
+        const response = await listByIds(value);
+        if (!Array.isArray(response.data)) {
+          throw new Error('图片列表响应格式错误');
+        }
+        const next = response.data.map((item) => ({
+          uid: String(item.ossId),
+          name: String(item.ossId),
+          status: 'done' as const,
+          url: item.url,
+          ossId: item.ossId
+        }));
+        setFileList(next);
       } catch {
-        response = undefined;
+        modal.msgError('加载已上传图片失败，请稍后重试');
       }
-      const next = (response?.data || []).map((item) => ({
-        uid: String(item.ossId),
-        name: String(item.ossId),
-        status: 'done' as const,
-        url: item.url,
-        ossId: item.ossId
-      }));
-      setFileList(next);
     };
 
     hydrate();
@@ -150,7 +152,9 @@ export default function ImageUpload({
   return (
     <div>
       <Upload {...uploadProps}>{fileList.length >= limit ? null : <PlusOutlined />}</Upload>
-      {preview && <Image src={preview} style={{ display: 'none' }} preview={{ visible: true, src: preview, onVisibleChange: (v) => !v && setPreview('') }} />}
+      {preview && (
+        <Image src={preview} style={{ display: 'none' }} preview={{ visible: true, src: preview, onVisibleChange: (v) => !v && setPreview('') }} />
+      )}
       {showTip && (
         <div style={{ color: 'rgba(0, 0, 0, 0.45)', marginTop: 6 }}>
           请上传大小不超过 <b style={{ color: '#ff4d4f' }}>{fileSize}MB</b>，格式为 <b style={{ color: '#ff4d4f' }}>{fileType.join('/')}</b> 的图片

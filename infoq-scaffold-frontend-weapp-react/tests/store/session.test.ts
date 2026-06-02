@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {useSessionStore} from '../../src/store/session';
+import type {UserVO} from '../../src/api/types';
 
 const {
   mockGetInfo,
@@ -30,9 +32,6 @@ vi.mock('@/api', () => ({
   removeToken: mockRemoveToken,
   setToken: mockSetToken
 }));
-
-import { useSessionStore } from '../../src/store/session';
-import type { UserVO } from '../../src/api/types';
 
 describe('store/session', () => {
   beforeEach(() => {
@@ -98,7 +97,7 @@ describe('store/session', () => {
     expect(useSessionStore.getState().initialized).toBe(true);
   });
 
-  it('signIn should fallback to empty permissions when backend omits permissions', async () => {
+  it('signIn should reject when backend omits permissions', async () => {
     mockLogin.mockResolvedValue({ data: { access_token: 'token-4' } });
     mockGetInfo.mockResolvedValue({
       data: {
@@ -107,11 +106,9 @@ describe('store/session', () => {
         permissions: undefined
       }
     });
-    mockNormalizePermissions.mockReturnValue([]);
+    await expect(useSessionStore.getState().signIn({ username: 'tester2', password: 'pwd2' })).rejects.toThrow('用户权限必须是字符串数组');
 
-    await useSessionStore.getState().signIn({ username: 'tester2', password: 'pwd2' });
-
-    expect(mockNormalizePermissions).toHaveBeenCalledWith([]);
+    expect(mockNormalizePermissions).not.toHaveBeenCalled();
     expect(useSessionStore.getState().permissions).toEqual([]);
   });
 
@@ -175,7 +172,7 @@ describe('store/session', () => {
     expect(useSessionStore.getState().user?.userName).toBe('forced');
   });
 
-  it('loadSession should fallback to empty permissions when backend omits permissions', async () => {
+  it('loadSession should reject when backend omits permissions', async () => {
     mockGetToken.mockReturnValue('token-5');
     mockGetInfo.mockResolvedValue({
       data: {
@@ -184,12 +181,9 @@ describe('store/session', () => {
         permissions: undefined
       }
     });
-    mockNormalizePermissions.mockReturnValue([]);
+    await expect(useSessionStore.getState().loadSession(true)).rejects.toThrow('用户权限必须是字符串数组');
 
-    const result = await useSessionStore.getState().loadSession(true);
-
-    expect(mockNormalizePermissions).toHaveBeenCalledWith([]);
-    expect(result?.user.userName).toBe('no-perm');
+    expect(mockNormalizePermissions).not.toHaveBeenCalled();
     expect(useSessionStore.getState().permissions).toEqual([]);
   });
 

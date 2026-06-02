@@ -43,7 +43,7 @@ main.ts
 | `main.ts` | 注册 router、Pinia、i18n、插件、指令与开发者工具保护 | `app.use(...)`、`directive(app)`、`initDevToolsProtection()` |
 | `router/index.ts` | 固定公开路由和首页路由 | `constantRoutes` |
 | `permission.ts` | 登录态检查、白名单放行、`getInfo()` 与动态路由注入 | `router.beforeEach(...)` |
-| `store/modules/user.ts` | 登录、获取用户信息、登出与 SSE 关闭 | `login()`、`getInfo()`、`logout()` |
+| `store/modules/user.ts` | 登录、获取用户信息、登出、SSE 关闭、退出失败本地清理 | `login()`、`getInfo()`、`logout()` |
 | `store/modules/permission.ts` | 拉取后端菜单并解析成 Vue Router 路由对象 | `generateRoutes()`、`filterAsyncRouter()` |
 | `utils/request.ts` | 统一请求头、重复提交拦截、可选加解密、401 处理和下载 | axios request/response interceptors |
 | `views/*` | 登录、首页、系统管理、监控、错误页和跳转页 | `src/views/**` |
@@ -126,6 +126,7 @@ const modules = import.meta.glob('./../../views/**/*.vue')
 
 - 后端路由组件名必须能在 `src/views` 中解析到真实页面。
 - 登录、注册与写请求的加密能力依赖 `VITE_APP_CLIENT_ID`、`VITE_APP_BASE_API` 和 RSA/AES 配置。
+- 后端退出接口失败不阻断本地 token、用户状态和角色权限清理。
 - 本工作区默认使用 Element Plus、Pinia 与 Vue Router 的既有模式，不套用 React admin 的状态实现。
 
 ## 7. 已知边界

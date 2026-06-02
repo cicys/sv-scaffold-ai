@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {loadWorkbenchSummary, mobileAdminModules} from '../../src/api/admin';
 
 const {
   mockListLoginInfo,
@@ -27,8 +28,6 @@ vi.mock('../../src/api/system/role', () => ({
 vi.mock('../../src/api/system/user', () => ({
   listUser: mockListUser
 }));
-
-import { loadWorkbenchSummary, mobileAdminModules } from '../../src/api/admin';
 
 describe('admin', () => {
   beforeEach(() => {
@@ -72,10 +71,10 @@ describe('admin', () => {
   });
 
   it('loadWorkbenchSummary should request allowed modules and resolve totals', async () => {
-    mockListUser.mockResolvedValue({ total: 21, rows: [] });
-    mockListRole.mockResolvedValue({ rows: [1, 2] });
-    mockListOnlineUsers.mockResolvedValue({ total: 3, rows: [] });
-    mockListLoginInfo.mockResolvedValue({ rows: [1] });
+    mockListUser.mockResolvedValue({ code: 200, total: 21, rows: [] });
+    mockListRole.mockResolvedValue({ code: 200, total: 2, rows: [1, 2] });
+    mockListOnlineUsers.mockResolvedValue({ code: 200, total: 3, rows: [] });
+    mockListLoginInfo.mockResolvedValue({ code: 200, total: 1, rows: [1] });
 
     const summary = await loadWorkbenchSummary([
       'system:user:list',

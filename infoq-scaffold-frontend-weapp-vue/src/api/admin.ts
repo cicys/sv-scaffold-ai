@@ -1,8 +1,9 @@
-import { listLoginInfo } from '@/api/monitor/loginInfo';
-import { listOnlineUsers } from '@/api/monitor/online';
-import { listRole } from '@/api/system/role';
-import { listUser } from '@/api/system/user';
-import { resolveTableTotal } from '@/utils/helpers';
+import {listLoginInfo} from '@/api/monitor/loginInfo';
+import {listOnlineUsers} from '@/api/monitor/online';
+import {listRole} from '@/api/system/role';
+import {listUser} from '@/api/system/user';
+import type {TableResponse} from '@/api/types';
+import {resolveTableTotal} from '@/utils/helpers';
 
 export type AdminModuleGroup = 'system' | 'monitor';
 export type AdminModuleKey =
@@ -48,6 +49,9 @@ export const mobileAdminModules: AdminModuleMeta[] = [
   { key: 'cache', group: 'monitor', title: '缓存概览', description: '查看 Redis 指标和命令统计', permission: 'monitor:cache:list', badge: 'RDS' }
 ];
 
+const resolvePermittedTableTotal = <T>(response: TableResponse<T> | undefined) =>
+  response ? resolveTableTotal(response) : 0;
+
 export const loadWorkbenchSummary = async (permissions: string[]): Promise<WorkbenchSummary> => {
   const [userResponse, roleResponse, onlineResponse, loginResponse] = await Promise.all([
     permissions.includes('system:user:list')
@@ -91,9 +95,9 @@ export const loadWorkbenchSummary = async (permissions: string[]): Promise<Workb
   ]);
 
   return {
-    userTotal: resolveTableTotal(userResponse),
-    roleTotal: resolveTableTotal(roleResponse),
-    onlineTotal: resolveTableTotal(onlineResponse),
-    loginTotal: resolveTableTotal(loginResponse)
+    userTotal: resolvePermittedTableTotal(userResponse),
+    roleTotal: resolvePermittedTableTotal(roleResponse),
+    onlineTotal: resolvePermittedTableTotal(onlineResponse),
+    loginTotal: resolvePermittedTableTotal(loginResponse)
   };
 };

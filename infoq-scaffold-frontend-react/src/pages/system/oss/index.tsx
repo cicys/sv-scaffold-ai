@@ -69,7 +69,7 @@ export default function OssPage() {
     try {
       const response = await listOss(addDateRange({ ...nextQuery }, formatRange(nextRange), 'CreateTime'));
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }

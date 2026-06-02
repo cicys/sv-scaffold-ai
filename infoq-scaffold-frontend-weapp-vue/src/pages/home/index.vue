@@ -68,9 +68,9 @@
       </view>
       <view class="card-content">
         <view class="quick-grid">
-          <view 
-            class="quick-item" 
-            v-for="item in gridItems" 
+          <view
+            class="quick-item"
+            v-for="item in gridItems"
             :key="item.key"
             @click="handleGridClick(item)"
           >
@@ -88,18 +88,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import {computed, ref, watch} from 'vue';
+import {onShow} from '@dcloudio/uni-app';
 import BottomNav from '@/components/BottomNav.vue';
 import AppIcon from '@/components/AppIcon.vue';
 import defaultAvatar from '@/assets/images/profile.jpg';
-import { adminModules } from '@/utils/admin';
-import { resolveAvatarUrl } from '@/utils/avatar';
-import { navigate, routes } from '@/utils/navigation';
-import { handlePageError } from '@/utils/ui';
-import { ensureAuthenticated } from '@/composables/use-auth-guard';
-import { listNotice, loadWorkbenchSummary, type NoticeVO } from '@/api';
-import { useSessionStore } from '@/store/session';
+import {adminModules} from '@/utils/admin';
+import {resolveAvatarUrl} from '@/utils/avatar';
+import {navigate, routes} from '@/utils/navigation';
+import {handlePageError} from '@/utils/ui';
+import {ensureAuthenticated} from '@/composables/use-auth-guard';
+import {listNotice, loadWorkbenchSummary, type NoticeVO} from '@/api';
+import {useSessionStore} from '@/store/session';
 
 const sessionStore = useSessionStore();
 const recentNotices = ref<NoticeVO[]>([]);
@@ -172,7 +172,7 @@ const loadPage = async () => {
       const response = await listNotice({
         pageNum: 1, pageSize: 3, noticeTitle: '', createByName: '', status: '0', noticeType: ''
       });
-      recentNotices.value = response.rows || [];
+      recentNotices.value = response.rows;
     }
   } catch (error) {
     await handlePageError(error, '首页加载失败');

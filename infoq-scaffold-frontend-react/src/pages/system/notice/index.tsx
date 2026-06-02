@@ -48,7 +48,7 @@ export default function NoticePage() {
     try {
       const response = await listNotice(nextQuery);
       setList(response.rows);
-      setTotal(response.total ?? response.rows.length);
+      setTotal(response.total);
     } finally {
       setLoading(false);
     }
@@ -228,7 +228,12 @@ export default function NoticePage() {
             <Button className="btn-plain-primary" icon={<PlusOutlined />} onClick={handleAdd}>
               新增
             </Button>
-            <Button className="btn-plain-success" icon={<EditOutlined />} onClick={() => handleEdit(selectedIds[0])} disabled={selectedIds.length !== 1}>
+            <Button
+              className="btn-plain-success"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(selectedIds[0])}
+              disabled={selectedIds.length !== 1}
+            >
               修改
             </Button>
             <Button className="btn-plain-danger" icon={<DeleteOutlined />} onClick={() => handleDelete()} disabled={selectedIds.length === 0}>

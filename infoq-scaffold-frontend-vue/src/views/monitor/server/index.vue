@@ -209,6 +209,9 @@ const createDefaultServer = (): ServerMonitorVO => ({
 });
 
 const normalizeServer = (value?: Partial<ServerMonitorVO> | null): ServerMonitorVO => {
+  if (!Array.isArray(value?.sysFiles)) {
+    throw new Error('服务监控响应 sysFiles 必须是数组');
+  }
   const defaults = createDefaultServer();
   return {
     ...defaults,
@@ -217,7 +220,7 @@ const normalizeServer = (value?: Partial<ServerMonitorVO> | null): ServerMonitor
     mem: { ...defaults.mem, ...(value?.mem ?? {}) },
     jvm: { ...defaults.jvm, ...(value?.jvm ?? {}) },
     sys: { ...defaults.sys, ...(value?.sys ?? {}) },
-    sysFiles: (value?.sysFiles ?? []).map((item: Partial<ServerSysFile>) => ({
+    sysFiles: value.sysFiles.map((item: Partial<ServerSysFile>) => ({
       dirName: item.dirName ?? '',
       sysTypeName: item.sysTypeName ?? '',
       typeName: item.typeName ?? '',

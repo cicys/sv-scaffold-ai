@@ -19,7 +19,7 @@
 
 | 模块 | 当前职责 |
 | --- | --- |
-| `user` | token、用户信息、角色权限、登录登出、SSE 清理 |
+| `user` | token、用户信息、角色权限、password/OAuth ticket 登录登出、SSE 清理、退出失败时的本地会话清理 |
 | `permission` | 动态菜单拉取、路由转换、侧栏/顶栏缓存 |
 | `app` | 语言、设备、界面偏好等应用级状态 |
 | `settings` | 主题、布局与显示设置 |
@@ -37,11 +37,19 @@
 
 ```text
 登录成功
--> user.login()
+-> user.login() / user.loginByOAuthTicket()
 -> token 持久化
 -> permission.ts 调 user.getInfo()
 -> permission.generateRoutes()
 -> router / layout / views 使用 store 结果
+```
+
+```text
+会话退出或过期重登
+-> user.logout()
+-> closeSSE()
+-> 尝试 POST /auth/logout
+-> 无论后端退出是否成功，都清理本地 token / 用户信息 / 角色权限
 ```
 
 ## 6. 公共约束

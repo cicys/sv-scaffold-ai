@@ -1,11 +1,12 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { useUserStore } from '@/store/modules/user';
-import { getToken } from '@/utils/auth';
+import { getToken, setToken } from '@/utils/auth';
 import type { ApiResponse, LoginData, LoginResult } from '@/api/types';
 import type { UserInfo } from '@/api/system/user/types';
 
 vi.mock('@/api/login', () => ({
   login: vi.fn(),
+  exchangeOAuthTicket: vi.fn(),
   logout: vi.fn(() => Promise.resolve()),
   getInfo: vi.fn()
 }));
@@ -15,7 +16,7 @@ vi.mock('@/utils/sse', () => ({
   closeSSE: vi.fn()
 }));
 
-const { login, getInfo, logout } = await import('@/api/login');
+const { login, exchangeOAuthTicket, getInfo, logout } = await import('@/api/login');
 const { initSSE, closeSSE } = await import('@/utils/sse');
 
 describe('store/user', () => {
@@ -42,7 +43,19 @@ describe('store/user', () => {
     await expect(store.login({ username: 'u', password: 'p', code: '', uuid: '' } as LoginData)).rejects.toBeTruthy();
   });
 
-  it('getInfo should map profile and fallback role', async () => {
+  it('oauth ticket login success should update token without initializing sse directly', async () => {
+    vi.mocked(exchangeOAuthTicket).mockResolvedValue({ data: { access_token: 'oauth-token' } } as ApiResponse<LoginResult>);
+    const store = useUserStore();
+
+    await store.loginByOAuthTicket('ticket-1');
+
+    expect(exchangeOAuthTicket).toHaveBeenCalledWith({ loginTicket: 'ticket-1' });
+    expect(store.token).toBe('oauth-token');
+    expect(getToken()).toBe('oauth-token');
+    expect(initSSE).not.toHaveBeenCalled();
+  });
+
+  it('getInfo should map profile without injecting fallback role', async () => {
     vi.mocked(getInfo).mockResolvedValue({
       data: {
         user: { userName: 'alice', nickName: 'Alice', avatar: '', userId: 1001 },
@@ -57,7 +70,8 @@ describe('store/user', () => {
     expect(store.name).toBe('alice');
     expect(store.nickname).toBe('Alice');
     expect(store.userId).toBe(1001);
-    expect(store.roles).toEqual(['ROLE_DEFAULT']);
+    expect(store.roles).toEqual([]);
+    expect(store.permissions).toEqual(['system:user:list']);
   });
 
   it('getInfo should map roles/permissions and keep custom avatar', async () => {
@@ -100,6 +114,32 @@ describe('store/user', () => {
     expect(store.token).toBe('');
     expect(store.roles).toEqual([]);
     expect(store.permissions).toEqual([]);
+  });
+
+  it('logout should clear local session when logout api fails', async () => {
+    vi.mocked(logout).mockRejectedValueOnce(new Error('logout unauthorized'));
+    setToken('expired-token');
+    const store = useUserStore();
+    store.token = 'expired-token';
+    store.roles = ['admin'];
+    store.permissions = ['system:user:list'];
+    store.name = 'admin';
+    store.nickname = 'Admin';
+    store.avatar = 'avatar.png';
+    store.userId = 1;
+
+    await expect(store.logout()).rejects.toBeTruthy();
+
+    expect(closeSSE).toHaveBeenCalled();
+    expect(logout).toHaveBeenCalled();
+    expect(getToken()).toBeNull();
+    expect(store.token).toBe('');
+    expect(store.roles).toEqual([]);
+    expect(store.permissions).toEqual([]);
+    expect(store.name).toBe('');
+    expect(store.nickname).toBe('');
+    expect(store.avatar).toBe('');
+    expect(store.userId).toBe('');
   });
 
   it('setAvatar should update avatar directly', () => {

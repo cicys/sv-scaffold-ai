@@ -1,5 +1,5 @@
-import { MessageBoxData } from 'element-plus';
-import { LoadingInstance } from 'element-plus/es/components/loading/src/loading';
+import type { LoadingInstance } from 'element-plus/es/components/loading/src/loading';
+import type { MessageBoxData } from 'element-plus/es/components/message-box/src/message-box.type';
 
 type MessageContent = Parameters<typeof ElMessage.info>[0];
 type AlertContent = Parameters<typeof ElMessageBox.alert>[0];
