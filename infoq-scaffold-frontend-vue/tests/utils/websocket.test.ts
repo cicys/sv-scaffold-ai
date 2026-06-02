@@ -1,4 +1,4 @@
-import { ElNotification } from 'element-plus';
+import { ElNotification } from 'element-plus/es/components/notification/index';
 
 const websocketMocks = vi.hoisted(() => {
   return {

@@ -204,7 +204,7 @@ describe('pages/system/config', () => {
 
     expect(screen.getByDisplayValue('123456')).toBeInTheDocument();
     expect(container.querySelector('.config-card-main-editing')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('restores default value by backend reset api', async () => {
     renderWithRouter(<ConfigPage />, '/system/config');

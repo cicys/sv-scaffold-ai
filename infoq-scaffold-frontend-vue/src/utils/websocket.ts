@@ -1,6 +1,6 @@
 import { getToken } from '@/utils/auth';
 import 'element-plus/es/components/notification/style/css';
-import { ElNotification } from 'element-plus';
+import { ElNotification } from 'element-plus/es/components/notification/index';
 import { useNoticeStore } from '@/store/modules/notice';
 
 // 初始化socket

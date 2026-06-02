@@ -4,7 +4,7 @@
 
 ## 当前实现概览
 
-`infoq-scaffold-frontend-vue` 是当前仓库的 Vue 管理端工作区，基于 Vue 3、Vite 6、Element Plus 2.x、Vue Router 4 与 Pinia。应用入口是 `src/main.ts -> src/App.vue`；固定路由写在 `src/router/index.ts`，登录后动态菜单路由由 `usePermissionStore().generateRoutes()` 注入到 Vue Router。
+`infoq-scaffold-frontend-vue` 是当前仓库的 Vue 管理端工作区，基于 Vue 3.5、Vite 8、Element Plus 2.14、Vue Router 5 与 Pinia。应用入口是 `src/main.ts -> src/App.vue`；固定路由写在 `src/router/index.ts`，登录后动态菜单路由由 `usePermissionStore().generateRoutes()` 注入到 Vue Router。
 
 当前代码能直接确认的几个关键事实：
 

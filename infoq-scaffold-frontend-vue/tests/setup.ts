@@ -16,7 +16,7 @@ const createMemoryStorage = () => {
   };
 };
 
-const createElementPlusMock = () => ({
+const elementPlusMock = vi.hoisted(() => ({
   ElMessage: Object.assign(vi.fn(), {
     success: vi.fn(),
     warning: vi.fn(),
@@ -38,20 +38,39 @@ const createElementPlusMock = () => ({
     service: vi.fn(() => ({
       close: vi.fn()
     }))
+  },
+  ElDialog: {
+    props: {
+      closeOnClickModal: {
+        default: true
+      }
+    }
   }
-});
+}));
 
 vi.mock('element-plus/es', () => {
-  return createElementPlusMock();
+  return elementPlusMock;
 });
 
 vi.mock('element-plus', () => {
   return {
-    ...createElementPlusMock(),
+    ...elementPlusMock,
     NotificationProps: {}
   };
 });
 
+vi.mock('element-plus/es/components/dialog/index', () => ({
+  ElDialog: elementPlusMock.ElDialog,
+  default: elementPlusMock.ElDialog
+}));
+vi.mock('element-plus/es/components/message/index', () => ({
+  ElMessage: elementPlusMock.ElMessage,
+  default: elementPlusMock.ElMessage
+}));
+vi.mock('element-plus/es/components/notification/index', () => ({
+  ElNotification: elementPlusMock.ElNotification,
+  default: elementPlusMock.ElNotification
+}));
 vi.mock('element-plus/es/components/dialog/style/css', () => ({}));
 vi.mock('element-plus/es/components/message/style/css', () => ({}));
 vi.mock('element-plus/es/components/notification/style/css', () => ({}));

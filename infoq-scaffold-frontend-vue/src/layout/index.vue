@@ -84,7 +84,7 @@ const setLayout = () => {
 
 <style lang="scss" scoped>
 @use '@/assets/styles/mixin.scss';
-@use '@/assets/styles/variables.module.scss' as *;
+@use '@/assets/styles/variables.scss' as *;
 
 .app-wrapper {
   @include mixin.clearfix;

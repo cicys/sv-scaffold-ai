@@ -119,14 +119,12 @@ export default function ConfigPage() {
   const pagedGroups = useMemo(() => {
     const start = (listPagination.page - 1) * listPagination.limit;
     const end = start + listPagination.limit;
-    let cursor = 0;
+    const pagedItems = filteredGroups
+      .flatMap((group) => group.items.map((item) => ({ groupKey: group.groupKey, item })))
+      .slice(start, end);
     return filteredGroups
       .map((group) => {
-        const items = group.items.filter(() => {
-          const included = cursor >= start && cursor < end;
-          cursor += 1;
-          return included;
-        });
+        const items = pagedItems.filter((entry) => entry.groupKey === group.groupKey).map((entry) => entry.item);
         return { ...group, items };
       })
       .filter((group) => group.items.length > 0);

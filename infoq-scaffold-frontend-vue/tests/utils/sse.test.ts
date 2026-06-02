@@ -1,5 +1,5 @@
 import { nextTick, ref } from 'vue';
-import { ElNotification } from 'element-plus';
+import { ElNotification } from 'element-plus/es/components/notification/index';
 
 const sseMocks = vi.hoisted(() => {
   return {

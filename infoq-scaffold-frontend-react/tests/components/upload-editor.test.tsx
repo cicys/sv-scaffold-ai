@@ -1,3 +1,4 @@
+import type { ChangeEventHandler, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
@@ -15,13 +16,12 @@ const uploadEditorMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('antd', async () => {
-  const React = await vi.importActual<typeof import('react')>('react');
   const Upload = Object.assign(({
     children,
     fileList,
     onPreview
   }: {
-    children?: React.ReactNode;
+    children?: ReactNode;
     fileList?: Array<{ uid: string; name?: string; url?: string }>;
     onPreview?: (file: { uid: string; name?: string; url?: string }) => void;
   }) => (
@@ -37,7 +37,7 @@ vi.mock('antd', async () => {
     LIST_IGNORE: Symbol('LIST_IGNORE')
   });
 
-  const Button = ({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) => (
+  const Button = ({ children, onClick }: { children?: ReactNode; onClick?: () => void }) => (
     <button type="button" onClick={onClick}>
       {children}
     </button>
@@ -46,12 +46,12 @@ vi.mock('antd', async () => {
   const Image = ({ src }: { src?: string }) => (src ? <img alt="" src={src} /> : null);
 
   const Input = {
-    TextArea: ({ value, onChange }: { value?: string; onChange?: React.ChangeEventHandler<HTMLTextAreaElement> }) => (
+    TextArea: ({ value, onChange }: { value?: string; onChange?: ChangeEventHandler<HTMLTextAreaElement> }) => (
       <textarea value={value ?? ''} onChange={onChange} />
     )
   };
 
-  const Space = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const Space = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
 
   return {
     Button,

@@ -4,7 +4,7 @@
 
 ## 当前实现概览
 
-`infoq-scaffold-frontend-react` 是当前仓库的 React 管理端工作区，基于 React 19、Vite 7、Ant Design 6、React Router 7 与 Zustand。应用入口是 `src/main.tsx -> src/RootProviders.tsx -> src/App.tsx -> src/router/AppRouter.tsx`；固定路由覆盖登录、注册、忘记密码、首页和少量壳路由，后台菜单路由依赖 `usePermissionStore().generateRoutes()` 在登录后动态装配。
+`infoq-scaffold-frontend-react` 是当前仓库的 React 管理端工作区，基于 React 19.2、Vite 8、Ant Design 6.4、React Router 7.16 与 Zustand。应用入口是 `src/main.tsx -> src/RootProviders.tsx -> src/App.tsx -> src/router/AppRouter.tsx`；固定路由覆盖登录、注册、忘记密码、首页和少量壳路由，后台菜单路由依赖 `usePermissionStore().generateRoutes()` 在登录后动态装配。
 
 当前代码能直接确认的几个关键事实：
 
