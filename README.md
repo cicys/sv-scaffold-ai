@@ -8,7 +8,7 @@
 
 ![Version](https://img.shields.io/badge/Version-2.1.4-f66a39)
 ![JDK](https://img.shields.io/badge/JDK-17-1677FF)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-6DB33F)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.14-6DB33F)
 ![Vue](https://img.shields.io/badge/Vue-3.5.30-42B883)
 ![Element Plus](https://img.shields.io/badge/Element%20Plus-2.11.9-409EFF)
 ![React](https://img.shields.io/badge/React-19.2.4-61DAFB)
@@ -73,7 +73,7 @@ infoq-scaffold-ai
 | 维度 | 技术栈 |
 | --- | --- |
 | AI 协作层 | Codex、`AGENTS.md`、`.codex/skills`、`OpenSpec`、`.codex/config.toml` |
-| 后端 | Spring Boot `3.5.10`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
+| 后端 | Spring Boot `3.5.14`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
 | Vue 管理端 | Vue `3.5.30`、TypeScript、Vite `6.4.1`、Element Plus `2.11.9`、Vitest |
 | React 管理端 | React `19.2.4`、TypeScript、Vite `7.3.1`、Ant Design `6.3.3`、React Router `7.13.1`、Vitest |
 | Vue 小程序端 | uni-app 3、Vue 3、TypeScript、Pinia、WeChat Mini Program |

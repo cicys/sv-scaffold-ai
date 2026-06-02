@@ -1,7 +1,7 @@
 # GEMINI.md
 |IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any project tasks. Read repository files before relying on framework pretraining data.
 |概览:InfoQ-Scaffold-AI 是专为 AI 主力研发设计的全栈脚手架，集成 Spring Boot 3 后端与 Vue 3/React 19 双端管理台及小程序（uni-app/Taro）。
-|后端栈:Spring Boot 3.5.10|JDK 17|MyBatis-Plus 3.5.16|Sa-Token 1.44.0|MySQL 8|Redis 7|Java package `cc.infoq.{module}.{layer}`|4-space indent.
+|后端栈:Spring Boot 3.5.14|JDK 17|MyBatis-Plus 3.5.16|Sa-Token 1.44.0|MySQL 8|Redis 7|Java package `cc.infoq.{module}.{layer}`|4-space indent.
 |Vue 栈:Vue 3.5.30|Element Plus 2.11.9|Vite 6.4.1|Pinia|Vue Router 4|uni-app 3|2-space indent.
 |React 栈:React 19.2.4|Ant Design 6.3.3|Vite 7.3.1|Zustand|React Router 7|Taro 4|2-space indent.
 |视觉系统:Vanilla CSS 优先|Tesla 极简主义设计|真值见 `DESIGN.md`|Demo 见 `doc/ui-demos/tesla-design-foundation.html`。

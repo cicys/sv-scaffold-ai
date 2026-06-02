@@ -37,6 +37,10 @@ const skippedRelativeDirectories = new Set([
   'doc/tmp'
 ]);
 
+const skippedEntryNames = new Set([
+  '.DS_Store'
+]);
+
 const binaryExtensions = new Set([
   '.7z',
   '.a',
@@ -119,10 +123,11 @@ Validates repository text files with the repository UTF-8 policy:
   - UTF-8 BOM is rejected
   - UTF-16/UTF-32 BOM is rejected
   - unreadable, missing, or outside-repository paths fail
-  - dependency, build, cache, log, temp, and obvious binary files are skipped
+  - dependency, build, cache, log, temp, macOS metadata, and obvious binary files are skipped
 
 Path arguments are resolved relative to the repository root.
-Explicit file paths are checked even if they are under a normally skipped directory.
+Explicit file paths are checked even if they are under a normally skipped directory,
+except globally ignored metadata entries such as .DS_Store.
 
 Examples:
   node .codex/scripts/validate_utf8.mjs
@@ -182,6 +187,10 @@ function shouldSkipDirectory(directoryPath) {
   return skippedDirectoryNames.has(path.basename(directoryPath)) || skippedRelativeDirectories.has(relativePath);
 }
 
+function shouldSkipEntry(entryPath) {
+  return skippedEntryNames.has(path.basename(entryPath));
+}
+
 function shouldSkipBinaryExtension(filePath) {
   return binaryExtensions.has(path.extname(filePath).toLowerCase());
 }
@@ -232,6 +241,10 @@ function collectFiles(targetPaths) {
 
     for (const entry of entries) {
       const entryPath = path.join(directoryPath, entry.name);
+      if (shouldSkipEntry(entryPath)) {
+        skippedEntries += 1;
+        continue;
+      }
       if (entry.isSymbolicLink()) {
         skippedEntries += 1;
         continue;
@@ -274,6 +287,10 @@ function collectFiles(targetPaths) {
     }
 
     if (stats.isSymbolicLink()) {
+      skippedEntries += 1;
+      continue;
+    }
+    if (shouldSkipEntry(resolvedInput.path)) {
       skippedEntries += 1;
       continue;
     }
@@ -384,11 +401,11 @@ function main() {
     for (const failure of failures) {
       console.error(`  ${failure.path}: ${failure.reason}`);
     }
-    console.error(`[utf8] checked ${checkedFiles} text files, skipped ${skippedFiles} binary files, skipped ${collection.skippedDirectories} directories, skipped ${collection.skippedEntries} other entries, failures ${failures.length}.`);
+    console.error(`[utf8] checked ${checkedFiles} text files, skipped ${skippedFiles} files, skipped ${collection.skippedDirectories} directories, skipped ${collection.skippedEntries} other entries, failures ${failures.length}.`);
     process.exit(1);
   }
 
-  console.log(`[utf8] OK: checked ${checkedFiles} text files, skipped ${skippedFiles} binary files, skipped ${collection.skippedDirectories} directories, skipped ${collection.skippedEntries} other entries.`);
+  console.log(`[utf8] OK: checked ${checkedFiles} text files, skipped ${skippedFiles} files, skipped ${collection.skippedDirectories} directories, skipped ${collection.skippedEntries} other entries.`);
 }
 
 try {
