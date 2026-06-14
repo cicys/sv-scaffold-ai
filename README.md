@@ -1,18 +1,16 @@
 <div align="center">
 
-<img src="doc/images/logo.png" width="120" alt="InfoQ-Scaffold-AI Logo" />
+<img src="doc/images/logo.png" width="120" alt="SV-Scaffold Logo" />
 
-# InfoQ-Scaffold-AI
+# SV-Scaffold-AI
 
-> 一个以 AI 为主力研发者的全栈工程脚手架。仓库通过 `AGENTS.md` 约束协作规则，通过 `.codex/skills` 固化自动化 SOP，并以 `OpenSpec` 管理长期规格与变更，将能力落到 Spring Boot 3 后端、Vue/React 管理端、Vue/React 小程序端、脚本、SQL、MCP 与文档工作区中。社区：[Linux DO](https://linux.do)
+> Spring Boot 3.x + Vue 3.x 全栈脚手架。以 AI 为主力研发，通过 `AGENTS.md` 约束协作规则，`.codex/skills` 固化自动化 SOP，`OpenSpec` 管理规格与变更。
 
 ![Version](https://img.shields.io/badge/Version-2.1.5-f66a39)
 ![JDK](https://img.shields.io/badge/JDK-17-1677FF)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.14-6DB33F)
 ![Vue](https://img.shields.io/badge/Vue-3.5.35-42B883)
 ![Element Plus](https://img.shields.io/badge/Element%20Plus-2.14.1-409EFF)
-![React](https://img.shields.io/badge/React-19.2.7-61DAFB)
-![Ant Design](https://img.shields.io/badge/Ant%20Design-6.4.3-1677FF)
 ![License](https://img.shields.io/badge/License-MIT-F7C948)
 
 </div>
@@ -21,197 +19,114 @@
 
 ## 项目简介
 
-`infoq-scaffold-ai` 把 AI 协作规则、自动化 SOP、OpenSpec 规格资产、业务代码、验证流程和交付证据放进同一仓库闭环。这个仓库不把 AI 当成“代码补全工具”，而是把它当成遵循规约、执行验证、维护规格与文档的工程参与者。
+`sv-scaffold-ai` 是一个 Spring Boot 3.x + Vue 3.x 的精简全栈脚手架。从原 `infoq-scaffold-ai` 裁剪而来，移除了 React 管理端和小程序端，聚焦于 Spring Boot 后端 + Vue 管理端的最佳实践。
 
-当前仓库同时包含：
+当前仓库包含：
 
-- Spring Boot 3.5 多模块后端
-- Vue 3 + Element Plus 管理端
-- React 19 + Ant Design 管理端
-- uni-app + Vue 3 小程序端
-- Taro + React 小程序端
-- 根 `doc/` 正文真值源与 `infoq-scaffold-docs` 文档站展示层
-- 根级与工作区级 `AGENTS.md`
-- `OpenSpec` 规格与变更目录
-- 项目级 MCP 配置与使用文档
-- 部署脚本、SQL 初始化脚本、协作文档
+- **Spring Boot 3.5 多模块后端**
+- **Vue 3 + Element Plus 管理端**
+- **完整的 AI 协作资产**：AGENTS.md、.codex/skills、OpenSpec
+- **Docker Compose 一键部署**：包括 MySQL、Redis、MinIO、Spring Boot、Vue
+- **数据库初始化脚本**：完整的 SQL 初始化和升级脚本
+- **文档和部署脚本**
 
 ## 项目定位
 
-本项目面向四类核心场景：
+本项目适合以下场景：
 
-1. **AI-first 工程协作**：通过根级和工作区级 `AGENTS.md`、skills、`OpenSpec`、MCP 让 Codex 先对齐规格、再做修改、最后执行验证。
-2. **双管理端基线**：同时提供 Vue 3 + Element Plus 与 React 19 + Ant Design 两套管理端实现。
-3. **双小程序端基线**：同时提供 uni-app Vue 与 Taro React 两套小程序实现。
-4. **可运行、可验证、可部署**：本地联调、单元测试、浏览器验证、小程序 DevTools 打开、Docker Compose 部署和版本升级都在同一仓库闭环完成。
+1. **AI-first 工程协作**：通过 `AGENTS.md`、`skills`、`OpenSpec`、MCP 让 AI 按规约工作
+2. **Spring Boot + Vue 技术栈**：提供完整的后端和前端实现
+3. **可运行、可验证、可部署**：本地联调、单元测试、Docker Compose 部署都在同一仓库完成
+4. **企业级管理后台**：包含用户、角色、权限、菜单、部门、字典等核心模块
 
 ## 仓库结构
 
 ```text
-infoq-scaffold-ai
-├── AGENTS.md
-├── .codex/skills
-├── .codex/config.toml
-├── openspec
-├── infoq-scaffold-backend
-│   ├── infoq-admin
-│   ├── infoq-core
-│   ├── infoq-modules
-│   └── infoq-plugin
-├── infoq-scaffold-frontend-vue
-├── infoq-scaffold-frontend-react
-├── infoq-scaffold-frontend-weapp-vue
-├── infoq-scaffold-frontend-weapp-react
-├── infoq-scaffold-docs
-├── script
-├── sql
-└── doc
+sv-scaffold-ai
+├── AGENTS.md                          # AI 协作规约
+├── .codex/                            # AI 自动化能力
+├── openspec/                          # 规格和变更管理
+├── infoq-scaffold-backend/            # Spring Boot 后端
+│   ├── infoq-admin/                   # 启动模块
+│   ├── infoq-core/                    # 公共基础
+│   ├── infoq-modules/                 # 业务模块
+│   └── infoq-plugin/                  # 插件扩展
+├── infoq-scaffold-frontend-vue/       # Vue 管理端
+├── infoq-scaffold-docs/               # 文档站（可选）
+├── script/                            # 部署脚本
+├── sql/                               # 数据库脚本
+└── doc/                               # 文档
 ```
 
 ## 技术栈
 
 | 维度 | 技术栈 |
 | --- | --- |
-| AI 协作层 | Codex、`AGENTS.md`、`.codex/skills`、`OpenSpec`、`.codex/config.toml` |
-| 后端 | Spring Boot `3.5.14`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
-| Vue 管理端 | Vue `3.5.35`、TypeScript `6.0.3`、Vite `8.0.16`、Element Plus `2.14.1`、Vue Router `5.1.0`、Vitest `4.1.8` |
-| React 管理端 | React `19.2.7`、TypeScript `6.0.3`、Vite `8.0.16`、Ant Design `6.4.3`、React Router `7.16.0`、Vitest `4.1.8` |
-| Vue 小程序端 | uni-app 3、Vue 3、TypeScript、Pinia、WeChat Mini Program |
-| React 小程序端 | Taro 4、React 18、TypeScript、Zustand、WeChat Mini Program |
-| 存储与中间件 | MySQL 8、Redis 7、MinIO |
-| 验证与自动化 | Maven、pnpm、浏览器自动化、Chrome DevTools MCP、OpenAI Docs MCP、WeChat DevTools |
-
-## AI 协作资产
-
-### 1. `AGENTS.md` 分层规则
-
-- 根规则：[`AGENTS.md`](./AGENTS.md)
-- 后端规则：[`infoq-scaffold-backend/AGENTS.md`](./infoq-scaffold-backend/AGENTS.md)
-- Vue 管理端规则：[`infoq-scaffold-frontend-vue/AGENTS.md`](./infoq-scaffold-frontend-vue/AGENTS.md)
-- React 管理端规则：[`infoq-scaffold-frontend-react/AGENTS.md`](./infoq-scaffold-frontend-react/AGENTS.md)
-- Vue 小程序规则：[`infoq-scaffold-frontend-weapp-vue/AGENTS.md`](./infoq-scaffold-frontend-weapp-vue/AGENTS.md)
-- React 小程序规则：[`infoq-scaffold-frontend-weapp-react/AGENTS.md`](./infoq-scaffold-frontend-weapp-react/AGENTS.md)
-- 文档站规则：[`infoq-scaffold-docs/AGENTS.md`](./infoq-scaffold-docs/AGENTS.md)
-
-### 2. `.codex/skills`
-
-当前仓库的 skill 结构遵循两条规则：
-
-- 每个 skill 只做一类工作
-- 除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀
-
-其中最核心的 skill 分为：
-
-- 通用浏览器自动化：`infoq-browser-automation`
-- React 家族运行态验证：`infoq-react-runtime-verification`
-- Vue 家族运行态验证：`infoq-vue-runtime-verification`
-- React 家族单测：`infoq-react-unit-test-patterns`
-- Vue 家族单测：`infoq-vue-unit-test-patterns`
-- 后端单测与回归补测：`infoq-backend-unit-test-patterns`
-- 后端冒烟、双机集群 smoke 与登录校验：`infoq-backend-smoke-test`、`infoq-login-success-check`
-- OpenSpec 与项目参考：`infoq-openspec-delivery`（`init_change_dir.mjs` + `openspec_check.mjs`）、`infoq-project-reference`
-
-其中浏览器自动化默认路径已经收敛为“仓库脚本 + skill 内本地 Playwright 依赖”。`playwright` MCP 只用于临时交互探索，`chrome-devtools` MCP 只用于 Network / Console / Performance 深度诊断。
-
-React 家族和 Vue 家族 skill 会通过 `references/admin` 与 `references/weapp` 区分客户端，但不再保留共享底座型 skill 目录。
-
-详见：
-
-- [`doc/collaboration/skills-guide.md`](./doc/collaboration/skills-guide.md)
-- [`doc/collaboration/agents-guide.md`](./doc/collaboration/agents-guide.md)
-- [`doc/collaboration/subagents-guide.md`](./doc/collaboration/subagents-guide.md)
-
-### 3. `OpenSpec`
-
-新的规格主流程统一放在 `openspec/`：
-
-- 项目级长期上下文：[`openspec/project.md`](./openspec/project.md)
-- 当前真相规格：[`openspec/specs/README.md`](./openspec/specs/README.md)
-- 活跃变更与归档：[`openspec/changes/README.md`](./openspec/changes/README.md)
-
-默认的 OpenSpec 交付入口是 `infoq-openspec-delivery`。新的功能、行为变更或跨工作区任务，先在 `openspec/changes/<change-id>/` 建立或定位 change，再开始实现。
-
-当前首批 stable specs 已覆盖：
-
-- `auth`
-- `user-management`
-- `menu-permission`
-- `notification`
-- `file-storage`
-- `plugin-governance`
-- `admin-routing`
-- `platform-governance`
-
-当前最小 OpenSpec 闭环命令：
-
-```bash
-node .codex/skills/infoq-openspec-delivery/scripts/init_change_dir.mjs <change-id>
-node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>
-```
-
-如果本次变更属于 repo-level 或高风险治理重构，还应同时在 `doc/plan/YYYY-MM-DD-topic-plan.md` 中保留执行计划。
-
-当用户明确要求 subagents 或 multi-expert execution 时，repo 级 custom agents 的真值放在 `.codex/agents/`，当前只保留 4 个角色：
-
-- `requirements_expert`
-- `technical_designer`
-- `code_implementer`
-- `auto_fixer`
-
-`design.md`、`materials.md`、`review.md` 默认由主线程按需维护；重大 UI/UX 任务优先切到 `infoq-ui-ux-three-phase-protocol`。
-
-### 4. 项目级 MCP
-
-项目级 Codex MCP 配置已写入 [`.codex/config.toml`](./.codex/config.toml)。
-
-当前默认启用：
-
-- `playwright`
-- `openai-docs`
-- `chrome-devtools`
-
-可选但默认禁用：
-
-- `mysql`（只读；通过 `node .codex/scripts/start_mysql_mcp.mjs` 启动，默认按 `application-local.yml -> application-dev.yml` 顺序读取 backend 配置，并允许用环境变量覆盖；共享文档示例统一使用本地依赖 `127.0.0.1:3306/infoq`）
-- `redis`（只读；通过 `node .codex/scripts/start_redis_mcp.mjs` 启动，默认按 `application-local.yml -> application-dev.yml` 顺序读取 backend 配置，并允许用环境变量覆盖；共享文档示例统一使用本地依赖 `127.0.0.1:6379/0`）
-
-详见：
-
-- [`doc/collaboration/mcp-servers.md`](./doc/collaboration/mcp-servers.md)
+| **后端** | Spring Boot `3.5.14`、JDK `17`、MyBatis-Plus `3.5.16`、Sa-Token `1.44.0` |
+| **Vue 管理端** | Vue `3.5.35`、TypeScript `6.0.3`、Vite `8.0.16`、Element Plus `2.14.1`、Pinia、Vue Router `5.1.0` |
+| **数据库** | MySQL `8`、Redis `7`、MinIO |
+| **构建和测试** | Maven、pnpm、Vitest |
+| **部署** | Docker Compose |
 
 ## 环境要求
 
-| 组件 | 基线 |
+| 组件 | 版本 |
 | --- | --- |
-| JDK | 17 |
-| Maven | 3.9+ |
-| Node.js | `^20.19.0 || ^22.13.0 || >=24.0.0` |
-| pnpm | `>= 10.0.0` |
-| MySQL | 8.x |
-| Redis | 7.x |
-| Docker Compose | 仅在脚本化部署时需要 |
-| WeChat DevTools | 小程序本地联调或 e2e 时需要 |
+| **Docker & Docker Compose** | 最新版本 |
+| **JDK** | 17 (本地开发时) |
+| **Maven** | 3.9+ (本地开发时) |
+| **Node.js** | `^20.19.0 || ^22.13.0 || >=24.0.0` (本地开发时) |
+| **pnpm** | `>= 10.0.0` (本地开发时) |
 
 ## 快速开始
 
-### 1. 后端
-
-本地和 agent 环境优先使用仓库后端 Maven 入口。该入口会优先读取 `.idea` 的项目配置，要求 JDK 17 与 Maven 3.9.x；如果 `.idea` 配置不可用，再搜索本机候选环境：
+### 方式一：Docker Compose（推荐，无需本地数据库）
 
 ```bash
-node .codex/scripts/backend_mvn.mjs -- clean install -DskipTests
-java -jar infoq-scaffold-backend/infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+# 1. 进入项目
+cd sv-scaffold-ai
+
+# 2. 进入 Docker 目录
+cd script/docker
+
+# 3. 设置安全密钥
+export SECURITY_TOKEN_SECRET="your-secure-token-at-least-32-chars"
+
+# 4. 启动所有服务
+docker-compose up -d
+
+# 5. 检查运行状态
+docker-compose ps
 ```
-如需继续执行 React / Vue admin 的受保护路由浏览器探测，临时追加 `--captcha.enable=false`。
 
-默认本地访问：
+### 启动后可以访问：
 
-- 后端：`http://127.0.0.1:8080`
-- 验证码接口：`http://127.0.0.1:8080/auth/code`
+| 服务 | 地址 | 说明 |
+| --- | --- | --- |
+| **Vue 管理端** | http://localhost/vue | 前端页面 |
+| **后端 API** | http://localhost:9090 | Spring Boot（通过 Nginx 代理为 /prod-api） |
+| **MySQL** | localhost:3306 | 用户：root，密码：root |
+| **Redis** | localhost:6379 | 密码：123456 |
+| **MinIO** | http://localhost:9001 | 用户：infoq，密码：infoq123 |
 
-### 2. 管理端
+### 默认登录凭证：
 
-Vue 管理端：
+- **用户名**：admin
+- **密码**：admin123
+
+### 方式二：本地开发（需要手动搭建 MySQL、Redis）
+
+#### 后端：
+
+```bash
+cd infoq-scaffold-backend
+node ../../.codex/scripts/backend_mvn.mjs -- clean install -DskipTests
+java -jar infoq-admin/target/infoq-admin.jar --spring.profiles.active=local
+```
+
+访问：`http://127.0.0.1:8080`
+
+#### 前端（新终端）：
 
 ```bash
 cd infoq-scaffold-frontend-vue
@@ -219,210 +134,134 @@ pnpm install
 pnpm run dev
 ```
 
-React 管理端：
-
-```bash
-cd infoq-scaffold-frontend-react
-pnpm install
-pnpm run dev
-```
-
-如果要通过 skill 启动后端 + 管理端联调：
-
-```bash
-node .codex/skills/infoq-vue-runtime-verification/scripts/start_admin_dev_stack.mjs
-node .codex/skills/infoq-react-runtime-verification/scripts/start_admin_dev_stack.mjs
-```
-
-停止对应 skill 启动的联调进程：
-
-```bash
-node .codex/skills/infoq-vue-runtime-verification/scripts/stop_admin_dev_stack.mjs
-node .codex/skills/infoq-react-runtime-verification/scripts/stop_admin_dev_stack.mjs
-```
-
-### 3. 小程序端
-
-React 小程序在打开微信开发者工具前，先把 `infoq-scaffold-frontend-weapp-react/.env.development` 里的 `TARO_APP_ID` 改成你自己的 AppID，然后执行：
-
-```bash
-pnpm --dir infoq-scaffold-frontend-weapp-react build-open:weapp:dev
-```
-
-Vue 小程序同理，先修改 `infoq-scaffold-frontend-weapp-vue/.env.development` 的 `TARO_APP_ID`，再执行：
-
-```bash
-pnpm --dir infoq-scaffold-frontend-weapp-vue build-open:weapp:dev
-```
-
-如果 `TARO_APP_ID` 为空或是 `touristappid`，`script/build-open-wechat-devtools.mjs` 会直接失败。
-
 ## 常用命令
 
-### 仓库校验
+### Docker 操作
 
 ```bash
-node .codex/scripts/validate_utf8.mjs
-node .codex/scripts/validate_utf8.mjs AGENTS.md infoq-scaffold-frontend-react/src
+# 启动所有服务
+cd script/docker
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f infoq-admin
+
+# 停止所有服务
+docker-compose down
+
+# 清理所有数据（谨慎！）
+docker-compose down -v
 ```
 
-### 后端
+### 后端开发
 
 ```bash
-node .codex/scripts/backend_mvn.mjs -- clean package -P dev
-node .codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test
+cd infoq-scaffold-backend
+
+# 编译
+node ../../.codex/scripts/backend_mvn.mjs -- clean package -P dev
+
+# 运行单元测试
+node ../../.codex/scripts/backend_mvn.mjs -- -pl infoq-modules/infoq-system -am -DskipTests=false test
 ```
 
-### Vue 管理端
+### 前端开发
+
+```bash
+cd infoq-scaffold-frontend-vue
+
+# 安装依赖
+pnpm install
+
+# 开发
+pnpm run dev
+
+# 单元测试
+pnpm run test:unit
+
+# 构建生产版本
+pnpm run build:prod
+
+# ESLint 检查
+pnpm run lint:eslint
+```
+
+## 系统功能
+
+### 核心模块
+
+- **用户管理**：用户添加、修改、删除、重置密码
+- **角色管理**：角色权限配置
+- **菜单权限**：动态菜单和权限管理
+- **部门管理**：组织架构
+- **岗位管理**：岗位配置
+- **字典管理**：系统字典
+- **参数设置**：系统配置
+- **通知公告**：系统通知
+- **文件管理**：文件上传、下载
+- **客户端管理**：应用授权
+
+### 系统监控
+
+- **在线用户**：实时在线用户查看
+- **登录日志**：登录记录查询
+- **操作日志**：用户操作记录
+- **定时任务**：Quartz 任务管理
+- **缓存监控**：Redis 缓存监控
+- **服务监控**：系统服务状态
+- **连接池监控**：数据库连接池监控
+
+## 部署
+
+详见 `doc/devops/` 目录：
+
+- [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md) - 部署前检查
+- [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md) - Docker Compose 部署
+- [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md) - 手动部署
+
+## 验证建议
+
+提交前至少执行最小验证：
+
+### 后端变更
+
+```bash
+cd infoq-scaffold-backend
+node ../../.codex/scripts/backend_mvn.mjs -- clean package -P dev
+```
+
+### 前端变更
 
 ```bash
 cd infoq-scaffold-frontend-vue
 pnpm run test:unit
-pnpm run test:unit:coverage
-pnpm run lint:eslint
 pnpm run build:prod
 ```
-
-### React 管理端
-
-```bash
-cd infoq-scaffold-frontend-react
-pnpm run test
-pnpm run test:coverage
-pnpm run lint
-pnpm run build:prod
-```
-
-### React 小程序端
-
-```bash
-cd infoq-scaffold-frontend-weapp-react
-pnpm run test
-pnpm run test:coverage
-pnpm run lint
-pnpm run verify:local
-```
-
-### Vue 小程序端
-
-```bash
-cd infoq-scaffold-frontend-weapp-vue
-pnpm run typecheck
-pnpm run test
-pnpm run test:coverage
-pnpm run verify:local
-```
-
-## 部署入口
-
-### 后端与依赖服务
-
-```bash
-export SECURITY_TOKEN_SECRET=replace-with-at-least-32-chars-secret
-# 可选：不设置时 deploy 会生成并持久化当前批次号
-# export DEPLOY_ID=2.1.5-20260602120000
-bash script/bin/infoq.sh deploy
-```
-
-说明：
-
-- `bash script/bin/infoq.sh deploy` 会生成或校验本次 `DEPLOY_ID`，并通过生产配置注入 `infoq.quartz.bootstrap.deploy-id`。
-- 同一批多节点滚动发布必须共享同一个 `DEPLOY_ID`；如果同一版本需要再次发布，应换新 `DEPLOY_ID` 并重新执行 `deploy`。
-- `bash script/bin/infoq.sh start` / `restart` 会复用 `${INFOQ_DEPLOY_ROOT:-/infoq}/server/config/deploy-id`，不会生成新的部署批次。
-- `infoq-admin` readiness 路径为 `/monitor/health/readiness`，用于 Compose healthcheck 或负载均衡接流量门禁。
-
-### 前端与网关
-
-```bash
-bash script/bin/deploy-frontend.sh deploy
-```
-
-该脚本会部署：
-
-- `infoq-frontend-vue`
-- `infoq-frontend-react`
-- `nginx-web`
-
-`deploy-frontend.sh deploy` 会先同步前端网关目录与 `nginx.conf`，再顺序构建 Vue / React 镜像，最后启动两个前端容器与 `nginx-web`，避免本机 Docker 并行构建时的内存峰值。
-
-详见：
-
-- [`sql/infoq_scaffold_2.0.0.sql`](./sql/infoq_scaffold_2.0.0.sql)
-- [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md)
-- [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md)
-- [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md)
-
-## 验证建议
-
-提交前至少执行对应工作区的最小验证：
-
-- 后端改动：主流程验证 + 定向 Maven 测试
-- Vue 管理端：`pnpm run test:unit` + `pnpm run build:prod`
-- React 管理端：`pnpm run test` + `pnpm run build:prod`
-- Vue 小程序端：`pnpm run typecheck` + `pnpm run test` + `pnpm run build:weapp:dev`
-- React 小程序端：`pnpm run test` + `pnpm run lint` + `pnpm run build:weapp:dev`
-- 文档站：`cd infoq-scaffold-docs && pnpm run docs:sync && pnpm run docs:check-links && pnpm run build`
-
-如果改动影响浏览器运行态、登录、路由守卫、页面渲染或小程序 DevTools 打开流程，建议额外使用对应的 React 或 Vue 运行态 verification skill。
-
-若要直接执行最小浏览器探测，可使用：
-
-```bash
-pnpm --dir .codex/skills/infoq-browser-automation/scripts install
-pnpm --dir .codex/skills/infoq-browser-automation/scripts run playwright-cli flow --url "https://example.com" --wait-for-text "Example Domain"
-```
-
-首次运行缺少浏览器二进制时，先执行 `pnpm --dir .codex/skills/infoq-browser-automation/scripts exec playwright install chromium`。
-浏览器 skill 不再维护 `.sh` / `.ps1` 包装器，统一直接调用仓库内 CLI；仓库内临时文件统一写入 `doc/tmp/`。
-
-## 项目能力概览
-
-- AI 协作治理：根级 / 工作区级 `AGENTS.md` 与 `.codex/skills`
-- 研发自动化：后端冒烟、登录校验、浏览器验证、小程序 DevTools 打开、版本升级（含文档站同步）
-- 后端业务基线：认证授权、组织权限、字典参数、通知客户端、OSS、日志监控、服务监控与 Hikari 连接池监控
-- 多前端交付：Vue/React 管理端 + Vue/React 小程序端
-- 插件化扩展：encrypt、mail、sse、websocket、doc、translation、sensitive、excel、log 等能力模块
 
 ## 文档导航
 
-- 项目文档中心：[`doc/README.md`](./doc/README.md)
-- 文档站展示层：[`infoq-scaffold-docs/README.md`](./infoq-scaffold-docs/README.md)
-- 协作体系：
-  - [`doc/collaboration/agents-guide.md`](./doc/collaboration/agents-guide.md)
-  - [`doc/collaboration/skills-guide.md`](./doc/collaboration/skills-guide.md)
-  - [`doc/collaboration/subagents-guide.md`](./doc/collaboration/subagents-guide.md)
-- MCP：
-  - [`doc/collaboration/mcp-servers.md`](./doc/collaboration/mcp-servers.md)
-- 部署交付：
-  - [`doc/devops/deploy-prerequisites.md`](./doc/devops/deploy-prerequisites.md)
-  - [`doc/devops/manual-deploy.md`](./doc/devops/manual-deploy.md)
-  - [`doc/devops/docker-compose-deploy.md`](./doc/devops/docker-compose-deploy.md)
-- 扩展治理：
-  - [`doc/collaboration/plugin-catalog.md`](./doc/collaboration/plugin-catalog.md)
+- **项目文档中心**：[`doc/README.md`](./doc/README.md)
+- **后端手册**：[`doc/backend/handbook.md`](./doc/backend/handbook.md)
+- **管理端手册**：[`doc/admin/handbook.md`](./doc/admin/handbook.md)
+- **协作体系**：[`doc/collaboration/development-workflow.md`](./doc/collaboration/development-workflow.md)
 
-## Admin后台演示图例
+## 变更记录
 
-系统监控能力现已覆盖在线用户、登录日志、操作日志、定时任务、任务日志、缓存监控、服务监控和 Hikari 原生连接池监控。
-其中连接池监控页面与接口已经按生产安全要求收敛为摘要视图，只展示数据源名、库类型、连接数、等待线程、最大池容量和占用率，不再向前端暴露 JDBC URL、账号、驱动类、P6Spy/Seata 标记或详细连接池参数。
+### v2.1.5 (Spring Boot + Vue Only)
 
-|  |  |
-| --- | --- |
-| ![登陆页面](doc/images/登陆页面.png) | ![主页面](doc/images/主页面.png) |
-| ![用户管理页面](doc/images/用户管理页面.png) | ![角色管理页面](doc/images/角色管理页面.png) |
-| ![菜单管理页面](doc/images/菜单管理页面.png) | ![部门管理页面](doc/images/部门管理页面.png) |
-| ![岗位管理页面](doc/images/岗位管理页面.png) | ![字典管理页面](doc/images/字典管理页面.png) |
-| ![参数设置页面](doc/images/参数设置页面.png) | ![通知公告页面](doc/images/通知公告页面.png) |
-| ![操作日志页面](doc/images/操作日志页面.png) | ![登陆日志页面](doc/images/登陆日志页面.png) |
-| ![文件管理页面](doc/images/文件管理页面.png) | ![客户端管理页面](doc/images/客户端管理页面.png) |
-| ![在线用户页面](doc/images/在线用户页面.png) | ![缓存监控页面](doc/images/缓存监控页面.png) |
+- ✂️ 从 infoq-scaffold-ai 裁剪而来
+- ❌ 移除 React 管理端 (`infoq-scaffold-frontend-react/`)
+- ❌ 移除 Vue 小程序端 (`infoq-scaffold-frontend-weapp-vue/`)
+- ❌ 移除 React 小程序端 (`infoq-scaffold-frontend-weapp-react/`)
+- ✅ 保留 Spring Boot 3.5 后端
+- ✅ 保留 Vue 3 + Element Plus 管理端
+- ✅ 保留完整的 Docker Compose 部署方案
 
-## Weapp后台演示图例
-
-|                                    |                                    |
-|------------------------------------|------------------------------------|
-| ![小程序登陆页面](doc/images/小程序登陆页面.png) | ![小程序首页页面](doc/images/小程序首页页面.png) |
-| ![小程序管理台页面](doc/images/小程序管理台页面.png) | ![小程序我的页面](doc/images/小程序我的页面.png)  |
-
-## License
+## 许可证
 
 [MIT License](./LICENSE)
+
+## 参考
+
+- 原始项目：[LuckyKuang/infoq-scaffold-ai](https://github.com/LuckyKuang/infoq-scaffold-ai)
+- Fork 项目：[cicys/sv-scaffold-ai](https://github.com/cicys/sv-scaffold-ai)

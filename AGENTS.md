@@ -1,39 +1,30 @@
 # AGENTS.md
 |IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any project tasks. Read repository files before relying on framework pretraining data.
 |Scope:本文件适用于仓库根目录及未被更近 `AGENTS.md` 或 `AGENTS.override.md` 覆盖的路径。
-|Encoding:仓库文本文件必须使用 UTF-8；写入必须使用 UTF-8 without BOM；Windows PowerShell 5.1 是默认 shell 基线，读取源码、配置、文档等文本文件时，`Get-Content`/`Select-String` 等阅读命令必须显式指定 `-Encoding UTF8`。
-|PowerShell Encoding Guardrail:Windows PowerShell 5.1 禁止用 `>`、`>>`、`Out-File`、`Set-Content`、`Add-Content` 写入仓库文本文件；写入必须使用 `apply_patch`、Node.js `utf8`、或 `.NET UTF8Encoding(false)` 等明确 UTF-8 without BOM 的方式；PowerShell 7 可使用 `utf8NoBOM`，但不得作为默认假设。
-|Encoding Gate:提交或构建前执行 `node .codex/scripts/validate_utf8.mjs`；可追加路径参数做定向校验；不得引用不存在的校验脚本路径。
+|Encoding:仓库文本文件必须使用 UTF-8；写入必须使用 UTF-8 without BOM；Windows PowerShell 5.1 是默认 shell 基线。
 |Package Manager:前端默认使用 pnpm 执行 install/dev/lint/test/build；仅在 pnpm 不可用时退回 npm。
-|Backend Maven Runner:后端 Maven 命令优先使用 `node .codex/scripts/backend_mvn.mjs -- ...`；入口优先读取 `.idea`，要求 JDK 17 与 Maven 3.9.x，配置不可用时再搜索本机候选。
-|Temporary Artifacts:仓库内工具、skill、脚本、验证过程新增的临时文件、临时目录、调试输出与一次性运行产物统一放在 `doc/tmp/` 下；除非外部工具强制要求其他位置。|禁止把临时产物散落到仓库其他路径，便于后续统一清理。
-|Failure Policy:产品代码优先显式失败，不接受静默 fallback、吞错或假成功；确需 fallback 时必须显式、可说明、易关闭，并经过用户批准。
-|Engineering Baseline:保持抽象务实；遵守 DRY/YAGNI/关注点分离；命名清晰、注释只写关键意图；优先直接修复，不保留无必要兼容层；兼容性不是明确要求时，删除死代码和过时分支。
-|Security And Validation:源码中禁止硬编码密钥；边界处校验外部输入；数据库访问使用参数化查询；保持代码可测试；优先自动化校验；后端单测总时长控制在 60 秒内。
-|Redisson OSS Policy:仓库全局只允许使用 Redisson 开源版兼容 API。|禁止引入、调用或保留 Redisson PRO-only 能力（例如 `getLocalCachedMapCache`、依赖 `keepAliveTime` 的 rate limiter 重载）。|涉及缓存、限流、鉴权链路、登录链路或 Redis 抽象改动时，必须补 OSS 兼容性验证。
-|AI Coding Guardrails:避免无意义过度注释，注释解释意图而不是逐行复述。|避免只为“更干净”而改变行为的空重构。|避免范围蔓延，只实现用户明确要求。|处理错误与边界情况，不假设输入永远理想。|优先最小改动，不做大面积重写。|若某段改动被识别为错误，先立即回退错误代码，再继续处理，不留下死代码。|不要为了让测试或构建通过而削弱断言、放宽 mock、压警告、抬阈值或伪造成功路径。
-|Acceptance Contract:实现前必须在当前任务上下文中写清一个 acceptance contract，覆盖 functional scope、non-goals、exception handling、required logs or observability、rollback trigger or conditions；若缺项或冲突，先暴露问题再编码。
-|Execution Loop:按最小闭环工作，一次只改一类问题。|验证顺序固定为 main-flow verification -> targeted tests -> lint/build or equivalent checks -> diff review。|每次代码改动交付前都必须通过相关单元测试；若不适用或跑不起来，必须明确写出 blocker，不能当作 ready。|除非用户明确要求，不要把无关重构和行为修改绑在一起。
-|Unit Test Doctrine:不同类型单元测试必须按业务行为与边界条件编写，禁止脱离业务语义只为凑覆盖率。|单元测试失败时先检查并修复产品代码问题；仅在需求或断言错误且有证据时才允许改测试，禁止通过修改测试隐藏代码缺陷。|每种单测类型先跑通一个最小闭环后，必须沉淀一份仓库可复用 skill（含触发条件、标准步骤、验证命令与常见反模式），用于后续提效与节约 token。
-|Release Guardrails:可发布变更必须保持依赖版本与 lockfile 一致。|执行或部署前核验必需 env、config 和外部依赖。|影响共享环境、数据或部署状态的高风险/破坏性操作必须先获明确确认。
-|SQL Migration Policy:`sql/infoq_scaffold_2.0.0.sql` 是冻结初始化基线，永远不要修改。|所有新增、修改、删除表结构或初始化数据变更，只能新增 `sql/infoq_scaffold_update_YYYYMMDD.sql` 增量脚本承载。|若误改初始化 SQL，必须立即回退该文件，并把变更迁移到当前日期增量脚本。
-|Deployment Secrets:生产/Compose 部署使用仓库已有默认密码或 RSA 私钥。|前端保持 VITE_APP_ENCRYPT/TARO_APP_ENCRYPT=true 时必须在构建环境提供对应 RSA 公私钥。
-|Pre-Release Checklist:发布或交付前显式检查 performance impact、alerting/observability coverage、rollback path/script、config/SQL/dependency impact；任何未检查项都要作为 residual risk 说明。
-|Instruction Layering:根 `AGENTS.md` 只保留跨仓规则。|backend、Vue admin、React admin、weapp React、weapp Vue、docs site 使用更近的 `AGENTS.md` 或 `AGENTS.override.md` 写栈内细则。|当更近文件与根规则冲突时，以更近文件为准。
-|Workspace AGENTS:infoq-scaffold-backend/AGENTS.md|infoq-scaffold-frontend-vue/AGENTS.md|infoq-scaffold-frontend-react/AGENTS.md|infoq-scaffold-frontend-weapp-react/AGENTS.md|infoq-scaffold-frontend-weapp-vue/AGENTS.md|infoq-scaffold-docs/AGENTS.md
-|Repo Skill Policy:每个 skill 只解决一个工作。|除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀。|每个 skill 目录必须包含 `SKILL.md`。|所有仓库级 skill 默认维护 `agents/openai.yaml`，更新 `SKILL.md` 时必须同步校验 UI metadata 是否 stale。|`agents/openai.yaml` 的 `default_prompt` 必须显式包含 `$skill-name`。|`.codex/skills` 下不保留共享底座型、仅 README 型、或 helper-only skill 目录。|React 家族和 Vue 家族技能允许通过 `references/admin` 与 `references/weapp` 区分客户端，但仍必须保持单一职责。
-|Skill Runtime Policy:仓库级 skill 的主执行入口必须兼容 Windows/macOS/Linux。|统一使用 repo-owned Node CLI 或 `.mjs` 入口；不再保留 `.sh`/`.ps1`/`.cmd` 作为 skill 入口。|若内部仍需 Python 等实现，必须由跨平台 Node 入口调度。|新增或更新 skill 时，同时检查脚本帮助文案、默认命令和临时产物路径是否与该规则一致。
-|Skill Docs Localization:仓库级 skill（`.codex/skills`）的描述性文档默认中文优先（含 `SKILL.md`、`references/*.md`、`agents/openai.yaml` 的说明字段）。|翻译仅覆盖说明性自然语言；命令、路径、环境变量、标识符、代码块、API 参数、组件名与版本号保持原文。|新增或更新 skill 时必须同步执行中文化与术语一致性检查，避免文档中英混杂与语义漂移。
+|Backend Maven Runner:后端 Maven 命令优先使用 `node .codex/scripts/backend_mvn.mjs -- ...`；入口优先读取 `.idea`，要求 JDK 17 与 Maven 3.9.x。
+|Temporary Artifacts:仓库内工具、skill、脚本、验证过程新增的临时文件、临时目录、调试输出与一次性运行产物统一放在 `doc/tmp/` 下。
+|Failure Policy:产品代码优先显式失败，不接受静默 fallback、吞错或假成功。
+|Engineering Baseline:保持抽象务实；遵守 DRY/YAGNI/关注点分离；命名清晰、注释只写关键意图。
+|Security And Validation:源码中禁止硬编码密钥；边界处校验外部输入；数据库访问使用参数化查询；保持代码可测试。
+|Redisson OSS Policy:仓库全局只允许使用 Redisson 开源版兼容 API。|禁止引入、调用或保留 Redisson PRO-only 能力。
+|AI Coding Guardrails:避免无意义过度注释，注释解释意图而不是逐行复述。|避免只为"更干净"而改变行为的空重构。|避免范围蔓延，只实现用户明确需求。
+|Acceptance Contract:实现前必须在当前任务上下文中写清一个 acceptance contract，覆盖 functional scope、non-goals、exception handling。
+|Execution Loop:按最小闭环工作，一次只改一类问题。|验证顺序固定为 main-flow verification -> targeted tests -> lint/build。
+|Unit Test Doctrine:不同类型单元测试必须按业务行为与边界条件编写，禁止脱离业务语义只为凑覆盖率。
+|SQL Migration Policy:`sql/infoq_scaffold_2.0.0.sql` 是冻结初始化基线，永远不要修改。|所有数据库变更，只能新增 `sql/infoq_scaffold_update_*.sql`。
+|Deployment Secrets:生产/Compose 部署使用仓库已有默认密码或 RSA 私钥。
+|Instruction Layering:根 `AGENTS.md` 只保留跨仓规则。|backend、Vue admin、docs site 使用更近的 `AGENTS.md` 或 `AGENTS.override.md` 写栈细则。
+|Workspace AGENTS:infoq-scaffold-backend/AGENTS.md|infoq-scaffold-frontend-vue/AGENTS.md|infoq-scaffold-docs/AGENTS.md
+|Repo Skill Policy:每个 skill 只解决一个工作。|除 `skill-creator` 外，仓库级 skill 统一使用 `infoq-` 前缀。|每个 skill 目录必须包含 `SKILL.md`。
+|Skill Runtime Policy:仓库级 skill 的主执行入口必须兼容 Windows/macOS/Linux。|统一使用 repo-owned Node CLI 或 `.mjs` 入口。
+|Skill Docs Localization:仓库级 skill（`.codex/skills`）的描述性文档默认中文优先。
 |Repo Skill Location:仓库级 skills 统一放在 `.codex/skills`。|相关 references、helper scripts 和发现逻辑保持与该路径一致。
-|Docs Sync:变更 skill 名称、命令、env 前置条件、工作区入口路径、`.codex/config.toml` 中的 MCP server/工具白名单/审批模式/超时设置后，必须同步更新 `/AGENTS.md`、更近 `AGENTS.md`、`README.md` 与相关 `doc/**/*.md`，禁止出现文档和 skill 实际行为漂移。
-|MCP Config Truth:`.codex/config.toml` 是仓库级 MCP 真值源。|`doc/collaboration/mcp-servers.md` 只能描述当前显式配置出来的 MCP server、tool、默认启用状态与只读范围。|文档中的 MCP server/tool 名称、审批模式、超时设置和本地启动脚本路径必须与 `.codex/config.toml`、`.codex/scripts/*` 保持一致。
-|OpenAI Docs MCP:涉及 OpenAI API、Responses API、ChatGPT Apps SDK、Codex、MCP、AGENTS.md、skills 或 subagent 问题时，优先使用 `openai-docs` MCP；优先官方文档，不依赖记忆或第三方总结。
-|Spec Workflow:分级使用 OpenSpec。|L3(强制):新功能、API 契约变更、跨工作区交付，编码前必须创建或定位 `openspec/changes/<change-id>/` 并按 full artifacts 执行。|L2(建议 Lite):单工作区的行为变更且不改 API 契约，可使用 OpenSpec Lite（至少 `proposal.md`+`tasks.md`）。|L1(可豁免):单工作区小修复且不改契约、改动范围小（默认 <=3 files）可不建 OpenSpec，但必须先写 acceptance contract。|不确定分级时默认按 L3 执行。|repo-level 或高风险治理变更额外在 `doc/plan/YYYY-MM-DD-topic-plan.md` 保留执行计划。|OpenSpec 文档正文默认中文；路径名称、命令、文件名保持英文原样。|标准文件名保持 `proposal.md`/`tasks.md`/`design.md`/`materials.md`/`review.md`/`spec.md` 以兼容工具。|长期项目上下文放在 `openspec/project.md`。|当前真值放在 `openspec/specs/`。|进行中的工作放在 `openspec/changes/<change-id>/`。|active change 在实现前和交付前都必须通过 `node .codex/skills/infoq-openspec-delivery/scripts/openspec_check.mjs <change-id>` 结构校验。
-|UI/UX Sovereignty Protocol:重大 UI 任务必须走四阶段：Phase 1 输出 Layout Specification + Desktop/Mobile ASCII Wireframe（含结构、组件策略、Responsive Strategy）并等待明确口令 `LAYOUT APPROVED`；Phase 2 在 `doc/ui-demos/<change-id>.html` 产出独立静态演示并等待明确口令 `DEMO APPROVED`；Phase 3 再进入受影响工作区的正式实现，使用该工作区真实技术栈与组件库，不预设 Tailwind/Capacitor/Hono；Phase 4 使用 Playwright 或相应运行态工具验证实际 DOM、路由与获批布局一致。
-|UI MVP Guardrails:若任务上下文提供 MVP 约束文件（例如 `../../docs/MVP_SPEC.md`），只实现核心用户流；若提议偏离极简目标，必须先升级为议题并获确认后再编码。
-|Local Skills:.codex/skills:{infoq-browser-automation,infoq-agents-md-compress,infoq-ant-design-component-reference,infoq-element-plus-component-reference,infoq-backend-smoke-test,infoq-backend-unit-test-patterns,infoq-login-success-check,infoq-openspec-delivery,infoq-plugin-introducer,infoq-project-reference,infoq-react-runtime-verification,infoq-react-unit-test-patterns,infoq-version-bump,infoq-vue-runtime-verification,infoq-vue-unit-test-patterns,infoq-ui-ux-three-phase-protocol,skill-creator}
-|Skill Priority:通用网站或浏览器工作优先用 infoq-browser-automation。|React 家族运行态验证与本地栈启动优先用 infoq-react-runtime-verification。|Vue 家族运行态验证与本地栈启动优先用 infoq-vue-runtime-verification。|需要稳定仓库参考信息时，在确认更近 AGENTS 未覆盖后使用 infoq-project-reference。|涉及重大布局改造、视觉基线审批、ASCII 线框确认或 Demo 审批流时优先使用 infoq-ui-ux-three-phase-protocol。
-|Skill Trigger:创建、压缩或更新 `AGENTS.md` 使用 infoq-agents-md-compress。|后端单测、mapper XML 集成测试、回归补测或 test-first backend fix 使用 infoq-backend-unit-test-patterns。|backend smoke/API/runtime verification 使用 infoq-backend-smoke-test。|登录、鉴权、登录失败诊断使用 infoq-login-success-check。|React admin 与 weapp React 的单测、coverage、回归补测使用 infoq-react-unit-test-patterns。|React admin 登录、路由、截图、console verification，以及 weapp React build-open、smoke、e2e 使用 infoq-react-runtime-verification。|Vue admin 与 weapp Vue 的单测、coverage、回归补测使用 infoq-vue-unit-test-patterns。|Vue admin 登录、路由、截图、console verification，以及 weapp Vue build-open、smoke、e2e 使用 infoq-vue-runtime-verification。|React Ant Design 组件/API 选择使用 infoq-ant-design-component-reference。|Vue Element Plus 组件/API 选择使用 infoq-element-plus-component-reference。|插件引入与治理使用 infoq-plugin-introducer。|L3/L2 OpenSpec 交付（新功能、API 契约变更、跨工作区，或用户明确要求 OpenSpec）使用 infoq-openspec-delivery。|L1 小修复默认不强制触发 infoq-openspec-delivery。|仓库级版本升级使用 infoq-version-bump。|当用户要求先出 ASCII 方案、要求 `LAYOUT APPROVED/DEMO APPROVED` 停步、或要求重大 UI 变更先走静态原型时使用 infoq-ui-ux-three-phase-protocol。
-|Subagent Docs:openspec:{project.md,specs/README.md,changes/README.md}|doc:{collaboration/agents-guide.md,collaboration/skills-guide.md,collaboration/subagents-guide.md}
-|Subagent Flow:OpenSpec 交付默认使用 `requirements_expert -> technical_designer -> code_implementer -> auto_fixer`。|重大 UI/UX 决策优先走 `infoq-ui-ux-three-phase-protocol`，或由主线程按需维护 `design.md`。|`materials.md` 与最终验收默认由主线程按需处理。|验证证据不要堆在主对话，显式总结 blocker。
-|Subagent Output:`requirements_expert` 负责 `proposal.md` 和 spec deltas。|`technical_designer` 产出 `tasks.md`。|`code_implementer` 负责实现与任务勾选更新。|`auto_fixer` 负责验证与真实修复。|主线程负责最终验收结论，以及按需写入 `design.md`/`materials.md`/`review.md`。
+|Docs Sync:变更 skill 名称、命令、env 前置条件、工作区入口路径、`.codex/config.toml` 中的配置后，必须同步更新相关文档。
+|MCP Config Truth:`.codex/config.toml` 是仓库级 MCP 真值源。|`doc/collaboration/mcp-servers.md` 只能描述当前显式配置出来的 MCP server。
+|OpenAI Docs MCP:涉及 OpenAI API、Responses API、ChatGPT Apps SDK、Codex、MCP、AGENTS.md 问题时，优先使用 `openai-docs` MCP。
+|Spec Workflow:分级使用 OpenSpec。|L3(强制):新功能、API 契约变更、跨工作区交付，编码前必须创建或定位 `openspec/changes/<change-id>/`。
+|UI/UX Sovereignty Protocol:重大 UI 任务必须走四阶段：Phase 1 输出 Wireframe、Phase 2 静态 Demo、Phase 3 实现、Phase 4 验证。
+|Local Skills:.codex/skills:{infoq-browser-automation,infoq-agents-md-compress,infoq-element-plus-component-reference,infoq-backend-smoke-test,infoq-backend-unit-test-patterns,infoq-vue-runtime-verification,infoq-vue-unit-test-patterns,infoq-openspec-delivery,infoq-project-reference}
+|Skill Priority:通用网站或浏览器工作优先用 infoq-browser-automation。|Vue 家族运行态验证与本地栈启动优先用 infoq-vue-runtime-verification。|后端 smoke 或 API verification 使用 infoq-backend-smoke-test。
